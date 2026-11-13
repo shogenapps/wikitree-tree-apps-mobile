@@ -97,6 +97,19 @@ any shell workaround.
 - **Source:** `views/fandoku/FandokuView.js`, `views/fractalTree/FractalView.js`, `views/webs/WebsView.js`.
 - **Shell workaround:** `fitBoard()` in `shared/shell.js`.
 
+### Super Tree: starts tiny
+- **Symptom:** after loading, the tree is zoomed out so far that boxes are about 12px wide on a
+  phone (Knopp-385: 8 people) and small on desktop too.
+- **Source:** `views/superBigFamTree/SuperBigFamView.js`, `SuperBigFamView.reZoom`, called
+  automatically after the first load. It sets the SVG `viewBox` to `g.getBBox()`, which also
+  counts the hidden placeholders kept for people not shown (1720 x 1900 units where the visible
+  boxes span about 600 x 800), and fits that into the whole window (`window.innerWidth/innerHeight`),
+  not the chart's own area.
+- **Fix:** fit only the visible people, measured against the SVG's own size, and on small
+  screens start at a readable scale centred on the start person.
+- **Seen:** Android shell, 2026-11-14. Shell workaround: `superStart()` in `shared/shell.js`
+  replaces the automatic fit on phones with a readable start centred on the start person.
+
 ### Family Calendar: lists and weeks cramped on phones
 - **Symptom:** the month list is a box 47% wide, so each entry wraps to 4 or 5 lines. Modern mode
   keeps FullCalendar's 1.35 aspect ratio, so the weeks scroll in a box about 176px tall.
