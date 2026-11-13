@@ -40,6 +40,10 @@ final class ShellModel: NSObject, ObservableObject, WKNavigationDelegate, WKUIDe
     private var urlObserver: AnyCancellable?
     /// Set while heading back to the tree from a site page, so a failed return can't loop.
     private var returning = false
+    /// The #name=...&view=... last asked for by a fresh load, applied again once the page has
+    /// finished loading, as on Android: while it starts up, the Apps login can leave the site's
+    /// default app and person instead of the ones asked for.
+    private var pendingHash: String?
     private static let siteHost = "www.wikitree.com"
     private static let appsURL = "https://www.wikitree.com/apps/"
 
@@ -85,7 +89,7 @@ final class ShellModel: NSObject, ObservableObject, WKNavigationDelegate, WKUIDe
         urlObserver = webView.publisher(for: \.url).sink { [weak self] url in
             if let url { self?.readHash(url) }
         }
-        webView.load(URLRequest(url: startURL()))
+        load(startURL())
     }
 
     var appTitle: String {
@@ -108,17 +112,29 @@ final class ShellModel: NSObject, ObservableObject, WKNavigationDelegate, WKUIDe
             // The Tree Apps page listens for hash changes and redraws without a reload.
             webView.evaluateJavaScript("location.hash = \(Self.quote(hash))")
         } else if let url = URL(string: Self.appsURL + Self.encode(id) + hash) {
-            webView.load(URLRequest(url: url))
+            load(url)
         }
     }
 
     func open(_ url: URL) {
-        if Self.isTreeApps(url) { webView.load(URLRequest(url: url)) }
+        guard Self.isTreeApps(url) else { return }
+        if let current = webView.url, Self.isTreeApps(current), let fragment = url.fragment {
+            // The Tree Apps page switches person and app on a hash change, whatever its path.
+            webView.evaluateJavaScript("location.hash = \(Self.quote("#" + fragment))")
+        } else {
+            load(url)
+        }
+    }
+
+    /// Load a Tree Apps address, remembering its #hash to apply again once the page has loaded.
+    private func load(_ url: URL) {
+        pendingHash = url.fragment.map { "#" + $0 }
+        webView.load(URLRequest(url: url))
     }
 
     func reload() {
         failed = false
-        if webView.url == nil { webView.load(URLRequest(url: startURL())) } else { webView.reload() }
+        if webView.url == nil { load(startURL()) } else { webView.reload() }
     }
 
     func toggleLogin() {
@@ -129,7 +145,7 @@ final class ShellModel: NSObject, ObservableObject, WKNavigationDelegate, WKUIDe
         } else {
             webView.evaluateJavaScript("window.__wtShellLogin ? __wtShellLogin() : false") { [weak self] ok, _ in
                 guard let self, (ok as? Bool) != true else { return }
-                self.webView.load(URLRequest(url: self.startURL()))
+                self.load(self.startURL())
             }
         }
     }
@@ -250,11 +266,22 @@ final class ShellModel: NSObject, ObservableObject, WKNavigationDelegate, WKUIDe
             // Go back to the tree instead; the Tree Apps page then completes the Apps login itself.
             if !returning {
                 returning = true
-                webView.load(URLRequest(url: startURL()))
+                load(startURL())
                 return
             }
         } else if let url = webView.url, Self.isTreeApps(url) {
             returning = false
+            if let hash = pendingHash {
+                pendingHash = nil
+                // Only when the person or app differs: Tree Apps add their own settings to the hash
+                // (Family Calendar adds &month=), and setting it back would draw the app twice.
+                webView.evaluateJavaScript("""
+                    (function (want) {
+                        function get(h, k) { var m = h.match(new RegExp("[#&]" + k + "=([^&]*)")); return m ? decodeURIComponent(m[1]) : ""; }
+                        if (get(location.hash, "name") !== get(want, "name") || get(location.hash, "view") !== get(want, "view")) location.hash = want;
+                    })(\(Self.quote(hash)))
+                    """)
+            }
         }
         webView.evaluateJavaScript("window.__wtShellSetBars && __wtShellSetBars(\(showBars))")
         showControls = UserDefaults.standard.bool(forKey: "controls_" + viewKey)
