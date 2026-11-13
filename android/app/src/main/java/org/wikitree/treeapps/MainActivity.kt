@@ -25,6 +25,8 @@ import android.widget.FrameLayout
 import android.widget.PopupMenu
 import android.widget.ProgressBar
 import android.widget.TextView
+import androidx.browser.customtabs.CustomTabColorSchemeParams
+import androidx.browser.customtabs.CustomTabsIntent
 import androidx.webkit.WebViewCompat
 import androidx.webkit.WebViewFeature
 import org.json.JSONObject
@@ -138,15 +140,23 @@ class MainActivity : Activity() {
         web.webViewClient = object : WebViewClient() {
             override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
                 val uri = request.url
-                val host = uri.host ?: return false
-                // WikiTree pages (including the api.wikitree.com login round trip) stay in the app.
-                if (host == "wikitree.com" || host.endsWith(".wikitree.com")) return false
-                if (uri.scheme == "http" || uri.scheme == "https") {
-                    openExternally(uri)
+                if (uri.scheme != "http" && uri.scheme != "https") {
+                    openExternally(uri) // mailto:, tel:, etc.
                     return true
                 }
-                // mailto:, tel:, etc.
-                openExternally(uri)
+                val host = uri.host ?: return false
+                val onWikiTree = host == "wikitree.com" || host.endsWith(".wikitree.com")
+                // Tree Apps pages always stay in the app.
+                if (isTreeAppsUrl(uri)) return false
+                // Redirects stay too: the Apps login goes to api.wikitree.com and back, and may
+                // pass through the WikiTree site login page on the way.
+                if (onWikiTree && request.isRedirect) return false
+                // So does anything followed from a page that isn't a Tree App (i.e. mid-login).
+                val from = Uri.parse(view.url ?: "")
+                if (onWikiTree && !isTreeAppsUrl(from)) return false
+                // Everything else (profile links, sources, help pages) opens in a browser sheet
+                // over the tree, so closing it returns to the tree exactly as it was.
+                openInSheet(uri)
                 return true
             }
 
@@ -338,7 +348,7 @@ class MainActivity : Activity() {
                     }
                 }
                 2 -> web.reload()
-                3 -> openExternally(Uri.parse("https://www.wikitree.com/wiki/${Uri.encode(currentId)}"))
+                3 -> openInSheet(Uri.parse("https://www.wikitree.com/wiki/${Uri.encode(currentId)}"))
                 4 -> web.url?.let { u -> openExternally(Uri.parse(u)) }
                 5 -> {
                     showBars = !showBars
@@ -357,6 +367,20 @@ class MainActivity : Activity() {
         else "$APPS_URL${Uri.encode(currentId)}#name=${Uri.encode(currentId)}&view=${Uri.encode(currentView.ifBlank { defaultView })}"
 
     private fun isTreeAppsUrl(uri: Uri) = uri.host == SITE_HOST && uri.path?.startsWith("/apps") == true
+
+    private fun openInSheet(uri: Uri) {
+        try {
+            CustomTabsIntent.Builder()
+                .setShowTitle(true)
+                .setDefaultColorSchemeParams(
+                    CustomTabColorSchemeParams.Builder().setToolbarColor(getColor(R.color.wt_green)).build()
+                )
+                .build()
+                .launchUrl(this, uri)
+        } catch (_: ActivityNotFoundException) {
+            openExternally(uri)
+        }
+    }
 
     private fun openExternally(uri: Uri) {
         try {
