@@ -1,0 +1,17 @@
+<resources>
+    <string name="app_name">Tree Apps</string>
+    <string name="choose_app">Tree App</string>
+    <string name="change_person">Person</string>
+    <string name="person_prompt">WikiTree ID, e.g. Windsor-1</string>
+    <string name="go">Go</string>
+    <string name="cancel">Cancel</string>
+    <string name="menu">More</string>
+    <string name="menu_login">Apps login</string>
+    <string name="menu_logout">Log out of Apps</string>
+    <string name="menu_reload">Reload</string>
+    <string name="menu_profile">Open profile on WikiTree</string>
+    <string name="menu_browser">Open this page in browser</string>
+    <string name="menu_show_bars">Show WikiTree page bars</string>
+    <string name="menu_hide_bars">Hide WikiTree page bars</string>
+    <string name="offline">Couldn\'t load WikiTree. Check your connection and tap Reload.</string>
+</resources>

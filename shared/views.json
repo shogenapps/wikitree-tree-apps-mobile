@@ -1,0 +1,138 @@
+{
+  "_comment": "Tree Apps offered by the shell before the page loads its own list. Keys are the #view= values from index.js in wikitree/wikitree-dynamic-tree.",
+  "defaultView": "fanchart",
+  "views": [
+    {
+      "key": "ahnentafel",
+      "title": "Ahnentafel Ancestor List"
+    },
+    {
+      "key": "ale",
+      "title": "Ancestor Lines Explorer"
+    },
+    {
+      "key": "webs",
+      "title": "Ancestor Webs"
+    },
+    {
+      "key": "ancestorsCemeteries",
+      "title": "Ancestors Cemeteries"
+    },
+    {
+      "key": "cc7",
+      "title": "CC7 Views"
+    },
+    {
+      "key": "cctree",
+      "title": "Compact Couple Ancestors"
+    },
+    {
+      "key": "ccdtree",
+      "title": "Compact Couple Descendants"
+    },
+    {
+      "key": "ccwebs",
+      "title": "Connection Checkers Web"
+    },
+    {
+      "key": "couples",
+      "title": "Couples Dynamic Tree"
+    },
+    {
+      "key": "descendants",
+      "title": "Descendants"
+    },
+    {
+      "key": "wt-dynamic-tree",
+      "title": "Dynamic Tree"
+    },
+    {
+      "key": "calendar",
+      "title": "Family Calendar"
+    },
+    {
+      "key": "familyGroupApp",
+      "title": "Family Group App"
+    },
+    {
+      "key": "familygroup",
+      "title": "Family Group View"
+    },
+    {
+      "key": "portraits",
+      "title": "Family Portraits"
+    },
+    {
+      "key": "timeline",
+      "title": "Family Timeline"
+    },
+    {
+      "key": "fanchart",
+      "title": "Fan Chart"
+    },
+    {
+      "key": "fandoku",
+      "title": "FanDoku game"
+    },
+    {
+      "key": "fractal",
+      "title": "Fractal Tree"
+    },
+    {
+      "key": "genealogyReport",
+      "title": "Genealogy Report"
+    },
+    {
+      "key": "heritage",
+      "title": "Heritage Charts"
+    },
+    {
+      "key": "lineageMatrix",
+      "title": "Lineage Matrix"
+    },
+    {
+      "key": "namecloud",
+      "title": "Name Cloud"
+    },
+    {
+      "key": "oneNameTrees",
+      "title": "One Name Trees"
+    },
+    {
+      "key": "printer-friendly",
+      "title": "Printer Friendly"
+    },
+    {
+      "key": "research",
+      "title": "Research"
+    },
+    {
+      "key": "slippyTree",
+      "title": "Slippy Tree"
+    },
+    {
+      "key": "stats",
+      "title": "Statistics"
+    },
+    {
+      "key": "superbig",
+      "title": "Super Tree"
+    },
+    {
+      "key": "surnames",
+      "title": "Surnames List"
+    },
+    {
+      "key": "timelineTree",
+      "title": "Timeline Tree"
+    },
+    {
+      "key": "wtPlusMaps",
+      "title": "WT+ Maps"
+    },
+    {
+      "key": "xtree",
+      "title": "X Family Tree"
+    }
+  ]
+}
