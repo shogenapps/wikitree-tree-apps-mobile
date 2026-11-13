@@ -255,6 +255,22 @@
         " #ccwebs-view #ccw-out .ccw-map-frame { flex: 1 1 0; min-height: 0; height: auto; }" +
         " }";
 
+    // Ancestor Lines Explorer on phones: the same markup as the Compact Couple trees (an Options
+    // panel and floating scroll arrows over a 1000px #view-container), so the same fix. The panel
+    // and arrows are hidden with the other controls (see CONTROLS).
+    CSS +=
+        " @media (max-width: 599px), (max-height: 599px) {" +
+        " html[data-wt-view=ale] main#main .col-lg-12 { display: flex !important; flex-direction: column; height: 100vh; }" +
+        " html[data-wt-view=ale] #view-container { flex: 1 1 0; min-height: 0 !important; height: auto !important; }" +
+        // The Options table is 940px wide; when shown, let its cells wrap so none is cut off.
+        " #aleFieldset { min-width: 0; max-width: 100%; box-sizing: border-box; }" +
+        " #aleFieldset #optionsTbl, #aleFieldset #optionsTbl > tbody { display: block; width: auto !important; }" +
+        " #aleFieldset #optionsTbl tr { display: flex; flex-wrap: wrap; column-gap: 12px; }" +
+        " #aleFieldset #optionsTbl td { display: block; width: auto !important; }" +
+        " #aleFieldset #optionsTbl td[colspan='5'] { flex-basis: 100%; }" +
+        " #aleFieldset #optionsTbl input[type=text] { width: 100% !important; max-width: 100%; box-sizing: border-box; }" +
+        " }";
+
     // Where each Tree App keeps its own controls. There is no shared convention, so apps are
     // added here one at a time. #info-panel is the shared panel used by Fan Chart, Fractal Tree,
     // Super Tree, the webs, Couples and others; the rest are app-specific.
@@ -265,7 +281,8 @@
         " #cc7Container > div:has(> #getPeopleButton), #cc7Container > #tableButtons," +
         " #cctContainer > #controlBlock," +
         " #ccdContainer > #controlBlock," +
-        " #ccwebs-view:has(.ccw-result) > .ccw-form";
+        " #ccwebs-view:has(.ccw-result) > .ccw-form," +
+        " #aleContainer > #controlBlock";
 
     // Controls that the shell's button should offer before the app hides them itself (see the
     // Connection Checkers Web block above).
