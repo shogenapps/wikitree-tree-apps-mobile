@@ -28,6 +28,25 @@
         " #view-container:has(> #fanChartSVG)" +
         " { flex: 1 1 auto; min-height: 0; height: auto !important; overflow: hidden !important; }" +
         " #view-container > #fanChartSVG { display: block; width: 100%; height: 100%; }" +
+        // Generations toolbar on phones (Fan Chart, FanDoku, Fractal Tree, Ancestor Webs and X-Tree
+        // share this markup): its table cells are sized 30%/5%/30%, so in portrait the icons and
+        // "[ 5 generations ]" wrapped into ragged lines. Keep each cell on one line, shrink the
+        // icons a little and show "[ 5 gens ]". The apps only rewrite the number in
+        // #numGensInBBar, so the word is hidden with font-size 0 on the cell and redrawn around
+        // the number with ::before/::after. Landscape is unchanged.
+        " @media (max-width: 600px) {" +
+        " table:has(> tbody > tr > td > #numGensInBBar) { width: 100% !important; table-layout: auto !important; }" +
+        " table:has(> tbody > tr > td > #numGensInBBar) > tbody > tr > td { width: auto !important; white-space: nowrap; padding: 2px !important; font-size: 12px; vertical-align: middle; }" +
+        " table:has(> tbody > tr > td > #numGensInBBar) > tbody > tr > td:first-child { padding-left: 4px !important; }" +
+        " table:has(> tbody > tr > td > #numGensInBBar) > tbody > tr > td:last-child { padding-right: 4px !important; }" +
+        " table:has(> tbody > tr > td > #numGensInBBar) img[style*=\"height:30px\"] { height: 20px !important; }" +
+        " table:has(> tbody > tr > td > #numGensInBBar) font[size=\"+2\"] { font-size: 16px; }" +
+        " td:has(> #numGensInBBar) { font-size: 0 !important; }" +
+        " #numGensInBBar { font-size: 12px; margin: 0 3px; }" +
+        " #numGensInBBar::before { content: \"[ \"; }" +
+        " #numGensInBBar::after { content: \" gens ]\"; }" +
+        " #loadingTD { font-size: 11px !important; }" +
+        " }" +
         // Ahnentafel: its header row (List/Report View, generations, Format, report options) was
         // wider than a phone, and its report centred a 1100px-wide column so both edges were
         // cut off. Wrap the header as whole items, keep labels on one line, and fit the report
