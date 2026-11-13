@@ -12,7 +12,7 @@ so fixes there appear in the app without a new release.
 | --- | --- |
 | `shared/` | Pieces any platform can use. `shell.js` is injected into the Tree Apps page to hide the site bars and report state (person, app, login) to the shell. `views.json` is the Tree App list used before the page loads its own. |
 | `android/` | The Android app (Kotlin, one Activity with a WebView). |
-| `ios/` | Not started yet. An iOS app would use a `WKWebView` and the same `shared/` files. |
+| `ios/` | The iPhone and iPad app (SwiftUI, a `WKWebView`), using the same `shared/` files. Open `ios/TreeApps.xcodeproj` in Xcode and run it in the Simulator. |
 
 ## The shell's bar
 
