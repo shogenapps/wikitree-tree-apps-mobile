@@ -304,6 +304,17 @@
         " #statsContainer > #stats-table th, #statsContainer > #stats-table td { padding: 4px 6px; }" +
         " }";
 
+    // Timeline Tree on phones: the app already sizes its timeline to the window and keeps its
+    // options in the shared info panel (hidden with the other controls). When the options are
+    // shown they pushed the timeline down and its bottom rows off the screen, so the view takes
+    // exactly the screen left below them and the timeline fills that.
+    CSS +=
+        " @media (max-width: 599px), (max-height: 599px) {" +
+        " html[data-wt-view=timelineTree] main#main .col-lg-12 { display: flex !important; flex-direction: column; height: 100vh; }" +
+        " html[data-wt-view=timelineTree] #view-container { flex: 1 1 0; min-height: 0 !important; height: auto !important; }" +
+        " html[data-wt-view=timelineTree] #ttreeContainer { height: 100% !important; }" +
+        " }";
+
     // Where each Tree App keeps its own controls. There is no shared convention, so apps are
     // added here one at a time. #info-panel is the shared panel used by Fan Chart, Fractal Tree,
     // Super Tree, the webs, Couples and others; the rest are app-specific.
