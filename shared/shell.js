@@ -329,7 +329,10 @@
         " #aleContainer > #controlBlock," +
         " .lineage-matrix > .lineage-matrix__generation-control, .lineage-matrix > .lineage-matrix__status," +
         " .col-lg-12 > main > #controlWrapper," +
-        " #statsContainer > #controlBlock";
+        " #statsContainer > #controlBlock," +
+        // Slippy Tree already fills the screen; its round Help and Full-screen buttons floated
+        // over the tree's top-left corner, so they are hidden too.
+        " .slippy-tree-container > .slippy-help-button, .slippy-tree-container > .slippy-fullscreen-button";
 
     // Controls that the shell's button should offer before the app hides them itself (see the
     // Connection Checkers Web block above).
@@ -370,7 +373,8 @@
         var list = document.querySelectorAll(CONTROLS + ", " + CONTROLS_LATER);
         for (var i = 0; i < list.length; i++) {
             var el = list[i];
-            if (!el.classList.contains("hidden") && el.innerHTML.trim() !== "") return true;
+            // An empty box is not a control, but an icon-only link or button (Slippy Tree's) is.
+            if (!el.classList.contains("hidden") && (el.innerHTML.trim() !== "" || el.matches("a, button"))) return true;
         }
         return false;
     }
