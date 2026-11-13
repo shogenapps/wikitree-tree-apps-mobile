@@ -67,6 +67,9 @@ class MainActivity : Activity() {
     private var pageViews: List<Pair<String, String>> = emptyList()
     private var showBars = false
 
+    /** Set while heading back to the tree from a site page, so a failed return can't loop. */
+    private var returning = false
+
     private var fileCallback: ValueCallback<Array<Uri>>? = null
 
     @SuppressLint("SetJavaScriptEnabled")
@@ -167,7 +170,19 @@ class MainActivity : Activity() {
 
             override fun onPageFinished(view: WebView, url: String) {
                 progress.visibility = View.GONE
-                if (Uri.parse(url).host == SITE_HOST) {
+                val uri = Uri.parse(url)
+                if (shouldReturnToTree(uri)) {
+                    // After logging in, the site lands on its own pages (e.g. the Navigation Home
+                    // Page). Go back to the tree; the Tree Apps page then completes the Apps login.
+                    if (!returning) {
+                        returning = true
+                        view.loadUrl(startUrl())
+                        return
+                    }
+                } else if (isTreeAppsUrl(uri)) {
+                    returning = false
+                }
+                if (uri.host == SITE_HOST) {
                     view.evaluateJavascript(shellJs, null)
                     view.evaluateJavascript("window.__wtShellSetBars && __wtShellSetBars($showBars)", null)
                 }
@@ -367,6 +382,13 @@ class MainActivity : Activity() {
         else "$APPS_URL${Uri.encode(currentId)}#name=${Uri.encode(currentId)}&view=${Uri.encode(currentView.ifBlank { defaultView })}"
 
     private fun isTreeAppsUrl(uri: Uri) = uri.host == SITE_HOST && uri.path?.startsWith("/apps") == true
+
+    /** True for a WikiTree site page that is neither a Tree App nor part of logging in. */
+    private fun shouldReturnToTree(uri: Uri): Boolean {
+        if (uri.host != SITE_HOST || isTreeAppsUrl(uri)) return false
+        val text = uri.toString().lowercase()
+        return !text.contains("login") && !text.contains("password")
+    }
 
     private fun openInSheet(uri: Uri) {
         try {

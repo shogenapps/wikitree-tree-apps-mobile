@@ -34,6 +34,8 @@ final class ShellModel: NSObject, ObservableObject, WKNavigationDelegate, WKUIDe
 
     private let defaultView: String
     private var urlObserver: AnyCancellable?
+    /// Set while heading back to the tree from a site page, so a failed return can't loop.
+    private var returning = false
     private static let siteHost = "www.wikitree.com"
     private static let appsURL = "https://www.wikitree.com/apps/"
 
@@ -213,6 +215,17 @@ final class ShellModel: NSObject, ObservableObject, WKNavigationDelegate, WKUIDe
 
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
         loading = false
+        if let url = webView.url, Self.shouldReturnToTree(from: url) {
+            // After logging in, the site lands on its own pages (e.g. the Navigation Home Page).
+            // Go back to the tree instead; the Tree Apps page then completes the Apps login itself.
+            if !returning {
+                returning = true
+                webView.load(URLRequest(url: startURL()))
+                return
+            }
+        } else if let url = webView.url, Self.isTreeApps(url) {
+            returning = false
+        }
         webView.evaluateJavaScript("window.__wtShellSetBars && __wtShellSetBars(\(showBars))")
         refreshState()
     }
@@ -245,6 +258,13 @@ final class ShellModel: NSObject, ObservableObject, WKNavigationDelegate, WKUIDe
 
     private static func isTreeApps(_ url: URL) -> Bool {
         url.host == siteHost && url.path.hasPrefix("/apps")
+    }
+
+    /// True for a WikiTree site page that is neither a Tree App nor part of logging in.
+    private static func shouldReturnToTree(from url: URL) -> Bool {
+        guard url.host == siteHost, !isTreeApps(url) else { return false }
+        let text = url.absoluteString.lowercased()
+        return !text.contains("login") && !text.contains("password")
     }
 
     private static func encode(_ text: String) -> String {
