@@ -72,6 +72,13 @@ any shell workaround.
 - **Source:** `views/ancestorLines/`.
 - **Seen:** Android shell. Shell workaround: controls start hidden.
 
+### WT+ Maps: legend and title collide on phones
+- **Symptom:** the Persons legend overlaps the "5000 km" scale bar at the bottom left. On Android
+  the red heading 'Data for Ancestors of "…"' at the top is cut off at both sides. For Beacall-6
+  the map shows no pins (also on iPhone).
+- **Source:** plus.wikitree.com map page shown in `views/wtPlusMaps/`.
+- **Seen:** Android shell (legend also on iPhone), 2026-11-13. Shell workaround: none.
+
 ## Phone layout
 
 ### All apps: #view-container is at least 1000px tall
