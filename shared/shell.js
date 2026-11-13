@@ -292,6 +292,18 @@
         " html[data-wt-view=oneNameTrees] #view-container { flex: 1 1 0; min-height: 0 !important; height: auto !important; overflow: auto; position: relative; }" +
         " }";
 
+    // Generational Statistics on phones: the Max Generations / Options panel is hidden with the
+    // other controls (see CONTROLS), and the view is exactly the screen rather than tree.css's
+    // 1000px. The statistics table is about 1030px wide, so it scrolls sideways on its own and
+    // the summary lines under it stay on screen.
+    CSS +=
+        " @media (max-width: 599px), (max-height: 599px) {" +
+        " html[data-wt-view=stats] main#main .col-lg-12 { display: flex !important; flex-direction: column; height: 100vh; }" +
+        " html[data-wt-view=stats] #view-container { flex: 1 1 0; min-height: 0 !important; height: auto !important; overflow: auto; }" +
+        " #statsContainer > #stats-table { display: block; max-width: 100%; overflow-x: auto; }" +
+        " #statsContainer > #stats-table th, #statsContainer > #stats-table td { padding: 4px 6px; }" +
+        " }";
+
     // Where each Tree App keeps its own controls. There is no shared convention, so apps are
     // added here one at a time. #info-panel is the shared panel used by Fan Chart, Fractal Tree,
     // Super Tree, the webs, Couples and others; the rest are app-specific.
@@ -305,7 +317,8 @@
         " #ccwebs-view:has(.ccw-result) > .ccw-form," +
         " #aleContainer > #controlBlock," +
         " .lineage-matrix > .lineage-matrix__generation-control, .lineage-matrix > .lineage-matrix__status," +
-        " .col-lg-12 > main > #controlWrapper";
+        " .col-lg-12 > main > #controlWrapper," +
+        " #statsContainer > #controlBlock";
 
     // Controls that the shell's button should offer before the app hides them itself (see the
     // Connection Checkers Web block above).
