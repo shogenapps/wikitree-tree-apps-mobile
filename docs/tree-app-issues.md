@@ -53,6 +53,16 @@ any shell workaround.
 - **Source:** plus.wikitree.com server; `views/wtPlusMaps/` for the frame height.
 - **Seen:** iPhone shell. Shell workaround: ATS exception for plus.wikitree.com in `ios/TreeApps/Info.plist`.
 
+### One Name Trees: no other app opens after it from a link change
+- **Symptom:** after One Name Trees has been open, changing `#view=` or `#name=` in the address
+  does nothing: the page stays on One Name Trees.
+- **Source:** `views/oneNameTrees/oneNameTrees.js` disables `#wt-id-text,#show-btn` while open
+  (lines ~379 and ~704) and enables them only in `close()`. `tree.js` `onHashChange` switches
+  view by clicking `#show-btn`, which a disabled button ignores, so `close()` never runs.
+- **Fix:** don't disable `#show-btn`, or have `onHashChange` call `onSubmit` directly.
+- **Seen:** Android shell with Knopp-385, 2026-11-14. Shell workaround: a `hashchange` listener
+  in `shared/shell.js` enables them again just before the page's own listener runs.
+
 ### Ahnentafel: Report View can go blank
 - **Symptom:** Report View goes blank after switching person or app through the page hash
   (no reload).
