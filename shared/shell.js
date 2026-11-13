@@ -146,6 +146,37 @@
         " #cc7Container > #ancReport { margin: 0 8px 8px !important; }" +
         " }";
 
+    // Family Group App on phones: familyGroupApp.css makes the view at least 730px wide, every
+    // table 800px with fixed 160px and 250px columns, and the app sets width: 800px on its
+    // tables, so the place column, wide biographies and source lines were cut off at the right.
+    // Fit the sheet to the screen: a narrower label column, a fixed date column, the place takes
+    // the rest and wraps, and anything long breaks rather than running off. The collapse
+    // triangles sit 438-490px left of centre, off a phone screen, so they stay out of sight.
+    CSS +=
+        " @media (max-width: 599px), (max-height: 599px) {" +
+        " #view-container.familyGroupApp { min-width: 0 !important; }" +
+        " #view-container.familyGroupApp table { width: 100% !important; max-width: 100% !important; margin-left: 0 !important; margin-right: 0 !important; }" +
+        // Each row of the sheet's tables is laid out as a grid with the same three columns, so
+        // the husband's, wife's and children's tables line up (as plain tables each one sized
+        // its date column to its own shortest dates). Cells spanning two or three columns keep
+        // their span.
+        " #view-container.familyGroupApp table.personTable > tbody > tr," +
+        " #view-container.familyGroupApp #familySheetFormTable > thead > tr" +
+        " { display: grid !important; grid-template-columns: 120px 100px minmax(0, 1fr); }" +
+        " #view-container.familyGroupApp table.personTable > tbody > tr > *," +
+        " #view-container.familyGroupApp #familySheetFormTable > thead > tr > *" +
+        " { display: block; width: auto !important; min-width: 0 !important; max-width: none !important; overflow-wrap: break-word; }" +
+        " #view-container.familyGroupApp table.personTable > tbody > tr > [colspan=\"2\"] { grid-column: span 2; }" +
+        " #view-container.familyGroupApp table.personTable > tbody > tr > [colspan=\"3\"] { grid-column: 1 / -1; }" +
+        " #view-container.familyGroupApp table.citationTable, #view-container.familyGroupApp .citationList table," +
+        " #view-container.familyGroupApp table.personTable table.wikitable { width: auto !important; }" +
+        " #view-container.familyGroupApp #notesAndSources, #view-container.familyGroupApp div.theBio," +
+        " #view-container.familyGroupApp .citationList { max-width: 100% !important; box-sizing: border-box; overflow-wrap: anywhere; }" +
+        " #view-container.familyGroupApp div.theBio table { max-width: 100% !important; }" +
+        " #view-container.familyGroupApp img { max-width: 100%; height: auto; }" +
+        " #view-container.familyGroupApp #fgaInfo, #view-container.familyGroupApp #fgaOptions { width: auto !important; max-width: calc(100% - 16px); box-sizing: border-box; }" +
+        " }";
+
     // Dynamic Tree and Couples Dynamic Tree put the first person at a fixed (500, 300), sized
     // for a desktop window. Once they have started, move that person to the middle of a smaller
     // screen. The trees' own zoom state (__zoom on their d3 container) is updated with it, so
