@@ -5,6 +5,7 @@ import android.app.Activity
 import android.app.AlertDialog
 import android.content.ActivityNotFoundException
 import android.content.Intent
+import android.content.pm.ActivityInfo
 import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Build
@@ -58,6 +59,12 @@ class MainActivity : Activity() {
     private val knownViews by lazy {
         val arr = viewsJson.getJSONArray("views")
         (0 until arr.length()).map { arr.getJSONObject(it).let { o -> o.getString("key") to o.getString("title") } }
+    }
+    /** Wide charts: on phones the shell turns to landscape and locks there while they are open. */
+    private val landscapeViews by lazy {
+        val arr = viewsJson.getJSONArray("views")
+        (0 until arr.length()).map { arr.getJSONObject(it) }
+            .filter { it.optBoolean("landscape") }.map { it.getString("key") }.toSet()
     }
     private val defaultView by lazy { viewsJson.optString("defaultView", "fanchart") }
 
@@ -277,6 +284,15 @@ class MainActivity : Activity() {
     private fun updateBar() {
         btnApp.text = viewTitle(currentView) ?: getString(R.string.choose_app)
         btnPerson.text = currentId.ifBlank { getString(R.string.change_person) }
+        applyOrientation()
+    }
+
+    private fun applyOrientation() {
+        val isPhone = resources.configuration.smallestScreenWidthDp < 600
+        val lock = isPhone && prefs.getBoolean(KEY_AUTO_ROTATE, true) && currentView in landscapeViews
+        val wanted = if (lock) ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+        else ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+        if (requestedOrientation != wanted) requestedOrientation = wanted
     }
 
     private fun views(): List<Pair<String, String>> = pageViews.ifEmpty { knownViews }
@@ -353,6 +369,10 @@ class MainActivity : Activity() {
         if (currentId.isNotBlank()) m.add(0, 3, 2, R.string.menu_profile)
         m.add(0, 4, 3, R.string.menu_browser)
         m.add(0, 5, 4, if (showBars) R.string.menu_hide_bars else R.string.menu_show_bars)
+        if (resources.configuration.smallestScreenWidthDp < 600) {
+            m.add(0, 6, 5, R.string.menu_auto_landscape).setCheckable(true)
+                .setChecked(prefs.getBoolean(KEY_AUTO_ROTATE, true))
+        }
         menu.setOnMenuItemClickListener {
             when (it.itemId) {
                 1 -> if (loggedIn) {
@@ -365,6 +385,10 @@ class MainActivity : Activity() {
                 2 -> web.reload()
                 3 -> openInSheet(Uri.parse("https://www.wikitree.com/wiki/${Uri.encode(currentId)}"))
                 4 -> web.url?.let { u -> openExternally(Uri.parse(u)) }
+                6 -> {
+                    prefs.edit().putBoolean(KEY_AUTO_ROTATE, !prefs.getBoolean(KEY_AUTO_ROTATE, true)).apply()
+                    applyOrientation()
+                }
                 5 -> {
                     showBars = !showBars
                     web.evaluateJavascript("window.__wtShellSetBars && __wtShellSetBars($showBars)", null)
@@ -434,6 +458,7 @@ class MainActivity : Activity() {
         private const val APPS_URL = "https://www.wikitree.com/apps/"
         private const val KEY_ID = "id"
         private const val KEY_VIEW = "view"
+        private const val KEY_AUTO_ROTATE = "autoRotate"
         private const val REQ_FILE = 1
 
     }

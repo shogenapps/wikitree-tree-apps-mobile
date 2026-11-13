@@ -13,5 +13,6 @@
     <string name="menu_browser">Open this page in browser</string>
     <string name="menu_show_bars">Show WikiTree page bars</string>
     <string name="menu_hide_bars">Hide WikiTree page bars</string>
+    <string name="menu_auto_landscape">Landscape for wide charts</string>
     <string name="offline">Couldn\'t load WikiTree. Check your connection and tap Reload.</string>
 </resources>

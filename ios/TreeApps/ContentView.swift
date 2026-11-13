@@ -9,6 +9,7 @@ struct ContentView: View {
     @EnvironmentObject private var shell: ShellModel
     @State private var askingPerson = false
     @State private var personDraft = ""
+    @State private var autoRotate = Rotation.auto
 
     var body: some View {
         VStack(spacing: 0) {
@@ -43,6 +44,8 @@ struct ContentView: View {
             SafariSheet(url: item.url).ignoresSafeArea()
         }
         .preferredColorScheme(.light)
+        .onAppear { Rotation.apply(for: shell.viewKey) }
+        .onChange(of: shell.viewKey) { key in Rotation.apply(for: key) }
     }
 
     /// The slim bar that replaces the site header and the Tree App / ID form.
@@ -94,6 +97,16 @@ struct ContentView: View {
                 }
                 Button(shell.showBars ? "Hide WikiTree page bars" : "Show WikiTree page bars") {
                     shell.toggleBars()
+                }
+                if Rotation.isPhone {
+                    Toggle("Landscape for wide charts", isOn: Binding(
+                        get: { autoRotate },
+                        set: { on in
+                            autoRotate = on
+                            Rotation.auto = on
+                            Rotation.apply(for: shell.viewKey)
+                        }
+                    ))
                 }
             } label: {
                 Image(systemName: "ellipsis")

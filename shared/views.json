@@ -1,5 +1,5 @@
 {
-  "_comment": "Tree Apps offered by the shell before the page loads its own list. Keys are the #view= values from index.js in wikitree/wikitree-dynamic-tree.",
+  "_comment": "Tree Apps offered by the shell before the page loads its own list. Keys are the #view= values from index.js in wikitree/wikitree-dynamic-tree. Views with landscape=true are wide charts: on phones the shell turns to landscape and locks there while they are open.",
   "defaultView": "fanchart",
   "views": [
     {
@@ -8,11 +8,13 @@
     },
     {
       "key": "ale",
-      "title": "Ancestor Lines Explorer"
+      "title": "Ancestor Lines Explorer",
+      "landscape": true
     },
     {
       "key": "webs",
-      "title": "Ancestor Webs"
+      "title": "Ancestor Webs",
+      "landscape": true
     },
     {
       "key": "ancestorsCemeteries",
@@ -24,19 +26,23 @@
     },
     {
       "key": "cctree",
-      "title": "Compact Couple Ancestors"
+      "title": "Compact Couple Ancestors",
+      "landscape": true
     },
     {
       "key": "ccdtree",
-      "title": "Compact Couple Descendants"
+      "title": "Compact Couple Descendants",
+      "landscape": true
     },
     {
       "key": "ccwebs",
-      "title": "Connection Checkers Web"
+      "title": "Connection Checkers Web",
+      "landscape": true
     },
     {
       "key": "couples",
-      "title": "Couples Dynamic Tree"
+      "title": "Couples Dynamic Tree",
+      "landscape": true
     },
     {
       "key": "descendants",
@@ -44,7 +50,8 @@
     },
     {
       "key": "wt-dynamic-tree",
-      "title": "Dynamic Tree"
+      "title": "Dynamic Tree",
+      "landscape": true
     },
     {
       "key": "calendar",
@@ -64,11 +71,13 @@
     },
     {
       "key": "timeline",
-      "title": "Family Timeline"
+      "title": "Family Timeline",
+      "landscape": true
     },
     {
       "key": "fanchart",
-      "title": "Fan Chart"
+      "title": "Fan Chart",
+      "landscape": true
     },
     {
       "key": "fandoku",
@@ -76,7 +85,8 @@
     },
     {
       "key": "fractal",
-      "title": "Fractal Tree"
+      "title": "Fractal Tree",
+      "landscape": true
     },
     {
       "key": "genealogyReport",
@@ -84,7 +94,8 @@
     },
     {
       "key": "heritage",
-      "title": "Heritage Charts"
+      "title": "Heritage Charts",
+      "landscape": true
     },
     {
       "key": "lineageMatrix",
@@ -108,7 +119,8 @@
     },
     {
       "key": "slippyTree",
-      "title": "Slippy Tree"
+      "title": "Slippy Tree",
+      "landscape": true
     },
     {
       "key": "stats",
@@ -116,7 +128,8 @@
     },
     {
       "key": "superbig",
-      "title": "Super Tree"
+      "title": "Super Tree",
+      "landscape": true
     },
     {
       "key": "surnames",
@@ -124,7 +137,8 @@
     },
     {
       "key": "timelineTree",
-      "title": "Timeline Tree"
+      "title": "Timeline Tree",
+      "landscape": true
     },
     {
       "key": "wtPlusMaps",
@@ -132,7 +146,8 @@
     },
     {
       "key": "xtree",
-      "title": "X Family Tree"
+      "title": "X Family Tree",
+      "landscape": true
     }
   ]
 }
