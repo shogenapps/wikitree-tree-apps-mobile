@@ -271,6 +271,16 @@
         " #aleFieldset #optionsTbl input[type=text] { width: 100% !important; max-width: 100%; box-sizing: border-box; }" +
         " }";
 
+    // Lineage Matrix on phones: tree.css makes #view-container 1000px tall, taller than a phone,
+    // so the page scrolled into empty space below a small matrix. Give the view exactly the
+    // screen; a bigger matrix scrolls inside it. The Generations picker and the status line
+    // above the matrix are hidden with the other controls (see CONTROLS).
+    CSS +=
+        " @media (max-width: 599px), (max-height: 599px) {" +
+        " html[data-wt-view=lineageMatrix] main#main .col-lg-12 { display: flex !important; flex-direction: column; height: 100vh; }" +
+        " html[data-wt-view=lineageMatrix] #view-container { flex: 1 1 0; min-height: 0 !important; height: auto !important; overflow: auto; }" +
+        " }";
+
     // Where each Tree App keeps its own controls. There is no shared convention, so apps are
     // added here one at a time. #info-panel is the shared panel used by Fan Chart, Fractal Tree,
     // Super Tree, the webs, Couples and others; the rest are app-specific.
@@ -282,7 +292,8 @@
         " #cctContainer > #controlBlock," +
         " #ccdContainer > #controlBlock," +
         " #ccwebs-view:has(.ccw-result) > .ccw-form," +
-        " #aleContainer > #controlBlock";
+        " #aleContainer > #controlBlock," +
+        " .lineage-matrix > .lineage-matrix__generation-control, .lineage-matrix > .lineage-matrix__status";
 
     // Controls that the shell's button should offer before the app hides them itself (see the
     // Connection Checkers Web block above).
