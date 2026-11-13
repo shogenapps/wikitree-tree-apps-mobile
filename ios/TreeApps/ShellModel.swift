@@ -51,8 +51,8 @@ final class ShellModel: NSObject, ObservableObject, WKNavigationDelegate, WKUIDe
            let data = try? Data(contentsOf: url),
            let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
             fallbackView = json["defaultView"] as? String ?? fallbackView
-            for item in json["views"] as? [[String: String]] ?? [] {
-                if let key = item["key"], let title = item["title"] {
+            for item in json["views"] as? [[String: Any]] ?? [] {
+                if let key = item["key"] as? String, let title = item["title"] as? String {
                     known.append(TreeApp(key: key, title: title))
                 }
             }
