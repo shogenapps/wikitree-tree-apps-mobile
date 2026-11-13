@@ -213,6 +213,17 @@
         if ((view === "wt-dynamic-tree" || view === "couples") && matchMedia(PHONE_QUERY).matches) recentre();
     }
 
+    // Compact Couple Ancestors on phones: tree.css makes #view-container 1000px tall, so on a
+    // landscape phone the page scrolled into empty space below a short tree. Give the view
+    // exactly the screen below any controls; a bigger tree scrolls inside it both ways. The
+    // Options panel and the floating scroll arrows (which sat over the tree) are hidden with the
+    // other controls (see CONTROLS); a drag scrolls the tree instead.
+    CSS +=
+        " @media (max-width: 599px), (max-height: 599px) {" +
+        " html[data-wt-view=cctree] main#main .col-lg-12 { display: flex !important; flex-direction: column; height: 100vh; }" +
+        " html[data-wt-view=cctree] #view-container { flex: 1 1 0; min-height: 0 !important; height: auto !important; }" +
+        " }";
+
     // Where each Tree App keeps its own controls. There is no shared convention, so apps are
     // added here one at a time. #info-panel is the shared panel used by Fan Chart, Fractal Tree,
     // Super Tree, the webs, Couples and others; the rest are app-specific.
@@ -220,7 +231,8 @@
         "#info-panel, header > :not([data-wt-site])," +
         " #ahnentafelOptions," +
         " #descendantsButtons, #helpEtc, #treeViewControls, #sharedControls, #reportControls," +
-        " #cc7Container > div:has(> #getPeopleButton), #cc7Container > #tableButtons";
+        " #cc7Container > div:has(> #getPeopleButton), #cc7Container > #tableButtons," +
+        " #cctContainer > #controlBlock";
 
     function tagSiteHeader() {
         var header = document.querySelector("header");
