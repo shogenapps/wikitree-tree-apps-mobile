@@ -281,6 +281,17 @@
         " html[data-wt-view=lineageMatrix] #view-container { flex: 1 1 0; min-height: 0 !important; height: auto !important; overflow: auto; }" +
         " }";
 
+    // One Name Trees on phones: four boxes of controls (name search, buttons, Table, Trees) took
+    // the top third of a portrait phone. The app runs the search for the current person's surname
+    // by itself, so the boxes are hidden with the other controls (see CONTROLS) and the results
+    // get the screen, scrolling inside the view rather than past tree.css's 1000px minimum.
+    CSS +=
+        " @media (max-width: 599px), (max-height: 599px) {" +
+        " html[data-wt-view=oneNameTrees] main#main .col-lg-12 { display: flex !important; flex-direction: column; height: 100vh; }" +
+        // position: relative keeps the absolutely placed [355] counts scrolling with the list.
+        " html[data-wt-view=oneNameTrees] #view-container { flex: 1 1 0; min-height: 0 !important; height: auto !important; overflow: auto; position: relative; }" +
+        " }";
+
     // Where each Tree App keeps its own controls. There is no shared convention, so apps are
     // added here one at a time. #info-panel is the shared panel used by Fan Chart, Fractal Tree,
     // Super Tree, the webs, Couples and others; the rest are app-specific.
@@ -293,7 +304,8 @@
         " #ccdContainer > #controlBlock," +
         " #ccwebs-view:has(.ccw-result) > .ccw-form," +
         " #aleContainer > #controlBlock," +
-        " .lineage-matrix > .lineage-matrix__generation-control, .lineage-matrix > .lineage-matrix__status";
+        " .lineage-matrix > .lineage-matrix__generation-control, .lineage-matrix > .lineage-matrix__status," +
+        " .col-lg-12 > main > #controlWrapper";
 
     // Controls that the shell's button should offer before the app hides them itself (see the
     // Connection Checkers Web block above).
