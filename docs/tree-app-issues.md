@@ -110,6 +110,20 @@ any shell workaround.
 - **Fix:** show a line such as "No portraits found for these ancestors."
 - **Seen:** iPhone shell, Knopp-385, 2026-11-14. Shell workaround: none.
 
+### Family Calendar: always shows the logged-in member
+- **Symptom:** switching it to another person changes back to the logged-in member about 0.3
+  seconds later, and the shell's WikiTree ID follows.
+- **Source:** `views/familyCalendar/familyCalendar.js`.
+- **Seen:** iPhone and Android shells, Knopp-385 while logged in as Beacall-6, 2026-11-14.
+  Shell workaround: none.
+
+### One Name Trees: late results land in the next app
+- **Symptom:** switching to another app while One Name Trees is still loading leaves its late
+  results drawn on the next app's page.
+- **Source:** `views/oneNameTrees/oneNameTrees.js` (its fetches are not cancelled when the view
+  is closed).
+- **Seen:** iPhone shell, 2026-11-14. Shell workaround: none (a fresh load clears it).
+
 ## Phone layout
 
 ### All apps: #view-container is at least 1000px tall
@@ -164,6 +178,22 @@ any shell workaround.
 - **Source:** `views/surnames/` CSS (`#surnamesList .gen0` ... `.gen6`).
 - **Seen:** iPhone shell, Knopp-385, 2026-11-14. Shell workaround: smaller sizes under
   `max-width: 599px` and `overflow-wrap: anywhere`, in `shared/shell.js`.
+
+### FanDoku: tiny names, and Rules on every start
+- **Symptom:** the board is built for wide screens, so on a phone the names are tiny until you
+  pinch. The Rules panel also opens on every fresh start.
+- **Source:** `views/fandoku/FandokuView.js`.
+- **Seen:** iPhone shell, 2026-11-14. Shell workaround: `fitBoard()` fits the board only.
+
+### Couples Tree: oldest couple at the edge in landscape
+- **Symptom:** on a landscape iPhone the oldest couple runs to the screen edge until you pan.
+- **Source:** `views/couplesTree/couples_tree.js`.
+- **Seen:** iPhone shell, 2026-11-14. Shell workaround: none (minor).
+
+### Timeline: earliest labels cut off at the left
+- **Symptom:** the earliest labels start cut off at the left edge until you pan.
+- **Source:** `views/timeline/`.
+- **Seen:** iPhone shell, 2026-11-14. Shell workaround: none.
 
 ## Touch and wording
 
