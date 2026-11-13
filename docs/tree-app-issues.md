@@ -84,6 +84,22 @@ any shell workaround.
 - **Source:** plus.wikitree.com map page shown in `views/wtPlusMaps/`.
 - **Seen:** Android shell (legend also on iPhone), 2026-11-13. Shell workaround: none.
 
+### Surnames List: "Gathering surnames" notice never goes away
+- **Symptom:** the green "Gathering surnames from ancestors to 6 generations..." notice stays above
+  the finished list.
+- **Source:** `views/surnames/surnames.js` calls `wtViewRegistry.showNotice(...)` but never
+  `wtViewRegistry.clearStatus()` once the list is drawn.
+- **Fix:** call `wtViewRegistry.clearStatus()` after drawing.
+- **Seen:** iPhone shell, Knopp-385, 2026-11-14. Shell workaround: `#wt-status.green` is hidden on
+  phones once `#surnamesList .gen0` exists, in `shared/shell.js`.
+
+### Family Portraits: blank page when there are no portraits
+- **Symptom:** for a person whose ancestors have no photos (Knopp-385) the view is empty, with no
+  message, so it looks broken.
+- **Source:** `views/familyPortraits/portraits.js` leaves `#photo-gallery` empty.
+- **Fix:** show a line such as "No portraits found for these ancestors."
+- **Seen:** iPhone shell, Knopp-385, 2026-11-14. Shell workaround: none.
+
 ## Phone layout
 
 ### All apps: #view-container is at least 1000px tall
@@ -131,6 +147,13 @@ any shell workaround.
 ### Ancestors Cemeteries: tiny pager
 - **Symptom:** the DataTables pager renders as "Previous1234567Next" with 9px tap targets.
 - **Source:** `views/ancestorsCemeteries/`. Shell workaround: in `shared/shell.js`.
+
+### Surnames List: big surnames run off a phone
+- **Symptom:** new surnames are 70px for the person, then 60, 50, 40 ... per generation. In a
+  ~190px portrait column "Walmsley" at 60px is 275px wide and was cut off at the right.
+- **Source:** `views/surnames/` CSS (`#surnamesList .gen0` ... `.gen6`).
+- **Seen:** iPhone shell, Knopp-385, 2026-11-14. Shell workaround: smaller sizes under
+  `max-width: 599px` and `overflow-wrap: anywhere`, in `shared/shell.js`.
 
 ## Touch and wording
 
