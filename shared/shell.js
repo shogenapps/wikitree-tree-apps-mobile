@@ -560,6 +560,22 @@
         " html[data-wt-view=surnames] #surnamesList { padding: 8px 6px !important; }" +
         " html[data-wt-view=surnames] #surnamesList .paternalColumn { margin-right: 6px !important; }" +
         " html[data-wt-view=surnames] #surnamesList .maternalColumn { margin-left: 6px !important; }" +
+        // Its green "Gathering surnames from ancestors to 6 generations..." notice is never
+        // cleared (the app does not call clearStatus), so it took 64px above the finished list.
+        // Hide it once the list has drawn.
+        " html[data-wt-view=surnames] body:has(#surnamesList .gen0) #wt-status.green { display: none !important; }" +
+        " }" +
+        // In portrait the app's sizes for new surnames (70px for the person, then 60, 50, 40 ...
+        // per generation) are too big for a ~190px column: "Walmsley" at 60px is 275px wide and
+        // ran off the right edge. Scale them down, and let any name still too long break.
+        " @media (max-width: 599px) {" +
+        " html[data-wt-view=surnames] #surnamesList .surnameItem { max-width: 100%; overflow-wrap: anywhere; }" +
+        " html[data-wt-view=surnames] #surnamesList .gen0 { font-size: 48px; }" +
+        " html[data-wt-view=surnames] #surnamesList .gen1 { font-size: 38px; }" +
+        " html[data-wt-view=surnames] #surnamesList .gen2 { font-size: 32px; }" +
+        " html[data-wt-view=surnames] #surnamesList .gen3 { font-size: 27px; }" +
+        " html[data-wt-view=surnames] #surnamesList .gen4 { font-size: 22px; }" +
+        " html[data-wt-view=surnames] #surnamesList .gen5 { font-size: 18px; }" +
         " }";
 
     // Ancestors Cemeteries on phones: the table's "Show 10 entries" and "Search" boxes are
