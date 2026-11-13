@@ -794,6 +794,17 @@
     // are in place before an app starts.
     setViewAttr();
     window.addEventListener("hashchange", setViewAttr);
+    // One Name Trees disables the Tree App bar's WikiTree ID box and Go button (#wt-id-text,
+    // #show-btn) while it is open, and enables them again only when closed. The page changes app
+    // or person on a new #view= or #name= by clicking that button, and a disabled button ignores
+    // the click, so after One Name Trees the shell's app and person switching did nothing. This
+    // listener is added before the page's own, so enable them just before it runs. Tree App bug,
+    // see docs/tree-app-issues.md.
+    window.addEventListener("hashchange", function () {
+        [].forEach.call(document.querySelectorAll("#wt-id-text:disabled, #show-btn:disabled"), function (e) {
+            e.disabled = false;
+        });
+    });
     window.addEventListener("resize", function () {
         var view = document.documentElement.getAttribute("data-wt-view");
         if (boardFit && BOARDS[view]) fitBoard(view, true);
