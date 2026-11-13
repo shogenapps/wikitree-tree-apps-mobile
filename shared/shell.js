@@ -27,7 +27,34 @@
         " { display: flex !important; flex-direction: column; height: 100vh; }" +
         " #view-container:has(> #fanChartSVG)" +
         " { flex: 1 1 auto; min-height: 0; height: auto !important; overflow: hidden !important; }" +
-        " #view-container > #fanChartSVG { display: block; width: 100%; height: 100%; }";
+        " #view-container > #fanChartSVG { display: block; width: 100%; height: 100%; }" +
+        // Ahnentafel: its header row (List/Report View, generations, Format, report options) was
+        // wider than a phone, and its report centred a 1100px-wide column so both edges were
+        // cut off. Wrap the header as whole items, keep labels on one line, and fit the report
+        // to the screen with a little side padding. Wide tables pasted from biographies scroll.
+        " #ahnentafelHeaderBox { flex-wrap: wrap !important; width: 100% !important; max-width: 100% !important; box-sizing: border-box; gap: 6px 8px; padding: 6px 8px !important; align-items: center !important; }" +
+        " #ahnentafelHeaderBox > * { margin: 0 !important; }" +
+        " #ahnentafelHeaderBox button, #ahnentafelHeaderBox input:not([type=checkbox]) { white-space: nowrap; font-size: 14px !important; height: 32px !important; line-height: 1 !important; margin: 0 !important; box-sizing: border-box; vertical-align: middle; }" +
+        " #ahnentafelHeaderBox button { padding: 0 10px !important; }" +
+        " #ahnentafelHeaderBox .more-generations-container { display: flex; align-items: center; gap: 6px; }" +
+        " #ahnentafelHeaderBox #generationsToAdd { width: 44px !important; padding: 0 4px !important; text-align: center; }" +
+        " #ahnentafelHeaderBox #ahnentafelAncestorListNavButtons { display: flex !important; gap: 4px; }" +
+        " #ahnentafelHeaderBox #ahnentafelAncestorListNavButtons button { width: 32px; padding: 0 !important; }" +
+        " #ahnentafelHeaderBox #help-button { margin-left: auto !important; }" +
+        " #ahnentafelHeaderBox #ahnentafelAncestorListNavButtons { order: 1; }" +
+        " #ahnentafelHeaderBox #help-button { order: 2; }" +
+        " #ahnentafelHeaderBox .more-generations-container { order: 3; }" +
+        " #ahnentafelHeaderBox #formatButton, #ahnentafelHeaderBox #reportImageToggle { order: 4; }" +
+        " #ahnentafelHeaderBox #reportImageToggle { display: flex; flex-wrap: wrap; align-items: center; max-width: 100%; gap: 4px 14px; }" +
+        " #ahnentafelHeaderBox #reportImageToggle label, #ahnentafelHeaderBox #reportImageToggle .breadcrumbs-control { display: inline-flex !important; align-items: center; gap: 4px; white-space: nowrap; font-size: 14px !important; margin: 0 !important; }" +
+        " #ahnentafelHeaderBox #reportImageToggle input[type=checkbox] { margin: 0 !important; width: 16px; height: 16px; }" +
+        " #ahnentafelHeaderBox #reportImageToggle .breadcrumbs-control button { width: 32px; padding: 0 !important; }" +
+        " main#main .col-lg-12 > main:has(+ #view-container.ahnentafelView) { padding: 0 !important; }" +
+        " #ahnentafelOptions { margin: 6px 8px !important; padding: 8px 10px !important; gap: 6px 12px !important; }" +
+        " #ahnentafelReportWrapper { padding: 12px !important; align-items: stretch !important; max-width: 100%; box-sizing: border-box; }" +
+        " #ahnentafelReport { width: auto !important; min-width: 0 !important; max-width: 100% !important; overflow-wrap: anywhere; }" +
+        " #ahnentafelReport img { max-width: 100%; height: auto; }" +
+        " #ahnentafelReport .table-wrapper, #ahnentafelReport pre { max-width: 100%; overflow-x: auto; }";
 
     // Where each Tree App keeps its own controls. There is no shared convention, so apps are
     // added here one at a time. #info-panel is the shared panel used by Fan Chart, Fractal Tree,
