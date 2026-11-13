@@ -26,6 +26,13 @@
             android:text="@string/choose_app" />
 
         <Button
+            android:id="@+id/btn_controls"
+            style="@style/BarButton"
+            android:contentDescription="@string/controls"
+            android:text="⚙"
+            android:textSize="18sp" />
+
+        <Button
             android:id="@+id/btn_person"
             style="@style/BarButton"
             android:ellipsize="end"

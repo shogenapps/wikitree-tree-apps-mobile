@@ -26,6 +26,7 @@ import android.widget.FrameLayout
 import android.widget.PopupMenu
 import android.widget.ProgressBar
 import android.widget.TextView
+import android.widget.Toast
 import androidx.browser.customtabs.CustomTabColorSchemeParams
 import androidx.browser.customtabs.CustomTabsIntent
 import androidx.webkit.WebViewCompat
@@ -48,6 +49,7 @@ class MainActivity : Activity() {
     private lateinit var web: WebView
     private lateinit var btnApp: Button
     private lateinit var btnPerson: Button
+    private lateinit var btnControls: Button
     private lateinit var progress: ProgressBar
     private lateinit var errorText: TextView
 
@@ -74,6 +76,12 @@ class MainActivity : Activity() {
     private var pageViews: List<Pair<String, String>> = emptyList()
     private var showBars = false
 
+    /** Whether the current Tree App's own controls are showing. They start hidden, per app. */
+    private var showControls = false
+    /** Whether the current Tree App has controls the shell knows how to hide. */
+    private var hasControls = false
+    private var controlsFor = ""
+
     /** Set while heading back to the tree from a site page, so a failed return can't loop. */
     private var returning = false
 
@@ -87,6 +95,7 @@ class MainActivity : Activity() {
         web = findViewById(R.id.web)
         btnApp = findViewById(R.id.btn_app)
         btnPerson = findViewById(R.id.btn_person)
+        btnControls = findViewById(R.id.btn_controls)
         progress = findViewById(R.id.progress)
         errorText = findViewById(R.id.error)
 
@@ -98,6 +107,7 @@ class MainActivity : Activity() {
 
         btnApp.setOnClickListener { pickApp() }
         btnPerson.setOnClickListener { askPerson() }
+        btnControls.setOnClickListener { if (hasControls) setControls(!showControls) }
         findViewById<Button>(R.id.btn_menu).setOnClickListener { showMenu(it) }
 
         setUpWebView()
@@ -192,8 +202,10 @@ class MainActivity : Activity() {
                 if (uri.host == SITE_HOST) {
                     view.evaluateJavascript(shellJs, null)
                     view.evaluateJavascript("window.__wtShellSetBars && __wtShellSetBars($showBars)", null)
+                    applyControls()
                 }
                 refreshState()
+                refreshSoon()
             }
 
             override fun doUpdateVisitedHistory(view: WebView, url: String, isReload: Boolean) {
@@ -263,6 +275,9 @@ class MainActivity : Activity() {
                 json.optString("id").takeIf { it.isNotBlank() }?.let { currentId = it }
                 json.optString("view").takeIf { it.isNotBlank() }?.let { currentView = it }
                 loggedIn = json.optBoolean("loggedIn")
+                val had = hasControls
+                hasControls = json.optBoolean("hasControls")
+                if (hasControls && !had && !showControls) hintControls()
                 val arr = json.optJSONArray("views")
                 if (arr != null && arr.length() > 0) {
                     pageViews = (0 until arr.length()).map {
@@ -284,7 +299,42 @@ class MainActivity : Activity() {
     private fun updateBar() {
         btnApp.text = viewTitle(currentView) ?: getString(R.string.choose_app)
         btnPerson.text = currentId.ifBlank { getString(R.string.change_person) }
+        if (controlsFor != currentView) {
+            // A different Tree App: use its own remembered choice (hidden unless shown before).
+            controlsFor = currentView
+            showControls = prefs.getBoolean("controls_$currentView", false)
+            hasControls = false
+            applyControls()
+            refreshSoon()
+        }
+        btnControls.alpha = if (hasControls) 1f else 0.35f
+        btnControls.setTextColor(getColor(if (showControls) R.color.wt_gold else R.color.on_green))
         applyOrientation()
+    }
+
+    private fun setControls(show: Boolean) {
+        showControls = show
+        prefs.edit().putBoolean("controls_$currentView", show).apply()
+        applyControls()
+        updateBar()
+    }
+
+    private fun applyControls() {
+        web.evaluateJavascript("window.__wtShellSetControls && __wtShellSetControls($showControls)", null)
+    }
+
+    /** The apps build their controls a moment after the page or app changes, so look again then. */
+    private fun refreshSoon() {
+        web.postDelayed({ refreshState() }, 1500)
+        web.postDelayed({ refreshState() }, 4000)
+    }
+
+    /** Explain the hidden controls the first few times they are hidden. */
+    private fun hintControls() {
+        val shown = prefs.getInt("controlsHintCount", 0)
+        if (shown >= 3) return
+        prefs.edit().putInt("controlsHintCount", shown + 1).apply()
+        Toast.makeText(this, R.string.controls_hint, Toast.LENGTH_LONG).show()
     }
 
     private fun applyOrientation() {

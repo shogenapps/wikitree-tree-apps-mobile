@@ -25,6 +25,10 @@ final class ShellModel: NSObject, ObservableObject, WKNavigationDelegate, WKUIDe
     @Published var loggedIn = false
     @Published var apps: [TreeApp]
     @Published var showBars = false
+    /// Whether the current Tree App's own controls are showing. They start hidden, per app.
+    @Published var showControls = false
+    /// Whether the current Tree App has controls the shell knows how to hide.
+    @Published var hasControls = false
     @Published var loading = false
     @Published var failed = false
     /// A page shown in a browser sheet over the tree (profiles, sources, help pages).
@@ -127,6 +131,23 @@ final class ShellModel: NSObject, ObservableObject, WKNavigationDelegate, WKUIDe
         }
     }
 
+    func setControls(_ show: Bool) {
+        showControls = show
+        UserDefaults.standard.set(show, forKey: "controls_" + viewKey)
+        applyControls()
+    }
+
+    private func applyControls() {
+        webView.evaluateJavaScript("window.__wtShellSetControls && __wtShellSetControls(\(showControls))")
+    }
+
+    /// The apps build their controls a moment after the page or app changes, so look again then.
+    private func refreshSoon() {
+        for delay in [1.5, 4.0] {
+            DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in self?.refreshState() }
+        }
+    }
+
     func toggleBars() {
         showBars.toggle()
         webView.evaluateJavaScript("window.__wtShellSetBars && __wtShellSetBars(\(showBars))")
@@ -146,7 +167,12 @@ final class ShellModel: NSObject, ObservableObject, WKNavigationDelegate, WKUIDe
             let parts = pair.split(separator: "=", maxSplits: 1).map(String.init)
             guard parts.count == 2, let value = parts[1].removingPercentEncoding, !value.isEmpty else { continue }
             if parts[0] == "name" { personId = value }
-            if parts[0] == "view" { viewKey = value }
+            if parts[0] == "view", viewKey != value {
+                viewKey = value
+                showControls = UserDefaults.standard.bool(forKey: "controls_" + value)
+                applyControls()
+                refreshSoon()
+            }
         }
         save()
     }
@@ -158,6 +184,7 @@ final class ShellModel: NSObject, ObservableObject, WKNavigationDelegate, WKUIDe
             if let id = json["id"] as? String, !id.isEmpty { self.personId = id }
             if let view = json["view"] as? String, !view.isEmpty { self.viewKey = view }
             self.loggedIn = json["loggedIn"] as? Bool ?? false
+            self.hasControls = json["hasControls"] as? Bool ?? false
             if let list = json["views"] as? [[String]], !list.isEmpty {
                 self.apps = list.compactMap { $0.count == 2 ? TreeApp(key: $0[0], title: $0[1]) : nil }
             }
@@ -227,7 +254,10 @@ final class ShellModel: NSObject, ObservableObject, WKNavigationDelegate, WKUIDe
             returning = false
         }
         webView.evaluateJavaScript("window.__wtShellSetBars && __wtShellSetBars(\(showBars))")
+        showControls = UserDefaults.standard.bool(forKey: "controls_" + viewKey)
+        applyControls()
         refreshState()
+        refreshSoon()
     }
 
     func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {

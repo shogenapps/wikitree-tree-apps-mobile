@@ -3,6 +3,7 @@ import SwiftUI
 import WebKit
 
 private let wtGreen = Color(red: 0x25 / 255, green: 0x42 / 255, blue: 0x2D / 255)
+private let wtGold = Color(red: 0xF2 / 255, green: 0xC1 / 255, blue: 0x4E / 255)
 private let wtTan = Color(red: 0xF7 / 255, green: 0xF6 / 255, blue: 0xF0 / 255)
 
 struct ContentView: View {
@@ -10,6 +11,7 @@ struct ContentView: View {
     @State private var askingPerson = false
     @State private var personDraft = ""
     @State private var autoRotate = Rotation.auto
+    @State private var showHint = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -17,8 +19,19 @@ struct ContentView: View {
             if shell.loading {
                 ProgressView().progressViewStyle(.linear).tint(wtGreen)
             }
-            ZStack {
+            ZStack(alignment: .top) {
                 WebViewHolder(webView: shell.webView)
+                if showHint {
+                    Label("This app's controls are hidden. Tap the sliders button or swipe down on the green bar to show them.",
+                          systemImage: "slider.horizontal.3")
+                        .font(.footnote)
+                        .foregroundColor(.white)
+                        .padding(10)
+                        .background(Color.black.opacity(0.8), in: RoundedRectangle(cornerRadius: 10))
+                        .padding(8)
+                        .transition(.opacity)
+                        .onTapGesture { showHint = false }
+                }
                 if shell.failed {
                     VStack(spacing: 12) {
                         Text("Couldn't load WikiTree. Check your connection.")
@@ -45,6 +58,14 @@ struct ContentView: View {
         }
         .preferredColorScheme(.light)
         .onAppear { Rotation.apply(for: shell.viewKey) }
+        .onChange(of: shell.hasControls) { has in
+            // Explain the hidden controls the first few times they are hidden.
+            let shown = UserDefaults.standard.integer(forKey: "controlsHintCount")
+            guard has, !shell.showControls, shown < 3 else { return }
+            UserDefaults.standard.set(shown + 1, forKey: "controlsHintCount")
+            withAnimation { showHint = true }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 5) { withAnimation { showHint = false } }
+        }
         .onChange(of: shell.viewKey) { key in Rotation.apply(for: key) }
     }
 
@@ -77,6 +98,20 @@ struct ContentView: View {
                 .frame(maxHeight: .infinity)
                 .contentShape(Rectangle())
             }
+
+            Button {
+                showHint = false
+                shell.setControls(!shell.showControls)
+            } label: {
+                Image(systemName: "slider.horizontal.3")
+                    .foregroundColor(shell.showControls ? wtGold : .white)
+                    .padding(.horizontal, 12)
+                    .frame(maxHeight: .infinity)
+                    .contentShape(Rectangle())
+            }
+            .opacity(shell.hasControls ? 1 : 0.35)
+            .disabled(!shell.hasControls)
+            .accessibilityLabel(shell.showControls ? "Hide this app's controls" : "Show this app's controls")
 
             Button(action: askPerson) {
                 Text(shell.personId.isEmpty ? "Person" : shell.personId)
@@ -121,6 +156,12 @@ struct ContentView: View {
         .foregroundColor(.white)
         .frame(height: 44)
         .background(wtGreen)
+        // Swipe down on the bar to show the app's controls, up to hide them.
+        .simultaneousGesture(DragGesture(minimumDistance: 12).onEnded { drag in
+            guard shell.hasControls, abs(drag.translation.height) > abs(drag.translation.width) else { return }
+            showHint = false
+            shell.setControls(drag.translation.height > 0)
+        })
     }
 
     private func askPerson() {
