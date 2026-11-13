@@ -124,6 +124,28 @@
         " }";
     var PHONE_QUERY = "(max-width: 599px), (max-height: 599px)";
 
+    // CC7 Views on phones: cc7.css gives #cc7Container a min-width of 650px, so its button rows
+    // ran off the right edge. Fit the container to the screen and wrap each button row as whole
+    // buttons. The people table stays as wide as it is and scrolls sideways inside the view, as
+    // before. Its two button rows are hidden with the other controls (see CONTROLS).
+    CSS +=
+        " @media (max-width: 599px), (max-height: 599px) {" +
+        " #cc7Container { min-width: 0 !important; }" +
+        " #cc7Container > div:has(> #getPeopleButton), #cc7Container > #tableButtons" +
+        " { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; padding: 4px 6px; margin: 0 !important; }" +
+        " #cc7Container > div:has(> #getPeopleButton) > *, #cc7Container > #tableButtons > :not(select)" +
+        " { margin: 0 !important; white-space: nowrap; }" +
+        // Keep the "Improve count accuracy" box with its label: a line break before it, then
+        // the box, label and settings/help icons on one line.
+        " #cc7Container > div:has(> #getPeopleButton)::after { content: \"\"; flex-basis: 100%; order: 1; }" +
+        " #cc7Container > div:has(> #getPeopleButton) > #getExtraDegrees," +
+        " #cc7Container > div:has(> #getPeopleButton) > #getExtraDegrees + label," +
+        " #cc7Container > div:has(> #getPeopleButton) > #adminButtons { order: 2; }" +
+        " #cc7Container > div:has(> #getPeopleButton) > #adminButtons { margin-left: auto !important; }" +
+        " #cc7Container > #degreesTable { margin: 6px 8px !important; width: auto !important; max-width: calc(100% - 16px); }" +
+        " #cc7Container > #ancReport { margin: 0 8px 8px !important; }" +
+        " }";
+
     // Dynamic Tree and Couples Dynamic Tree put the first person at a fixed (500, 300), sized
     // for a desktop window. Once they have started, move that person to the middle of a smaller
     // screen. The trees' own zoom state (__zoom on their d3 container) is updated with it, so
@@ -166,7 +188,8 @@
     var CONTROLS =
         "#info-panel, header > :not([data-wt-site])," +
         " #ahnentafelOptions," +
-        " #descendantsButtons, #helpEtc, #treeViewControls, #sharedControls, #reportControls";
+        " #descendantsButtons, #helpEtc, #treeViewControls, #sharedControls, #reportControls," +
+        " #cc7Container > div:has(> #getPeopleButton), #cc7Container > #tableButtons";
 
     function tagSiteHeader() {
         var header = document.querySelector("header");
