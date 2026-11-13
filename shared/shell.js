@@ -334,6 +334,7 @@
         "#info-panel, header > :not([data-wt-site])," +
         " #ahnentafelOptions," +
         " #descendantsButtons, #helpEtc, #treeViewControls, #sharedControls, #reportControls," +
+        " #couples-view-container > #ct-help-button," +
         " #cc7Container > div:has(> #getPeopleButton), #cc7Container > #tableButtons," +
         " #cctContainer > #controlBlock," +
         " #ccdContainer > #controlBlock," +
