@@ -100,7 +100,65 @@
         " #descendantsReportWrapper { padding: 12px !important; align-items: stretch !important; max-width: 100%; box-sizing: border-box; }" +
         " #descendantsReport { width: auto !important; min-width: 0 !important; max-width: 100% !important; overflow-wrap: anywhere; }" +
         " #descendantsReport img { max-width: 100%; height: auto; }" +
+        " }" +
+        // Dynamic Tree, Couples Dynamic Tree and Super Tree: tree.css gives #view-container a
+        // min-height of 1000px and the trees size their drawing area from it when they start,
+        // so on a phone most of the tree was below the screen, where a drag pans the tree
+        // instead of scrolling the page. Give them exactly the screen below any controls, and
+        // let the drawing area follow it on rotation. data-wt-view is set before the app starts
+        // (see setViewAttr); recentre() then moves the first person into view. Phones only
+        // (shorter side under 600px, matching the shell's own phone test); tablets keep the
+        // app's layout.
+        " @media (max-width: 599px), (max-height: 599px) {" +
+        " html[data-wt-view=wt-dynamic-tree] main#main .col-lg-12," +
+        " html[data-wt-view=couples] main#main .col-lg-12," +
+        " html[data-wt-view=superbig] main#main .col-lg-12" +
+        " { display: flex !important; flex-direction: column; height: 100vh; }" +
+        " html[data-wt-view=wt-dynamic-tree] #view-container," +
+        " html[data-wt-view=couples] #view-container," +
+        " html[data-wt-view=superbig] #view-container" +
+        " { flex: 1 1 0; min-height: 0 !important; height: auto !important; overflow: hidden !important; }" +
+        " html[data-wt-view=wt-dynamic-tree] #dynamic-tree-container," +
+        " html[data-wt-view=couples] #couples-view-container { height: 100%; overflow: hidden; }" +
+        " #dynamic-tree-container > svg, #couples-view-container > svg { display: block; width: 100%; height: 100%; }" +
         " }";
+    var PHONE_QUERY = "(max-width: 599px), (max-height: 599px)";
+
+    // Dynamic Tree and Couples Dynamic Tree put the first person at a fixed (500, 300), sized
+    // for a desktop window. Once they have started, move that person to the middle of a smaller
+    // screen. The trees' own zoom state (__zoom on their d3 container) is updated with it, so
+    // dragging and pinching carry on from the new position.
+    var TREE_ORIGIN = { x: 500, y: 300 };
+    var recentreTimer;
+    function recentre() {
+        var tries = 0;
+        clearInterval(recentreTimer);
+        var timer = (recentreTimer = setInterval(function () {
+            if (++tries > 80) return clearInterval(timer);
+            var box = document.querySelector("#dynamic-tree-container, #couples-view-container");
+            var t = box && box.__zoom;
+            // Keep looking for a while: switching person rebuilds the tree a moment later.
+            if (!t || !window.d3 || !d3.zoomIdentity) return;
+            if (t.k !== 1 || t.x !== TREE_ORIGIN.x || t.y !== TREE_ORIGIN.y) return;
+            var x = Math.round(Math.min(TREE_ORIGIN.x, box.clientWidth / 2));
+            // Vertically always the middle: in portrait the desktop 300 left the person high.
+            var y = Math.round(box.clientHeight / 2);
+            if (x === t.x && y === t.y) return;
+            box.__zoom = d3.zoomIdentity.translate(x, y);
+            var g = box.querySelector(":scope > svg > g");
+            if (g) g.setAttribute("transform", "translate(" + x + "," + y + ") scale(1)");
+            var layer = box.querySelector(":scope > .html-layer");
+            if (layer) layer.style.transform = "translate(" + x + "px, " + y + "px) scale(1)";
+        }, 250));
+    }
+
+    // The current Tree App's key (from #view=...) on <html>, for per-app rules above.
+    function setViewAttr() {
+        var m = /[#&]view=([^&]*)/.exec(location.hash);
+        var view = m ? decodeURIComponent(m[1]) : "";
+        document.documentElement.setAttribute("data-wt-view", view);
+        if ((view === "wt-dynamic-tree" || view === "couples") && matchMedia(PHONE_QUERY).matches) recentre();
+    }
 
     // Where each Tree App keeps its own controls. There is no shared convention, so apps are
     // added here one at a time. #info-panel is the shared panel used by Fan Chart, Fractal Tree,
@@ -207,6 +265,11 @@
         if (a) a.click();
     };
 
+    // Registered before the Tree Apps page's own hashchange listener, so the per-app rules
+    // are in place before an app starts.
+    setViewAttr();
+    window.addEventListener("hashchange", setViewAttr);
+    window.addEventListener("load", setViewAttr);
     apply();
     applyControls();
     if (document.readyState === "loading") {
