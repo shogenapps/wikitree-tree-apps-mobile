@@ -245,7 +245,9 @@
             // the player's zooming. Keep looking, though: switching person shows the old,
             // zoomed chart until the new one is drawn.
             var mine = refit && boardFit && boardFit.svg === svg && t.k === boardFit.k && t.x === boardFit.x && t.y === boardFit.y;
-            if (!mine && (t.k !== start.k || t.x !== svg.getAttribute("width") / 2)) return;
+            // Within half a pixel: on a 914px-wide Android screen Fractal Tree starts at
+            // x = 456.99999999999994, not 457, so an exact test never fitted it.
+            if (!mine && (t.k !== start.k || Math.abs(t.x - svg.getAttribute("width") / 2) > 0.5)) return;
             // While FanDoku sets up, all of its names show for a second or two and the board
             // looks far bigger: wait until it has hidden the ones it does not need (seven
             // generations need them all, so give up waiting after 10s). Then, for every app,
