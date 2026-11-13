@@ -11,6 +11,7 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.text.InputType
+import android.view.MotionEvent
 import android.view.View
 import android.view.WindowInsets
 import android.webkit.CookieManager
@@ -115,18 +116,71 @@ class MainActivity : Activity() {
         if (savedInstanceState != null) {
             web.restoreState(savedInstanceState)
         } else {
-            web.loadUrl(intent?.data?.takeIf { isTreeAppsUrl(it) }?.toString() ?: startUrl())
+            val link = intent?.data?.takeIf { isTreeAppsUrl(it) }
+            if (link != null) openLink(link) else web.loadUrl(startUrl())
         }
     }
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
-        intent.data?.takeIf { isTreeAppsUrl(it) }?.let { web.loadUrl(it.toString()) }
+        intent.data?.takeIf { isTreeAppsUrl(it) }?.let { openLink(it) }
+    }
+
+    /**
+     * Open a Tree Apps link. Its person and app are remembered first, because the site may send
+     * the page to the login page and the return trip to the tree then uses them. If the Tree Apps
+     * page is already open, a link that only differs in its #hash switches in place.
+     */
+    private fun openLink(uri: Uri) {
+        readHash(uri)
+        val current = Uri.parse(web.url ?: "")
+        if (isTreeAppsUrl(current) && uri.fragment != null && current.path == uri.path) {
+            web.evaluateJavascript("location.hash = ${JSONObject.quote("#" + uri.encodedFragment)}", null)
+        } else {
+            web.loadUrl(uri.toString())
+        }
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         web.saveState(outState)
+    }
+
+    /** Where a touch that started on the green bar went down, or null. */
+    private var barDownX = 0f
+    private var barDownY: Float? = null
+
+    /**
+     * Swipe down on the green bar to show the app's controls, up to hide them (as on iOS).
+     * Once a touch on the bar turns into a vertical swipe, the bar buttons get a cancel, so a
+     * swipe that starts on the Person or app button doesn't also press it.
+     */
+    override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
+        val bar = findViewById<View>(R.id.bar)
+        when (ev.actionMasked) {
+            MotionEvent.ACTION_DOWN -> {
+                val at = IntArray(2).also { bar.getLocationOnScreen(it) }
+                barDownY = if (ev.rawY >= at[1] && ev.rawY < at[1] + bar.height) ev.rawY else null
+                barDownX = ev.rawX
+            }
+            MotionEvent.ACTION_MOVE, MotionEvent.ACTION_UP -> barDownY?.let { startY ->
+                val dy = ev.rawY - startY
+                val dx = ev.rawX - barDownX
+                val swipe = kotlin.math.abs(dy) > 12 * resources.displayMetrics.density &&
+                    kotlin.math.abs(dy) > kotlin.math.abs(dx)
+                if (swipe) {
+                    barDownY = null
+                    val cancel = MotionEvent.obtain(ev).apply { action = MotionEvent.ACTION_CANCEL }
+                    super.dispatchTouchEvent(cancel)
+                    cancel.recycle()
+                    if (hasControls) setControls(dy > 0)
+                    return true
+                }
+                if (ev.actionMasked == MotionEvent.ACTION_UP) barDownY = null
+            }
+            MotionEvent.ACTION_CANCEL -> barDownY = null
+        }
+        return super.dispatchTouchEvent(ev)
     }
 
     @Deprecated("Deprecated in Java")
