@@ -274,12 +274,59 @@
         }, 250));
     }
 
+    // Super Tree on phones: once a tree is drawn the app zooms to fit (SuperBigFamView.reZoom).
+    // It fits the whole drawing's getBBox(), which also counts the hidden places it keeps for
+    // people not shown (1720 x 1900 units for Knopp-385's eight boxes), into the whole window,
+    // so on a phone each 300-unit box came out about 12px wide. After that automatic fit (not
+    // when the player taps the app's own zoom button, which still cycles its three settings),
+    // start instead at a readable scale (a box about 0.38 of the view's height) centred on the
+    // start person, whose box is found by its WikiTree ID. Drag and pinch carry on from there.
+    function superStart() {
+        var tries = 0;
+        var timer = setInterval(function () {
+            if (++tries > 240) return clearInterval(timer);
+            var app = window.SuperBigFamView;
+            if (!app || typeof app.reZoom !== "function") return;
+            clearInterval(timer);
+            if (app.reZoom.__wtShell) return;
+            var reZoom = app.reZoom;
+            app.reZoom = function () {
+                var result = reZoom.apply(this, arguments);
+                // A tap on the app's zoom button runs inside a click; the automatic fit does not.
+                var tapped = window.event && window.event.type === "click";
+                if (!tapped && document.documentElement.getAttribute("data-wt-view") === "superbig" && matchMedia(PHONE_QUERY).matches) readableStart(app);
+                return result;
+            };
+            app.reZoom.__wtShell = true;
+        }, 250);
+    }
+    function readableStart(app) {
+        var svg = document.getElementById("superbigChartSVG");
+        var m = /[#&]name=([^&]*)/.exec(location.hash);
+        if (!svg || !app.zoom || !window.d3 || !m) return;
+        var id = decodeURIComponent(m[1]);
+        var root = [].filter.call(svg.querySelectorAll("g.person"), function (g) {
+            return g.getBoundingClientRect().width > 0 && g.textContent.indexOf(id) >= 0;
+        })[0];
+        var t = root && /translate\(([-\d.]+),\s*([-\d.]+)\)/.exec(root.getAttribute("transform"));
+        var box = root && root.querySelector("foreignObject");
+        var div = box && box.firstElementChild;
+        if (!t || !div) return;
+        var w = svg.clientWidth, h = svg.clientHeight, boxH = div.offsetHeight || 240;
+        var k = Math.min(0.6, (0.38 * h) / boxH);
+        var cx = +t[1] + (+box.getAttribute("x") || 0) + (+box.getAttribute("width") || 0) / 2;
+        var cy = +t[2] + (+box.getAttribute("y") || 0) + boxH / 2;
+        svg.removeAttribute("viewBox");
+        d3.select(svg).call(app.zoom.transform, d3.zoomIdentity.translate(w / 2 - cx * k, h / 2 - cy * k).scale(k));
+    }
+
     // The current Tree App's key (from #view=...) on <html>, for per-app rules above.
     function setViewAttr() {
         var m = /[#&]view=([^&]*)/.exec(location.hash);
         var view = m ? decodeURIComponent(m[1]) : "";
         document.documentElement.setAttribute("data-wt-view", view);
         if ((view === "wt-dynamic-tree" || view === "couples") && matchMedia(PHONE_QUERY).matches) recentre();
+        if (view === "superbig" && Math.min(screen.width, screen.height) < 600) superStart();
         if (BOARDS[view] && Math.min(screen.width, screen.height) < 600) fitBoard(view);
         // Uses the screen, not PHONE_QUERY: at document start the page has no viewport yet.
         if (view === "calendar" && Math.min(screen.width, screen.height) < 600) addCalendarMonth();
