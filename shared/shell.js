@@ -224,6 +224,13 @@
         " html[data-wt-view=cctree] #view-container { flex: 1 1 0; min-height: 0 !important; height: auto !important; }" +
         " }";
 
+    // Compact Couple Descendants on phones: the same markup and fix as Compact Couple Ancestors.
+    CSS +=
+        " @media (max-width: 599px), (max-height: 599px) {" +
+        " html[data-wt-view=ccdtree] main#main .col-lg-12 { display: flex !important; flex-direction: column; height: 100vh; }" +
+        " html[data-wt-view=ccdtree] #view-container { flex: 1 1 0; min-height: 0 !important; height: auto !important; }" +
+        " }";
+
     // Where each Tree App keeps its own controls. There is no shared convention, so apps are
     // added here one at a time. #info-panel is the shared panel used by Fan Chart, Fractal Tree,
     // Super Tree, the webs, Couples and others; the rest are app-specific.
@@ -232,7 +239,8 @@
         " #ahnentafelOptions," +
         " #descendantsButtons, #helpEtc, #treeViewControls, #sharedControls, #reportControls," +
         " #cc7Container > div:has(> #getPeopleButton), #cc7Container > #tableButtons," +
-        " #cctContainer > #controlBlock";
+        " #cctContainer > #controlBlock," +
+        " #ccdContainer > #controlBlock";
 
     function tagSiteHeader() {
         var header = document.querySelector("header");
