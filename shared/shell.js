@@ -68,7 +68,7 @@
         " #ahnentafelHeaderBox #reportImageToggle label, #ahnentafelHeaderBox #reportImageToggle .breadcrumbs-control { display: inline-flex !important; align-items: center; gap: 4px; white-space: nowrap; font-size: 14px !important; margin: 0 !important; }" +
         " #ahnentafelHeaderBox #reportImageToggle input[type=checkbox] { margin: 0 !important; width: 16px; height: 16px; }" +
         " #ahnentafelHeaderBox #reportImageToggle .breadcrumbs-control button { width: 32px; padding: 0 !important; }" +
-        " main#main .col-lg-12 > main:has(+ #view-container.ahnentafelView) { padding: 0 !important; }" +
+        " main#main .col-lg-12 > main:has(+ #view-container) { padding: 0 !important; }" +
         " #ahnentafelOptions { margin: 6px 8px !important; padding: 8px 10px !important; gap: 6px 12px !important; }" +
         " #ahnentafelReportWrapper { padding: 12px !important; align-items: stretch !important; max-width: 100%; box-sizing: border-box; }" +
         " #ahnentafelReport { width: auto !important; min-width: 0 !important; max-width: 100% !important; overflow-wrap: anywhere; }" +
@@ -92,6 +92,14 @@
         " #ahnentafelReport .report-bio { margin-top: 8px; }" +
         " #ahnentafelReport .report-bio .family-summary { margin: 0 0 8px; padding-bottom: 8px; }" +
         " #ahnentafelReport .report-bio .family-summary p:empty { display: none; }" +
+        " }" +
+        // Descendants on phones: the app lines up birth and death in four fixed columns sized
+        // for a desktop, which runs off the right edge. Two columns instead: date, then place.
+        " @media (max-width: 600px) {" +
+        " #descendants .birthDeathDetails { grid-template-columns: auto 1fr !important; column-gap: 8px; margin-right: 8px; }" +
+        " #descendantsReportWrapper { padding: 12px !important; align-items: stretch !important; max-width: 100%; box-sizing: border-box; }" +
+        " #descendantsReport { width: auto !important; min-width: 0 !important; max-width: 100% !important; overflow-wrap: anywhere; }" +
+        " #descendantsReport img { max-width: 100%; height: auto; }" +
         " }";
 
     // Where each Tree App keeps its own controls. There is no shared convention, so apps are
@@ -100,7 +108,7 @@
     var CONTROLS =
         "#info-panel, header > :not([data-wt-site])," +
         " #ahnentafelOptions," +
-        " #treeViewControls, #sharedControls, #reportControls";
+        " #descendantsButtons, #helpEtc, #treeViewControls, #sharedControls, #reportControls";
 
     function tagSiteHeader() {
         var header = document.querySelector("header");
@@ -118,7 +126,10 @@
         if (!window.__wtShellShowControls && !el) {
             el = document.createElement("style");
             el.id = "wt-shell-controls";
-            el.textContent = CONTROLS + " { display: none !important; }";
+            // Prefixed so it outweighs app rules such as "body.report-mode #reportControls".
+            el.textContent = CONTROLS.split(",").map(function (sel) {
+                return "html.wt-shell-ready body " + sel.trim();
+            }).join(", ") + " { display: none !important; }";
             (document.head || document.documentElement).appendChild(el);
         } else if (window.__wtShellShowControls && el) {
             el.remove();
