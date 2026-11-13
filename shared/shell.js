@@ -7,12 +7,13 @@
     window.__wtShell = true;
 
     var CSS =
-        "#offcanvasNavbar, #searchBar, .tabs--wrapper, #subfooter, .bg--tan, footer" +
+        "#offcanvasNavbar, #searchBar, .tabs--wrapper, #subfooter, .bg--tan, body > footer" +
         " { display: none !important; }" +
         // Some apps (Ahnentafel, Family Group App) add their own buttons to the site <header>.
         // So hide only the site's own header content (tagged in tagSiteHeader) and keep the rest.
-        " html:not(.wt-shell-ready) header, header > [data-wt-site] { display: none !important; }" +
-        " header { padding: 0 !important; margin: 0 !important; min-height: 0 !important;" +
+        // Only the site's header and footer (directly in <body>): Genealogy Report has its own.
+        " html:not(.wt-shell-ready) body > header, body > header > [data-wt-site] { display: none !important; }" +
+        " body > header { padding: 0 !important; margin: 0 !important; min-height: 0 !important;" +
         " height: auto !important; background: none !important; border: 0 !important; }" +
         " main#main { padding: 0 !important; }" +
         " main#main > .row.mt-3 { margin-top: 0 !important; }" +
@@ -205,12 +206,91 @@
         }, 250));
     }
 
+    // FanDoku, Fractal Tree and Ancestor Webs start from a fixed view chosen for a desktop
+    // window (FanDoku at scale 0.45, Fractal Tree at 0.75, Ancestor Webs at 1, centred on a
+    // 1000px-tall board), so on a phone the chart ran off the sides or below the screen. Once
+    // the chart has drawn, zoom out (never in) to show all of it in the middle of the screen;
+    // pinch to zoom in. Each app's own zoom state (__zoom on its SVG) and its scale factor,
+    // which sizes its popups, are updated with it, so dragging and pinching carry on from
+    // there. Turning the phone fits it again (refit), unless the player has zoomed or dragged.
+    var BOARDS = { fandoku: { k: 0.45, app: "FandokuView" }, fractal: { k: 0.75, app: "FractalView" }, webs: { k: 1, app: "WebsView" } };
+    var boardTimer, boardFit;
+    // The chart's extent in its own units, from what is drawn on screen: the people's boxes
+    // are HTML inside zero-height foreignObjects, which getBBox() leaves out. Hidden parts
+    // measure 0 and are skipped, as is Fractal Tree's invisible line far below the tree.
+    function chartBox(svg, g, t) {
+        var r = svg.getBoundingClientRect();
+        var x1 = Infinity, y1 = Infinity, x2 = -Infinity, y2 = -Infinity;
+        [].forEach.call(g.querySelectorAll("path, line, circle, rect, text, foreignObject > *"), function (e) {
+            if (e.id === "lineAtBottomOfSVG") return;
+            var b = e.getBoundingClientRect();
+            if (!b.width && !b.height) return;
+            x1 = Math.min(x1, b.left); y1 = Math.min(y1, b.top);
+            x2 = Math.max(x2, b.right); y2 = Math.max(y2, b.bottom);
+        });
+        if (!(x1 < x2)) return { x: 0, y: 0, width: 0, height: 0 };
+        return { x: (x1 - r.left - t.x) / t.k, y: (y1 - r.top - t.y) / t.k, width: (x2 - x1) / t.k, height: (y2 - y1) / t.k };
+    }
+    function fitBoard(view, refit) {
+        var start = BOARDS[view];
+        var tries = 0, lastSize = "", same = 0;
+        clearInterval(boardTimer);
+        var timer = (boardTimer = setInterval(function () {
+            if (++tries > 120) return clearInterval(timer);
+            var svg = document.querySelector("#view-container > svg");
+            var g = svg && svg.querySelector(":scope > g");
+            var t = svg && svg.__zoom;
+            if (!g || !t || !window.d3 || !d3.zoomIdentity) return;
+            // Only the app's own starting view (or, on turning, the view set here): never undo
+            // the player's zooming. Keep looking, though: switching person shows the old,
+            // zoomed chart until the new one is drawn.
+            var mine = refit && boardFit && boardFit.svg === svg && t.k === boardFit.k && t.x === boardFit.x && t.y === boardFit.y;
+            if (!mine && (t.k !== start.k || t.x !== svg.getAttribute("width") / 2)) return;
+            // While FanDoku sets up, all of its names show for a second or two and the board
+            // looks far bigger: wait until it has hidden the ones it does not need (seven
+            // generations need them all, so give up waiting after 10s). Then, for every app,
+            // wait until the chart's size has held for three checks in a row.
+            var names = g.querySelectorAll("[id^=floatingNameHolder]");
+            var shown = [].filter.call(names, function (e) { return getComputedStyle(e).display !== "none"; });
+            if (names.length && shown.length === names.length && tries < 40) return;
+            var box = chartBox(svg, g, t);
+            var size = [box.x, box.y, box.width, box.height].join();
+            if (size !== lastSize) { lastSize = size; same = 0; return; }
+            if (++same < 3) return;
+            var w = svg.clientWidth, h = svg.clientHeight;
+            if (!box.width || !w || !h) return;
+            // Keep watching after fitting: while a person loads, the apps can put their
+            // starting view back, and then it is fitted again.
+            refit = false; lastSize = ""; same = 0;
+            var k = Math.max(0.05, Math.min(start.k, 0.96 * Math.min(w / box.width, h / box.height)));
+            var x = Math.round(w / 2 - (box.x + box.width / 2) * k);
+            var y = Math.round(h / 2 - (box.y + box.height / 2) * k);
+            svg.__zoom = d3.zoomIdentity.translate(x, y).scale(k);
+            g.setAttribute("transform", "translate(" + x + "," + y + ") scale(" + k + ")");
+            if (window[start.app]) window[start.app].currentScaleFactor = k;
+            boardFit = { svg: svg, k: k, x: x, y: y };
+        }, 250));
+    }
+
     // The current Tree App's key (from #view=...) on <html>, for per-app rules above.
     function setViewAttr() {
         var m = /[#&]view=([^&]*)/.exec(location.hash);
         var view = m ? decodeURIComponent(m[1]) : "";
         document.documentElement.setAttribute("data-wt-view", view);
         if ((view === "wt-dynamic-tree" || view === "couples") && matchMedia(PHONE_QUERY).matches) recentre();
+        if (BOARDS[view] && Math.min(screen.width, screen.height) < 600) fitBoard(view);
+        // Uses the screen, not PHONE_QUERY: at document start the page has no viewport yet.
+        if (view === "calendar" && Math.min(screen.width, screen.height) < 600) addCalendarMonth();
+    }
+
+    // Family Calendar on iPhones: with no month= in the link it works the month out with
+    // Date.parse("undefined 1"), which Chrome reads as January but Safari/WebKit cannot read,
+    // so the app stopped with "MONTHS[selectedMonth - 1]" and showed no dates. Name the current
+    // month in the link instead, only where that parse fails, before the app reads the link.
+    // This works around a Tree App bug (reported); it changes nothing on Android.
+    function addCalendarMonth() {
+        if (/[#&]month=/.test(location.hash) || !isNaN(Date.parse("undefined 1"))) return;
+        history.replaceState(history.state, "", location.hash + "&month=" + (new Date().getMonth() + 1));
     }
 
     // Compact Couple Ancestors on phones: tree.css makes #view-container 1000px tall, so on a
@@ -327,11 +407,199 @@
         " html[data-wt-view=xtree] #view-container { flex: 1 1 0; min-height: 0 !important; height: auto !important; overflow: auto; }" +
         " }";
 
+    // Family Calendar on phones: each month's list was a box 47% of the screen wide in the
+    // middle, so a date and name took four or five lines. It now takes the full width. The
+    // Display Mode picker and the twelve month links took the top quarter of a portrait phone,
+    // so they are hidden with the other controls (see CONTROLS); the shell's controls button
+    // brings them back to change month or mode, each on one line (the months scroll sideways).
+    // In Modern Calendar mode FullCalendar sizes the month at 1.35 times as wide as tall, so on a
+    // phone the weeks scrolled inside a 176px box; they now take their natural height.
+    // The calendar adds its picker to both of the page's <main>s but removes only one on leaving,
+    // so copies piled up at the end of the page and in other apps. Only the one in the inner
+    // <main>, which comes first and is the one the app listens to, is kept.
+    CSS +=
+        " @media (max-width: 599px), (max-height: 599px) {" +
+        " html[data-wt-view=calendar] #watchCalendar .content { width: auto !important; margin: 0 !important; padding: 0 12px 12px !important; }" +
+        " html[data-wt-view=calendar] #watchCalendar .calendar { height: auto; }" +
+        " html[data-wt-view=calendar] main > #view-options { display: flex; align-items: center; gap: 8px; padding: 4px 8px; }" +
+        " html[data-wt-view=calendar] main > #view-options > label { margin: 0; white-space: nowrap; }" +
+        " html[data-wt-view=calendar] #watchCalendar > .fourteen.columns.center { white-space: nowrap; overflow-x: auto; margin: 0 0 6px !important; padding: 0 4px; }" +
+        " html[data-wt-view=calendar] #watchCalendar > .fourteen.columns.center > span { font-size: 1.1em; }" +
+        " html[data-wt-view=calendar] #ancCalendar .fc-scroller { height: auto !important; overflow: visible !important; }" +
+        " html[data-wt-view=calendar] #ancCalendar .fc-day-grid .fc-row { min-height: 72px; }" +
+        " html[data-wt-view=calendar] #ancCalendar .fc-toolbar .fc-button { padding: 0 .5em; }" +
+        " html[data-wt-view=calendar] #ancCalendar .fc-toolbar h2 { font-size: 1.2em; }" +
+        " html:not([data-wt-view=calendar]) main > #view-options:has(> #display-mode), main#main > #view-options:has(> #display-mode) { display: none !important; }" +
+        " }";
+
+    // Family Group View on phones: the Date Format / Date Status / WikiTree IDs box took the top
+    // 150px of the screen, so it is hidden with the other controls (see CONTROLS). The family
+    // sheet had side margins of 10px, then 10px more, then 50px around the children's list, and
+    // the headings were indented by 5% and 8% on their first line only, so a wrapped couple's
+    // name looked ragged; the margins are trimmed and the headings start at the left edge. The
+    // empty <main> above the sheet keeps the site's 16px padding, a 32px blank band; it goes.
+    CSS +=
+        " @media (max-width: 599px), (max-height: 599px) {" +
+        " html[data-wt-view=familygroup] .col-lg-12 > main { padding: 0 !important; }" +
+        " html[data-wt-view=familygroup] #family_group { margin: 0 6px !important; width: auto !important; }" +
+        " html[data-wt-view=familygroup] #family_group :is(h2, h3), html[data-wt-view=familygroup] #children_list h2 { text-indent: 0 !important; margin: 8px 0 !important; }" +
+        " html[data-wt-view=familygroup] .fv_singleFamily { margin: 8px 0 !important; }" +
+        " html[data-wt-view=familygroup] #children_list { margin: 0 6px !important; padding: 0 6px; width: auto !important; }" +
+        " }";
+
+    // Family Portraits on phones: the gallery works as it is (rows of 150px-tall portraits that
+    // wrap); only the blank 32px band above it (the empty <main>'s padding) is removed.
+    CSS +=
+        " @media (max-width: 599px), (max-height: 599px) {" +
+        " html[data-wt-view=portraits] .col-lg-12 > main { padding: 0 !important; }" +
+        " html[data-wt-view=portraits] #photo-gallery { padding: 2px 0; }" +
+        " }";
+
+    // Genealogy Report on phones: its options form is 840px tall, more than a portrait screen,
+    // and the report builds itself without it, so the form is hidden with the other controls
+    // (see CONTROLS); "Done: ..." stays. A table wider than the screen (the Statistics table is
+    // 810px) was cut off at the right; each table now scrolls sideways on its own. The view's
+    // 16px side padding is halved.
+    CSS +=
+        " @media (max-width: 599px), (max-height: 599px) {" +
+        " html[data-wt-view=genealogyReport] #view-container.genealogyReportView { padding-left: 8px !important; padding-right: 8px !important; }" +
+        " html[data-wt-view=genealogyReport] .gr-report table { display: block; max-width: 100%; overflow-x: auto; }" +
+        " }";
+
+    // Name Cloud on phones: its settings and buttons took the top half of a portrait screen and
+    // left the cloud 206px tall. They are hidden with the other controls (see CONTROLS) and the
+    // cloud takes the rest of the screen; it is an SVG that scales to fit, so nothing is redrawn.
+    // The line under it ("54 surnames from 142 people ...") stays, in smaller type.
+    CSS +=
+        " @media (max-width: 599px), (max-height: 599px) {" +
+        " html[data-wt-view=namecloud] main#main .col-lg-12 { display: flex !important; flex-direction: column; height: 100vh; }" +
+        " html[data-wt-view=namecloud] #view-container { flex: 1 1 0; min-height: 0 !important; height: auto !important; overflow: hidden !important; }" +
+        " html[data-wt-view=namecloud] .ncloud-app { height: 100%; border: 0 !important; box-sizing: border-box; }" +
+        " html[data-wt-view=namecloud] .ncloud-dialog { height: 100%; }" +
+        " html[data-wt-view=namecloud] .ncloud-main { min-height: 0; }" +
+        " html[data-wt-view=namecloud] #ncloudStatus { padding: 4px 10px !important; font-size: 12px; }" +
+        " }";
+
+    // Printer Friendly on phones: its options box took the top 280px and is hidden with the
+    // other controls (see CONTROLS). The pedigree grid is 1054px wide (five generations of
+    // fixed columns, laid out for paper), so the view is exactly the screen and the title and
+    // grid scroll inside it both ways instead of the page running on for tree.css's 1000px.
+    CSS +=
+        " @media (max-width: 599px), (max-height: 599px) {" +
+        " html[data-wt-view=printer-friendly] main#main .col-lg-12 { display: flex !important; flex-direction: column; height: 100vh; }" +
+        " html[data-wt-view=printer-friendly] #view-container { flex: 1 1 0; min-height: 0 !important; height: auto !important; overflow: auto !important; }" +
+        " html[data-wt-view=printer-friendly] .col-lg-12 > main { padding: 0 !important; }" +
+        " html[data-wt-view=printer-friendly] #subject h2 { font-size: 1.1rem; margin: 6px 8px; }" +
+        // Its options box (shared with Family Group View) is tighter when shown: 200px, not 280px.
+        " .col-lg-12 > .familyViewOptions { row-gap: 6px !important; column-gap: 10px !important; padding: 6px 8px !important; margin: 4px 6px !important; align-content: flex-start !important; }" +
+        " .col-lg-12 > .familyViewOptions > * { margin: 0 !important; }" +
+        " }";
+
+    // Research on phones: it already fits. Its "Show Search Input" button, and the search fields
+    // it opens, are hidden with the other controls (see CONTROLS), and the 48px gap the button
+    // sat in above the introduction closes.
+    CSS +=
+        " @media (max-width: 599px), (max-height: 599px) {" +
+        " html[data-wt-view=research] #research-app > .research-search-header { margin-top: 8px !important; }" +
+        " }";
+
+    // Surnames List on phones: 20px of padding round the list and a 40px gap between the
+    // father's and mother's columns left each column 161px of a 402px screen, so long surnames
+    // in the large sizes ran close to the edge. Both are trimmed to give the columns ~190px.
+    CSS +=
+        " @media (max-width: 599px), (max-height: 599px) {" +
+        " html[data-wt-view=surnames] #surnamesList { padding: 8px 6px !important; }" +
+        " html[data-wt-view=surnames] #surnamesList .paternalColumn { margin-right: 6px !important; }" +
+        " html[data-wt-view=surnames] #surnamesList .maternalColumn { margin-left: 6px !important; }" +
+        " }";
+
+    // Ancestors Cemeteries on phones: the table's "Show 10 entries" and "Search" boxes are
+    // hidden with the other controls (see CONTROLS) and share one line when shown. The page
+    // links ran together as "Previous1234567Next" with 9px-wide numbers to tap; they are spaced
+    // and padded. The blank 32px band above the table (the empty <main>'s padding) goes.
+    CSS +=
+        " @media (max-width: 599px), (max-height: 599px) {" +
+        " html[data-wt-view=ancestorsCemeteries] .col-lg-12 > main { padding: 0 !important; }" +
+        " html[data-wt-view=ancestorsCemeteries] #cemeteriesTable_wrapper { padding: 4px 4px 12px; }" +
+        " html[data-wt-view=ancestorsCemeteries] #cemeteriesTable_length, html[data-wt-view=ancestorsCemeteries] #cemeteriesTable_filter { display: inline-block; width: auto; margin: 0 8px 4px 0; }" +
+        " html[data-wt-view=ancestorsCemeteries] #cemeteriesTable_filter input { width: 130px; }" +
+        " html[data-wt-view=ancestorsCemeteries] #cemeteriesTable_paginate { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; margin-top: 6px; }" +
+        " html[data-wt-view=ancestorsCemeteries] #cemeteriesTable_paginate > span { display: contents; }" +
+        " html[data-wt-view=ancestorsCemeteries] #cemeteriesTable_paginate .paginate_button { display: inline-block; min-width: 32px; padding: 6px 8px; text-align: center; border: 1px solid #ccc; border-radius: 6px; }" +
+        " html[data-wt-view=ancestorsCemeteries] #cemeteriesTable_paginate .paginate_button.current { background: #25422d; color: #fff; border-color: #25422d; }" +
+        " }";
+
+    // WT+ Maps on phones: its frame was a fixed 850px tall, so the bottom of the map and its
+    // controls were below the screen and the page scrolled instead of the map. The frame now
+    // fills exactly the screen below the Ancestors / Descendants / Nuclear family / Managed
+    // profiles buttons, which are hidden with the other controls (see CONTROLS).
+    CSS +=
+        " @media (max-width: 599px), (max-height: 599px) {" +
+        " html[data-wt-view=wtPlusMaps] .col-lg-12 > main { padding: 0 !important; }" +
+        " html[data-wt-view=wtPlusMaps] main#main .col-lg-12 { display: flex !important; flex-direction: column; height: 100vh; }" +
+        " html[data-wt-view=wtPlusMaps] #view-container { flex: 1 1 0; min-height: 0 !important; height: auto !important; overflow: hidden !important; display: flex; flex-direction: column; }" +
+        " html[data-wt-view=wtPlusMaps] #view-container > #map { flex: 1 1 0; min-height: 0; height: auto !important; border: 0; display: block; }" +
+        " }";
+
+    // FanDoku on phones: its board took a fixed 1000px height, so the page scrolled. The board
+    // now fills the screen below its generations toolbar (hidden with the other controls, see
+    // CONTROLS); fitBoard() (above) then shows the whole game at the start. In portrait its
+    // toolbar wrapped into ragged lines like the other generations toolbars, but its number sits
+    // one level deeper (in #preGameGens), so the shared rules above miss it: the same treatment
+    // here, giving "Start Game", the fan shapes, "[ 4 gens ]" and the settings on one line
+    // (in landscape it only needed keeping each cell on one line).
+    CSS +=
+        " @media (max-width: 599px), (max-height: 599px) {" +
+        " html[data-wt-view=fandoku] main#main .col-lg-12 { display: flex !important; flex-direction: column; height: 100vh; }" +
+        " html[data-wt-view=fandoku] #view-container { flex: 1 1 0; min-height: 0 !important; height: auto !important; overflow: hidden !important; }" +
+        " html[data-wt-view=fandoku] #view-container > svg { display: block; width: 100%; height: 100%; }" +
+        " #btnBarDIV > table:has(#preGameGens) > tbody > tr > td { white-space: nowrap; }" +
+        " }" +
+        " @media (max-width: 599px) {" +
+        " #btnBarDIV > table:has(#preGameGens) { table-layout: auto !important; }" +
+        " #btnBarDIV > table:has(#preGameGens) > tbody > tr > td { width: auto !important; white-space: nowrap; padding: 2px !important; font-size: 12px; vertical-align: middle; }" +
+        " #btnBarDIV > table:has(#preGameGens) > tbody > tr > td:first-child { padding-left: 4px !important; }" +
+        " #btnBarDIV > table:has(#preGameGens) > tbody > tr > td:last-child { padding-right: 4px !important; }" +
+        " #btnBarDIV > table:has(#preGameGens) button { padding: 3px 6px !important; font-size: 13px; }" +
+        " #btnBarDIV > table:has(#preGameGens) img[style*=\"height:30px\"] { height: 20px !important; }" +
+        " #btnBarDIV > table:has(#preGameGens) font[size=\"+2\"] { font-size: 16px; }" +
+        " #preGameGens { font-size: 0; }" +
+        " }";
+
+    // Fractal Tree on phones: like FanDoku, its chart took a fixed 1000px height, so the page
+    // scrolled. It now fills the screen below its generations toolbar (hidden with the other
+    // controls, see CONTROLS), and fitBoard() (above) shows the whole tree at the start.
+    CSS +=
+        " @media (max-width: 599px), (max-height: 599px) {" +
+        " html[data-wt-view=fractal] main#main .col-lg-12 { display: flex !important; flex-direction: column; height: 100vh; }" +
+        " html[data-wt-view=fractal] #view-container { flex: 1 1 0; min-height: 0 !important; height: auto !important; overflow: hidden !important; }" +
+        " html[data-wt-view=fractal] #view-container > svg { display: block; width: 100%; height: 100%; }" +
+        " }";
+
+    // Ancestor Webs on phones: the same 1000px board, centred halfway down it, so most of the
+    // web was below the screen. It now fills the screen below its toolbar (hidden with the
+    // other controls, see CONTROLS), and fitBoard() (above) shows the whole web at the start;
+    // its own zoom button still works as before. Its toolbar is too long for one line (about
+    // 870px even with the shared generations rules), and its three fixed-width cells wrapped
+    // into ragged lines: the groups now wrap as whole items, without the empty spacer cells,
+    // giving two rows in landscape and three in portrait ("Family:" stays with its menu).
+    CSS +=
+        " @media (max-width: 599px), (max-height: 599px) {" +
+        " html[data-wt-view=webs] #info-panel > table > tbody > tr { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; column-gap: 10px; row-gap: 2px; padding: 2px 6px; }" +
+        " html[data-wt-view=webs] #info-panel > table > tbody > tr > td { display: block; width: auto !important; padding: 0 !important; font-size: 12px; white-space: normal !important; }" +
+        " html[data-wt-view=webs] #info-panel > table > tbody > tr > td[width=\"5%\"] { display: none; }" +
+        " html[data-wt-view=webs] #FamilyTypeSelectorSpan { white-space: nowrap; }" +
+        " html[data-wt-view=webs] #info-panel > table font[size=\"+2\"] { font-size: 16px; }" +
+        " html[data-wt-view=webs] main#main .col-lg-12 { display: flex !important; flex-direction: column; height: 100vh; }" +
+        " html[data-wt-view=webs] #view-container { flex: 1 1 0; min-height: 0 !important; height: auto !important; overflow: hidden !important; }" +
+        " html[data-wt-view=webs] #view-container > svg { display: block; width: 100%; height: 100%; }" +
+        " }";
+
     // Where each Tree App keeps its own controls. There is no shared convention, so apps are
     // added here one at a time. #info-panel is the shared panel used by Fan Chart, Fractal Tree,
     // Super Tree, the webs, Couples and others; the rest are app-specific.
     var CONTROLS =
-        "#info-panel, header > :not([data-wt-site])," +
+        "#info-panel, header:not(main header) > :not([data-wt-site])," +
         " #ahnentafelOptions," +
         " #descendantsButtons, #helpEtc, #treeViewControls, #sharedControls, #reportControls," +
         " #couples-view-container > #ct-help-button," +
@@ -343,6 +611,14 @@
         " .lineage-matrix > .lineage-matrix__generation-control, .lineage-matrix > .lineage-matrix__status," +
         " .col-lg-12 > main > #controlWrapper," +
         " #statsContainer > #controlBlock," +
+        " main#main:has(#watchCalendar) #view-options:has(> #display-mode), #watchCalendar > .fourteen.columns.center," +
+        " .col-lg-12 > #familyViewOptions," +
+        " .genealogyReportView > .gr-form," +
+        " .ncloud-dialog > .ncloud-controls," +
+        " .col-lg-12 > #printerFriendlyOptions," +
+        " #view-container > #toggle-search, #research-app > .research-panel:has(> #research-form)," +
+        " #cemeteriesTable_wrapper > #cemeteriesTable_length, #cemeteriesTable_wrapper > #cemeteriesTable_filter," +
+        " #view-container > center:has(> #ancestors.button)," +
         // Slippy Tree already fills the screen; its round Help and Full-screen buttons floated
         // over the tree's top-left corner, so they are hidden too.
         " .slippy-tree-container > .slippy-help-button, .slippy-tree-container > .slippy-fullscreen-button";
@@ -453,6 +729,10 @@
     // are in place before an app starts.
     setViewAttr();
     window.addEventListener("hashchange", setViewAttr);
+    window.addEventListener("resize", function () {
+        var view = document.documentElement.getAttribute("data-wt-view");
+        if (boardFit && BOARDS[view]) fitBoard(view, true);
+    });
     window.addEventListener("load", setViewAttr);
     apply();
     applyControls();
