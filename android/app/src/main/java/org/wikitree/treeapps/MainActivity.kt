@@ -81,6 +81,10 @@ class MainActivity : Activity() {
     private var showControls = false
     /** Whether the current Tree App has controls the shell knows how to hide. */
     private var hasControls = false
+    /** The launch link already opened, so a recreation from saved state does not open it again. */
+    private var handledLink: String? = null
+    /** The #name=...&view=... of a link still to be confirmed once the page has finished loading. */
+    private var pendingHash: String? = null
     private var controlsFor = ""
 
     /** Set while heading back to the tree from a site page, so a failed return can't loop. */
@@ -113,17 +117,30 @@ class MainActivity : Activity() {
 
         setUpWebView()
 
-        if (savedInstanceState != null) {
+        val link = intent?.data?.takeIf { isTreeAppsUrl(it) }
+        // When Android recreates the app from saved state it hands back the intent the app was
+        // opened with. A link that was already opened before (the same launch) must not undo
+        // where the user has been since; a new link must win over the old page.
+        val handled = savedInstanceState?.getString(KEY_HANDLED_LINK)
+        if (savedInstanceState != null && (link == null || link.toString() == handled)) {
             web.restoreState(savedInstanceState)
+        } else if (link != null) {
+            openLink(link)
         } else {
-            val link = intent?.data?.takeIf { isTreeAppsUrl(it) }
-            if (link != null) openLink(link) else web.loadUrl(startUrl())
+            val start = startUrl()
+            pendingHash = Uri.parse(start).encodedFragment
+            web.loadUrl(start)
         }
+        handledLink = link?.toString()
     }
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
-        intent.data?.takeIf { isTreeAppsUrl(it) }?.let { openLink(it) }
+        setIntent(intent)
+        intent.data?.takeIf { isTreeAppsUrl(it) }?.let {
+            handledLink = it.toString()
+            openLink(it)
+        }
     }
 
     /**
@@ -133,9 +150,15 @@ class MainActivity : Activity() {
      */
     private fun openLink(uri: Uri) {
         readHash(uri)
+        pendingHash = uri.encodedFragment
         val current = Uri.parse(web.url ?: "")
-        if (isTreeAppsUrl(current) && uri.fragment != null && current.path == uri.path) {
+        // The Tree Apps page switches person and app on a hash change, whatever its path shows.
+        if (isTreeAppsUrl(current) && uri.fragment != null) {
             web.evaluateJavascript("location.hash = ${JSONObject.quote("#" + uri.encodedFragment)}", null)
+        } else if (uri.fragment != null && currentId.isNotBlank()) {
+            // Load it the way the shell's own start page is loaded (/apps/<ID>#name=...&view=...).
+            // A bare /apps/#... link loaded fresh showed the site's default app and person instead.
+            web.loadUrl(startUrl())
         } else {
             web.loadUrl(uri.toString())
         }
@@ -144,6 +167,7 @@ class MainActivity : Activity() {
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         web.saveState(outState)
+        handledLink?.let { outState.putString(KEY_HANDLED_LINK, it) }
     }
 
     /** Where a touch that started on the green bar went down, or null. */
@@ -252,6 +276,13 @@ class MainActivity : Activity() {
                     }
                 } else if (isTreeAppsUrl(uri)) {
                     returning = false
+                    // A link that arrived while the page was still starting up (the Apps login
+                    // can reload it) may have been overwritten by the site's default person and
+                    // app, so apply it again now; setting the same hash again does nothing.
+                    pendingHash?.let {
+                        pendingHash = null
+                        view.evaluateJavascript("location.hash = ${JSONObject.quote("#$it")}", null)
+                    }
                 }
                 if (uri.host == SITE_HOST) {
                     view.evaluateJavascript(shellJs, null)
@@ -562,6 +593,7 @@ class MainActivity : Activity() {
         private const val APPS_URL = "https://www.wikitree.com/apps/"
         private const val KEY_ID = "id"
         private const val KEY_VIEW = "view"
+        private const val KEY_HANDLED_LINK = "handledLink"
         private const val KEY_AUTO_ROTATE = "autoRotate"
         private const val REQ_FILE = 1
 
