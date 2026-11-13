@@ -156,8 +156,9 @@ struct ContentView: View {
         .foregroundColor(.white)
         .frame(height: 44)
         .background(wtGreen.ignoresSafeArea(edges: [.top, .horizontal]))
-        // Swipe down on the bar to show the app's controls, up to hide them.
-        .simultaneousGesture(DragGesture(minimumDistance: 12).onEnded { drag in
+        // Swipe down on the bar to show the app's controls, up to hide them. High priority so a
+        // swipe that starts on a button (Person, the app menu) doesn't also press it.
+        .highPriorityGesture(DragGesture(minimumDistance: 12).onEnded { drag in
             guard shell.hasControls, abs(drag.translation.height) > abs(drag.translation.width) else { return }
             showHint = false
             shell.setControls(drag.translation.height > 0)
