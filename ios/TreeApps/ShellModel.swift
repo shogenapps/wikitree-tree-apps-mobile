@@ -77,6 +77,9 @@ final class ShellModel: NSObject, ObservableObject, WKNavigationDelegate, WKUIDe
         webView.navigationDelegate = self
         webView.uiDelegate = self
         webView.allowsBackForwardNavigationGestures = true
+        #if DEBUG
+        if #available(iOS 16.4, *) { webView.isInspectable = true }
+        #endif
 
         // Fires for hash changes too, which is how the Tree Apps switch person and app.
         urlObserver = webView.publisher(for: \.url).sink { [weak self] url in

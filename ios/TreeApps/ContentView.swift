@@ -45,7 +45,7 @@ struct ContentView: View {
             }
         }
         .background(wtGreen.ignoresSafeArea(edges: .top))
-        .background(wtTan.ignoresSafeArea(edges: .bottom))
+        .background(wtTan.ignoresSafeArea())
         .alert("Person", isPresented: $askingPerson) {
             TextField("WikiTree ID, e.g. Windsor-1", text: $personDraft)
                 .textInputAutocapitalization(.never)
@@ -155,7 +155,7 @@ struct ContentView: View {
         .font(.subheadline)
         .foregroundColor(.white)
         .frame(height: 44)
-        .background(wtGreen)
+        .background(wtGreen.ignoresSafeArea(edges: [.top, .horizontal]))
         // Swipe down on the bar to show the app's controls, up to hide them.
         .simultaneousGesture(DragGesture(minimumDistance: 12).onEnded { drag in
             guard shell.hasControls, abs(drag.translation.height) > abs(drag.translation.width) else { return }

@@ -48,9 +48,12 @@ enum Rotation {
         let wanted: UIInterfaceOrientationMask = lock ? .landscape : .allButUpsideDown
         guard wanted != mask else { return }
         mask = wanted
+        // Leaving a wide chart: only unlocking would leave the screen sideways, so turn it back
+        // to portrait once. Rotation stays free, so a phone held sideways turns again by itself.
+        let turnTo: UIInterfaceOrientationMask = lock ? .landscape : (isPhone ? .portrait : wanted)
         for case let scene as UIWindowScene in UIApplication.shared.connectedScenes {
-            scene.requestGeometryUpdate(.iOS(interfaceOrientations: wanted)) { _ in }
             scene.windows.forEach { $0.rootViewController?.setNeedsUpdateOfSupportedInterfaceOrientations() }
+            scene.requestGeometryUpdate(.iOS(interfaceOrientations: turnTo)) { _ in }
         }
     }
 }
