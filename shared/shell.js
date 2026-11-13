@@ -231,6 +231,30 @@
         " html[data-wt-view=ccdtree] #view-container { flex: 1 1 0; min-height: 0 !important; height: auto !important; }" +
         " }";
 
+    // Connection Checkers Web on phones: the app opens on its form (game, IDs, "Show connections"),
+    // which is the app until there are results, so it stays. Once results exist the form is
+    // hidden with the other controls (see CONTROLS) and the results fill the screen: the zoom/save
+    // toolbar and the 1, 2, ... Map, Summary tabs share one line (the tabs scroll sideways), and
+    // the web itself scrolls both ways in the space left. The summary under it is kept to two
+    // lines that scroll. The form counts as controls from the start (see CONTROLS_LATER), so the
+    // shell's controls button works as soon as results appear.
+    CSS +=
+        " @media (max-width: 599px), (max-height: 599px) {" +
+        " html[data-wt-view=ccwebs] main#main .col-lg-12 { display: flex !important; flex-direction: column; height: 100vh; }" +
+        " html[data-wt-view=ccwebs] #view-container { flex: 1 1 0; min-height: 0 !important; height: auto !important; display: flex; flex-direction: column; }" +
+        " #ccwebs-view { flex: 1 1 0; min-height: 0; display: flex; flex-direction: column; overflow: auto; }" +
+        " #ccwebs-view > #ccw-out:has(.ccw-result) { flex: 1 0 100%; min-height: 0; display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); column-gap: 8px; align-items: end; }" +
+        " #ccwebs-view > #ccw-progress:empty { display: none; }" +
+        " #ccwebs-view #ccw-out .ccw-toolbar { margin: 0 0 4px; white-space: nowrap; }" +
+        " #ccwebs-view #ccw-out #ccw-tabs { flex-wrap: nowrap; overflow-x: auto; margin: 0; }" +
+        " #ccwebs-view #ccw-out #ccw-tabs button { flex: none; padding: 4px 10px; }" +
+        " #ccwebs-view #ccw-out .ccw-result.active { grid-column: 1 / -1; display: flex; flex-direction: column; min-height: 0; overflow: auto; margin: 0; align-self: stretch; }" +
+        " #ccwebs-view #ccw-out .ccw-result > h2 { margin: 2px 0; font-size: 16px; flex: none; }" +
+        " #ccwebs-view #ccw-out .ccw-diagram { flex: 1 1 0; min-height: 0; overflow: auto; }" +
+        " #ccwebs-view #ccw-out .ccw-summary { flex: none; max-height: 3em; overflow: auto; margin: 2px 0 0; }" +
+        " #ccwebs-view #ccw-out .ccw-map-frame { flex: 1 1 0; min-height: 0; height: auto; }" +
+        " }";
+
     // Where each Tree App keeps its own controls. There is no shared convention, so apps are
     // added here one at a time. #info-panel is the shared panel used by Fan Chart, Fractal Tree,
     // Super Tree, the webs, Couples and others; the rest are app-specific.
@@ -240,7 +264,12 @@
         " #descendantsButtons, #helpEtc, #treeViewControls, #sharedControls, #reportControls," +
         " #cc7Container > div:has(> #getPeopleButton), #cc7Container > #tableButtons," +
         " #cctContainer > #controlBlock," +
-        " #ccdContainer > #controlBlock";
+        " #ccdContainer > #controlBlock," +
+        " #ccwebs-view:has(.ccw-result) > .ccw-form";
+
+    // Controls that the shell's button should offer before the app hides them itself (see the
+    // Connection Checkers Web block above).
+    var CONTROLS_LATER = "#ccwebs-view > .ccw-form";
 
     function tagSiteHeader() {
         var header = document.querySelector("header");
@@ -274,7 +303,7 @@
     };
 
     function hasControls() {
-        var list = document.querySelectorAll(CONTROLS);
+        var list = document.querySelectorAll(CONTROLS + ", " + CONTROLS_LATER);
         for (var i = 0; i < list.length; i++) {
             var el = list[i];
             if (!el.classList.contains("hidden") && el.innerHTML.trim() !== "") return true;
