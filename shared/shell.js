@@ -315,6 +315,18 @@
         " html[data-wt-view=timelineTree] #ttreeContainer { height: 100% !important; }" +
         " }";
 
+    // X Family Tree on phones: its three-line title ("X-Chromosome Probability Tree for <name>")
+    // took 72px of a 319px landscape screen and repeats what the shell's bar already shows (the
+    // app and the person), so it is hidden and the tree starts at the top. The tree and the
+    // ancestor list below it scroll in the view as before; the options live in the shared info
+    // panel, hidden with the other controls.
+    CSS +=
+        " @media (max-width: 599px), (max-height: 599px) {" +
+        " html[data-wt-view=xtree] #XTreeTitle { display: none; }" +
+        " html[data-wt-view=xtree] main#main .col-lg-12 { display: flex !important; flex-direction: column; height: 100vh; }" +
+        " html[data-wt-view=xtree] #view-container { flex: 1 1 0; min-height: 0 !important; height: auto !important; overflow: auto; }" +
+        " }";
+
     // Where each Tree App keeps its own controls. There is no shared convention, so apps are
     // added here one at a time. #info-panel is the shared panel used by Fan Chart, Fractal Tree,
     // Super Tree, the webs, Couples and others; the rest are app-specific.
