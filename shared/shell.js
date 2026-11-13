@@ -54,7 +54,26 @@
         " #ahnentafelReportWrapper { padding: 12px !important; align-items: stretch !important; max-width: 100%; box-sizing: border-box; }" +
         " #ahnentafelReport { width: auto !important; min-width: 0 !important; max-width: 100% !important; overflow-wrap: anywhere; }" +
         " #ahnentafelReport img { max-width: 100%; height: auto; }" +
-        " #ahnentafelReport .table-wrapper, #ahnentafelReport pre { max-width: 100%; overflow-x: auto; }";
+        " #ahnentafelReport .table-wrapper, #ahnentafelReport pre { max-width: 100%; overflow-x: auto; }" +
+        // Ahnentafel report on phones. Self-contained so it can be offered upstream as a media
+        // query in views/ahnentafel/ahnentafel.css (wikitree-dynamic-tree); tablets keep the
+        // app's own layout. Smaller title, less space around headings and between people, and a
+        // hanging indent: the number sits in its own column so a wrapped name and the b./d.
+        // lines line up with the first word of the name. Fonts and colours are unchanged.
+        " @media (max-width: 600px) {" +
+        " #ahnentafelReportStatus { min-height: 0 !important; height: auto !important; padding: 0 !important; margin: 0 0 4px !important; }" +
+        " #ahnentafelReport .report-main-title { font-size: 1.25rem; margin: 8px 0 12px; }" +
+        " #ahnentafelReport .report-generation-header { font-size: 1.1rem; margin: 20px 0 10px; }" +
+        " #ahnentafelReport .report-person { padding: 10px 12px; margin: 0 0 12px; }" +
+        " #ahnentafelReport .report-person-header { display: grid; grid-template-columns: auto 1fr; column-gap: 0.5em; align-items: baseline; margin-bottom: 8px; }" +
+        " #ahnentafelReport .report-person-title, #ahnentafelReport .report-title-main { display: contents; }" +
+        " #ahnentafelReport .report-person-header > *, #ahnentafelReport .report-title-main > * { grid-column: 2; }" +
+        " #ahnentafelReport .report-title-main > .report-ahnentafel { grid-column: 1; margin: 0; min-width: 1.6em; }" +
+        " #ahnentafelReport .report-vitals { margin: 4px 0 0; }" +
+        " #ahnentafelReport .report-bio { margin-top: 8px; }" +
+        " #ahnentafelReport .report-bio .family-summary { margin: 0 0 8px; padding-bottom: 8px; }" +
+        " #ahnentafelReport .report-bio .family-summary p:empty { display: none; }" +
+        " }";
 
     // Where each Tree App keeps its own controls. There is no shared convention, so apps are
     // added here one at a time. #info-panel is the shared panel used by Fan Chart, Fractal Tree,
