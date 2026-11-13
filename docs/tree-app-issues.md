@@ -14,14 +14,19 @@ any shell workaround.
 - **Symptom:** "Show heritage" stays greyed out and nothing is drawn.
 - **Error:** `Uncaught (in promise) TypeError: Cannot read properties of undefined (reading 'Degrees')`
   at `findOverallHeritage (heritage.js:257)` from `gatherHeritage (heritage.js:206)`.
-- **Source:** `views/heritage/heritage.js`. `findOverallHeritage` starts with
-  `familyMembers[id]`, which is undefined, so the getPeople call returned no profile keyed by
-  the starting ID. `gatherHeritage` only guards against exactly one result
-  (`Object.keys(familyMembers).length == 1`), so zero results reach the crash, and the button is
-  never re-enabled. Also `Utils.hideShakingTree;` is missing its `()`, and the field list is one
-  string with BirthLocation twice.
-- **Still to find:** why getPeople returns nothing for the starting person (logged-in state,
-  privacy, or the ID form passed in).
+- **Cause (found 2026-11-14):** `getFamilyMembers` passes the fields as ONE string,
+  `["BirthLocation, BirthLocation, Name, Derived.BirthName, Father, Mother, Meta"]`. The API
+  uses only the first name in it, so each profile comes back with `BirthLocation` and nothing
+  else. getPeople itself works: for Beacall-6 at 5 generations it returns 63 profiles keyed by
+  numeric Id (status "", resultByKey `{"Beacall-6": {"Id": 19076274}}`), and the start profile
+  is found. But it has no `Meta`, so `familyMember["Meta"]["Degrees"]` at heritage.js:257
+  throws. The same call with the fields as a list (`["BirthLocation", "Name",
+  "Derived.BirthName", "Father", "Mother", "Meta"]`) returns Name, BirthName, Father, Mother and
+  `Meta: {Degrees: 0}`.
+- **Source:** `views/heritage/heritage.js`, `getFamilyMembers`.
+- **Fix:** pass the fields as separate array items (and drop the duplicate BirthLocation). The
+  crash also leaves the button disabled and the shaking tree showing. Also,
+  `Utils.hideShakingTree;` in `gatherHeritage` is missing its `()`.
 - **Seen:** Android shell, 2026-11-13; on iPhone "Show heritage" also stayed greyed out for
   Young-32264. Shell workaround: none.
 
