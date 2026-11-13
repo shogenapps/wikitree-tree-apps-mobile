@@ -14,9 +14,20 @@
         " html:not(.wt-shell-ready) header, header > [data-wt-site] { display: none !important; }" +
         " header { padding: 0 !important; margin: 0 !important; min-height: 0 !important;" +
         " height: auto !important; background: none !important; border: 0 !important; }" +
-        " main#main { padding-top: 0 !important; }" +
+        " main#main { padding: 0 !important; }" +
         " main#main > .row.mt-3 { margin-top: 0 !important; }" +
-        " #view-container { margin: 0 !important; }";
+        // Use the full width: main#main's 16px side padding and the container's border made
+        // a tan margin and a grey line down each side on phones.
+        " #view-container { margin: 0 !important; border: 0 !important; }" +
+        // Fan Chart: its SVG takes its height from its viewBox, so at full width a landscape
+        // phone is too short to show it and the centre falls off the bottom. Give it exactly the
+        // screen below its toolbar instead; the SVG scales the whole chart to fit, and the
+        // chart's own drag and pinch zoom still work inside that box.
+        " main#main .col-lg-12:has(> #view-container > #fanChartSVG)" +
+        " { display: flex !important; flex-direction: column; height: 100vh; }" +
+        " #view-container:has(> #fanChartSVG)" +
+        " { flex: 1 1 auto; min-height: 0; height: auto !important; overflow: hidden !important; }" +
+        " #view-container > #fanChartSVG { display: block; width: 100%; height: 100%; }";
 
     // Where each Tree App keeps its own controls. There is no shared convention, so apps are
     // added here one at a time. #info-panel is the shared panel used by Fan Chart, Fractal Tree,
