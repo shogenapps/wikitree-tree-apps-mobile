@@ -5,5 +5,19 @@
 	<!-- Keys Xcode can't generate from build settings; merged with the generated Info.plist. -->
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<false/>
+	<!-- WT+ Maps shows a map from plus.wikitree.com in a frame. That server offers only TLS 1.2
+	     without forward secrecy, which App Transport Security refuses, so the frame stayed blank.
+	     Allow that one host without forward secrecy (it is still HTTPS with a valid certificate). -->
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSExceptionDomains</key>
+		<dict>
+			<key>plus.wikitree.com</key>
+			<dict>
+				<key>NSExceptionRequiresForwardSecrecy</key>
+				<false/>
+			</dict>
+		</dict>
+	</dict>
 </dict>
 </plist>
