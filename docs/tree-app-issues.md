@@ -131,12 +131,16 @@ any shell workaround.
   within a couple of seconds, with Beacall-6) leaves the next app's page showing the Ahnentafel
   list instead: Fan Chart's chart was wiped and the Ahnentafel list drawn under the "Fan Chart"
   name. Ahnentafel's button bar (`#ahnentafelHeaderBox`) is also added to the page header, so it
-  shows up with every later app's controls.
+  shows up with every later app's controls. The same happens when Ahnentafel is asked for
+  another person mid-load: open Beacall-6, switch to Knopp-385 after a second, and Knopp-385's
+  list ends with 54 people, its own 5 followed by Beacall-6's generations 2 to 6.
 - **Source:** `views/ahnentafel/ahnentafel.js`. `displayAncestorList()` carries on after
   `await WikiTreeAPI.getPeople(...)` without checking whether the view was closed meanwhile, then
   writes into the view container and calls `addHeaderBox()`. `close()` has already run by then.
 - **Seen:** iPhone shell, 2026-11-14. Shell workaround: `shared/shell.js` reloads the page (same
-  person and app) when Ahnentafel's list or bar turns up under another app.
+  person and app) when Ahnentafel's list or bar turns up under another app, and loads
+  `/apps/<new id>` afresh when the person changes while Ahnentafel stays open. Person switch
+  reported by the Android thread.
 
 ### One Name Trees: late results land in the next app
 - **Symptom:** switching to another app while One Name Trees is still loading leaves its late

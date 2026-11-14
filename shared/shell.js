@@ -891,6 +891,28 @@
     // docs/tree-app-issues.md. When its parts turn up under another app, load the page again
     // (same #name= and #view=) so the app that was asked for starts afresh. At most once in 15
     // seconds; otherwise just remove them.
+    // The same happens when Ahnentafel is asked for another person before the first person's list
+    // is built: the first person's late results are added to the new person's list. The page
+    // cannot tell which results are whose, so on a new #name= while Ahnentafel stays open, load
+    // the page again with the new #name=. This runs before the page's own hashchange listener;
+    // whatever that listener starts is dropped by the reload.
+    var hashPart = function (key, hash) {
+        var m = new RegExp("[#&]" + key + "=([^&]*)").exec(hash === undefined ? location.hash : hash);
+        return m ? decodeURIComponent(m[1]) : "";
+    };
+    var lastHash = { name: hashPart("name"), view: hashPart("view") };
+    // Load /apps/<new id>, as a fresh start does, rather than the old person's /apps/<id>.
+    var reloadFor = function () {
+        var path = "/apps/" + encodeURIComponent(hashPart("name"));
+        if (hashPart("name") && location.pathname !== path) location.replace(path + location.hash);
+        else location.reload();
+    };
+    window.addEventListener("hashchange", function () {
+        var now = { name: hashPart("name"), view: hashPart("view") };
+        var redo = now.view === "ahnentafel" && lastHash.view === "ahnentafel" && now.name !== lastHash.name;
+        lastHash = now;
+        if (redo) reloadFor();
+    });
     var STALE = { ahnentafel: "#ahnentafelAncestorList, #ahnentafelHeaderBox" };
     var staleTimer = null;
     var clearStale = function () {
@@ -902,7 +924,7 @@
             try { last = +sessionStorage.getItem("wtShellStaleReload") || 0; } catch (e) {}
             if (Date.now() - last > 15000) {
                 try { sessionStorage.setItem("wtShellStaleReload", String(Date.now())); } catch (e) {}
-                location.reload();
+                reloadFor();
             } else {
                 [].forEach.call(document.querySelectorAll(STALE[key]), function (e) { e.remove(); });
             }
