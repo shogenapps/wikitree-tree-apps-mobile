@@ -789,6 +789,10 @@
     window.__wtShellSetControls = function (show) {
         window.__wtShellShowControls = !!show;
         applyControls();
+        // FanDoku, Fractal Tree and Ancestor Webs: the controls take room from the top of the
+        // view, so fit the chart again (as on turning) or its bottom row was cut off.
+        var view = document.documentElement.getAttribute("data-wt-view");
+        if (boardFit && BOARDS[view]) fitBoard(view, true);
     };
 
     function hasControls() {
