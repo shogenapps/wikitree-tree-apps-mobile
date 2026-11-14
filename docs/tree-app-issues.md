@@ -95,6 +95,14 @@ any shell workaround.
 - **Source:** plus.wikitree.com map page shown in `views/wtPlusMaps/`.
 - **Seen:** Android shell (legend also on iPhone), 2026-11-13. Shell workaround: none.
 
+### WT+ Maps: layer list covers the map on phones
+- **Symptom:** on iPhone the map opens with its layer list ("Profile", "Migration") filling about
+  nine tenths of the screen, so only a strip of the map shows. Tapping the left menu button
+  closes it and the whole map appears. The red heading is also cut off at both sides on iPhone.
+- **Source:** plus.wikitree.com map page (`/maps`) shown in `views/wtPlusMaps/`. It is a
+  cross-origin frame, so the shell can't close the list.
+- **Seen:** iPhone shell, Thomas-30484, 2026-11-14. Shell workaround: none.
+
 ### Surnames List: "Gathering surnames" notice never goes away
 - **Symptom:** the green "Gathering surnames from ancestors to 6 generations..." notice stays above
   the finished list.
@@ -117,6 +125,18 @@ any shell workaround.
 - **Source:** `views/familyCalendar/familyCalendar.js`.
 - **Seen:** iPhone and Android shells, Knopp-385 while logged in as Beacall-6, 2026-11-14.
   Shell workaround: none.
+
+### Ahnentafel: late results replace the next app
+- **Symptom:** opening another app while Ahnentafel is still building its list (for example
+  within a couple of seconds, with Beacall-6) leaves the next app's page showing the Ahnentafel
+  list instead: Fan Chart's chart was wiped and the Ahnentafel list drawn under the "Fan Chart"
+  name. Ahnentafel's button bar (`#ahnentafelHeaderBox`) is also added to the page header, so it
+  shows up with every later app's controls.
+- **Source:** `views/ahnentafel/ahnentafel.js`. `displayAncestorList()` carries on after
+  `await WikiTreeAPI.getPeople(...)` without checking whether the view was closed meanwhile, then
+  writes into the view container and calls `addHeaderBox()`. `close()` has already run by then.
+- **Seen:** iPhone shell, 2026-11-14. Shell workaround: `shared/shell.js` reloads the page (same
+  person and app) when Ahnentafel's list or bar turns up under another app.
 
 ### One Name Trees: late results land in the next app
 - **Symptom:** switching to another app while One Name Trees is still loading leaves its late

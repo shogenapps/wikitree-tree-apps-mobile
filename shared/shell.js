@@ -885,6 +885,33 @@
             e.disabled = false;
         });
     });
+    // Ahnentafel keeps loading after it is closed. If another app is opened before its list is
+    // built, it then writes its list over the new app and adds its button bar to the page header,
+    // so for example Fan Chart showed the Ahnentafel list. Tree App bug, see
+    // docs/tree-app-issues.md. When its parts turn up under another app, load the page again
+    // (same #name= and #view=) so the app that was asked for starts afresh. At most once in 15
+    // seconds; otherwise just remove them.
+    var STALE = { ahnentafel: "#ahnentafelAncestorList, #ahnentafelHeaderBox" };
+    var staleTimer = null;
+    var clearStale = function () {
+        staleTimer = null;
+        var view = document.documentElement.getAttribute("data-wt-view");
+        for (var key in STALE) {
+            if (key === view || !document.querySelector(STALE[key])) continue;
+            var last = 0;
+            try { last = +sessionStorage.getItem("wtShellStaleReload") || 0; } catch (e) {}
+            if (Date.now() - last > 15000) {
+                try { sessionStorage.setItem("wtShellStaleReload", String(Date.now())); } catch (e) {}
+                location.reload();
+            } else {
+                [].forEach.call(document.querySelectorAll(STALE[key]), function (e) { e.remove(); });
+            }
+            return;
+        }
+    };
+    new MutationObserver(function () {
+        if (!staleTimer) staleTimer = setTimeout(clearStale, 1000);
+    }).observe(document.documentElement, { childList: true, subtree: true });
     window.addEventListener("resize", function () {
         var view = document.documentElement.getAttribute("data-wt-view");
         if (boardFit && BOARDS[view]) fitBoard(view, true);
