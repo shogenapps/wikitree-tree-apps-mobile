@@ -200,6 +200,21 @@ any shell workaround.
 - **Seen:** iPhone and Android shells, 2026-11-14 (Knopp-385). Shell workaround: `fitTimeline()`
   widens the window until every label is inside.
 
+### Timeline Tree: labels at the right edge cut off
+- **Symptom:** in landscape on a phone, the name labels of people born latest (for example
+  "Ann Fawcett (1855-?)" for Knopp-385) run past the right edge of the timeline and are cut off.
+  The timeline is drawn to the window width, and labels to the right of a bar are not kept inside it.
+- **Source:** `views/timelineTree/timelineTree.js`.
+- **Seen:** Android shell, 2026-11-14 (Knopp-385, Beacall-6). Shell workaround: none.
+
+### Family Group App: empty rows for a living person
+- **Symptom:** for Ian Beacall (Beacall-6, logged in as himself) the Born, Father and Mother rows
+  are empty, while Family Group View shows his birth date, place and parents. Knopp-385
+  (not living) shows everything, so it looks like the app's handling of living people or
+  privacy rather than the data.
+- **Source:** `views/familyGroupApp/`.
+- **Seen:** Android shell, 2026-11-14. Shell workaround: none. Not checked in a desktop browser.
+
 ## Touch and wording
 
 ### "Mouse wheel" in help text
