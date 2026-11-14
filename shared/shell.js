@@ -320,6 +320,34 @@
         d3.select(svg).call(app.zoom.transform, d3.zoomIdentity.translate(w / 2 - cx * k, h / 2 - cy * k).scale(k));
     }
 
+    // X Family Tree on phones (see its CSS block): while it is open, scale its SVG to show all
+    // generations in the view, never larger than drawn and never below 0.45 (smaller is
+    // unreadable; then the view scrolls, starting with the start person in view). Refitted when
+    // the app redraws (person, generations) or the view changes size (turning, controls).
+    var xtreeTimer;
+    function fitXTree() {
+        clearInterval(xtreeTimer);
+        var last = "";
+        xtreeTimer = setInterval(function () {
+            if (document.documentElement.getAttribute("data-wt-view") !== "xtree") return clearInterval(xtreeTimer);
+            var svg = document.getElementById("outerSVG");
+            var view = document.getElementById("view-container");
+            if (!svg || !view || !matchMedia(PHONE_QUERY).matches) return;
+            var w = +svg.getAttribute("width"), h = +svg.getAttribute("height");
+            var cw = view.clientWidth, ch = view.clientHeight;
+            var key = [w, h, cw, ch, svg.getAttribute("data-wt-fit") || ""].join();
+            if (!w || !h || !cw || !ch || key === last) return;
+            var k = Math.min(1, Math.max(0.45, Math.min(cw / w, (ch - 4) / h)));
+            svg.setAttribute("viewBox", "0 0 " + w + " " + h);
+            svg.style.width = Math.round(w * k) + "px";
+            svg.style.height = Math.round(h * k) + "px";
+            svg.setAttribute("data-wt-fit", k.toFixed(3));
+            last = [w, h, cw, ch, svg.getAttribute("data-wt-fit")].join();
+            view.scrollTop = Math.max(0, h * k - ch);
+            view.scrollLeft = Math.max(0, (w * k - cw) / 2);
+        }, 300);
+    }
+
     // The current Tree App's key (from #view=...) on <html>, for per-app rules above.
     function setViewAttr() {
         var m = /[#&]view=([^&]*)/.exec(location.hash);
@@ -328,6 +356,7 @@
         if ((view === "wt-dynamic-tree" || view === "couples") && matchMedia(PHONE_QUERY).matches) recentre();
         if (view === "superbig" && Math.min(screen.width, screen.height) < 600) superStart();
         if (BOARDS[view] && Math.min(screen.width, screen.height) < 600) fitBoard(view);
+        if (view === "xtree" && Math.min(screen.width, screen.height) < 600) fitXTree();
         // Uses the screen, not PHONE_QUERY: at document start the page has no viewport yet.
         if (view === "calendar" && Math.min(screen.width, screen.height) < 600) addCalendarMonth();
     }
@@ -454,6 +483,11 @@
         " html[data-wt-view=xtree] #XTreeTitle { display: none; }" +
         " html[data-wt-view=xtree] main#main .col-lg-12 { display: flex !important; flex-direction: column; height: 100vh; }" +
         " html[data-wt-view=xtree] #view-container { flex: 1 1 0; min-height: 0 !important; height: auto !important; overflow: auto; }" +
+        // The tree is a fixed-size SVG (100px per generation, 140px per box across) with the
+        // start person at the bottom, so on a phone the person and their parents were below the
+        // screen and only the empty boxes of unknown ancestors showed. fitXTree scales it to the
+        // view; the app's own centring transform is replaced by margin auto.
+        " html[data-wt-view=xtree] #outerSVG[data-wt-fit] { transform: none !important; display: block; margin: 0 auto; }" +
         " }";
 
     // Family Calendar on phones: each month's list was a box 47% of the screen wide in the
