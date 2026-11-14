@@ -193,6 +193,20 @@
         " #view-container.familyGroupApp #fgaInfo, #view-container.familyGroupApp #fgaOptions { width: auto !important; max-width: calc(100% - 16px); box-sizing: border-box; }" +
         " }";
 
+    // Family Group App on phones: the role rows ("Husband:", "Wife:", "1st Child:") and the
+    // "Married:" heading are 1.4 times the page's text size, bold, and the role may not wrap,
+    // so in portrait the label was wider than its 120px column and ran into the name beside it.
+    // Make them a little smaller (still larger than the other rows) and let them wrap if they
+    // must, so they stay inside their column. The names keep their size.
+    CSS +=
+        " @media (max-width: 599px), (max-height: 599px) {" +
+        // (The role row itself is 1.4em, so its label is set relative to that: 0.8em of it is
+        // about the same 1.1 times the text size as the "Married:" heading.)
+        " #view-container.familyGroupApp tr.roleRow > th { font-size: 0.8em !important; }" +
+        " #view-container.familyGroupApp tr.marriedRow > th { font-size: 1.1em !important; }" +
+        " #view-container.familyGroupApp .role.heading { white-space: normal !important; overflow-wrap: anywhere; }" +
+        " }";
+
     // Dynamic Tree and Couples Dynamic Tree put the first person at a fixed (500, 300), sized
     // for a desktop window. Once they have started, move that person to the middle of a smaller
     // screen. The trees' own zoom state (__zoom on their d3 container) is updated with it, so
