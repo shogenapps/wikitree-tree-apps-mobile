@@ -94,6 +94,13 @@
         " #ahnentafelReport .report-bio .family-summary { margin: 0 0 8px; padding-bottom: 8px; }" +
         " #ahnentafelReport .report-bio .family-summary p:empty { display: none; }" +
         " }" +
+        // Ahnentafel List View on phones: each generation heading ends with its fill rate
+        // ("4/4 (100.00%)"), floated right. When the heading text left it no room, it dropped
+        // below the heading and the first person's box squeezed in beside it, a narrow column.
+        // Give the fill rate its own right-aligned line inside the heading instead.
+        " @media (max-width: 599px), (max-height: 599px) {" +
+        " html[data-wt-view=ahnentafel] #view-container h2 > .fillRate { float: none !important; display: block; text-align: right; }" +
+        " }" +
         // Descendants on phones: the app lines up birth and death in four fixed columns sized
         // for a desktop, which runs off the right edge. Two columns instead: date, then place.
         // Landscape phones too: Report View was 930px wide there, cut off at both sides.
