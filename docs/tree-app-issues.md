@@ -30,14 +30,15 @@ any shell workaround.
 - **Seen:** Android shell, 2026-11-13; on iPhone "Show heritage" also stayed greyed out for
   Young-32264. Shell workaround: none.
 
-### Family Calendar: no dates on iPhone/Safari
-- **Symptom:** with no `month=` in the link, the calendar shows no dates on iPhone.
+### Family Calendar: no dates on iPhone/Safari, always January elsewhere
+- **Symptom:** with no `month=` in the link, the calendar shows no dates on iPhone, and opens on
+  January (not the current month) in Chrome, Android included.
 - **Error:** fails at `MONTHS[selectedMonth - 1]`.
 - **Source:** `views/familyCalendar/familyCalendar.js` works out the month with
   `Date.parse("undefined 1")`, which Chrome reads as January but Safari/WebKit cannot parse.
 - **Fix:** default to `new Date().getMonth() + 1`.
-- **Seen:** iPhone shell. Shell workaround: `addCalendarMonth()` in `shared/shell.js` adds the
-  current month to the link where that parse fails.
+- **Seen:** iPhone shell; January on the Android shell, 2026-11-14. Shell workaround:
+  `addCalendarMonth()` in `shared/shell.js` adds the current month to the link on phones.
 
 ### Family Calendar: its pickers pile up in other apps
 - **Symptom:** it adds its Display Mode/month picker to both of the page's `<main>` elements but

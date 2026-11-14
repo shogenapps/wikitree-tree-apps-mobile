@@ -395,13 +395,13 @@
         if (view === "calendar" && Math.min(screen.width, screen.height) < 600) addCalendarMonth();
     }
 
-    // Family Calendar on iPhones: with no month= in the link it works the month out with
-    // Date.parse("undefined 1"), which Chrome reads as January but Safari/WebKit cannot read,
-    // so the app stopped with "MONTHS[selectedMonth - 1]" and showed no dates. Name the current
-    // month in the link instead, only where that parse fails, before the app reads the link.
-    // This works around a Tree App bug (reported); it changes nothing on Android.
+    // Family Calendar: with no month= in the link it works the month out with
+    // Date.parse("undefined 1"), which Safari/WebKit cannot read, so on iPhones the app stopped
+    // with "MONTHS[selectedMonth - 1]" and showed no dates; Chrome (Android) reads it as
+    // January, so it always opened on January. Name the current month in the link instead,
+    // before the app reads the link. This works around a Tree App bug (reported).
     function addCalendarMonth() {
-        if (/[#&]month=/.test(location.hash) || !isNaN(Date.parse("undefined 1"))) return;
+        if (/[#&]month=/.test(location.hash)) return;
         history.replaceState(history.state, "", location.hash + "&month=" + (new Date().getMonth() + 1));
     }
 
