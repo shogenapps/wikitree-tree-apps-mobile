@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- Placeholder icon (a simple tree), to be replaced by the WikiTree Apps project's artwork. -->
-<vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="108dp" android:height="108dp"
-    android:viewportWidth="108" android:viewportHeight="108">
-    <path android:fillColor="#F2C14E"
-        android:pathData="M54,26 C66,26 76,35 76,47 C76,57 68,64 58,65 L58,80 L50,80 L50,65 C40,64 32,57 32,47 C32,35 42,26 54,26 Z" />
-</vector>

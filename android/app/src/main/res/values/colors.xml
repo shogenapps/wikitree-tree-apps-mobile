@@ -4,4 +4,6 @@
     <color name="wt_tan">#F7F6F0</color>
     <color name="on_green">#FFFFFF</color>
     <color name="wt_gold">#F2C14E</color>
+    <!-- Behind the WikiTree emblem in the launcher icon -->
+    <color name="icon_background">#FFFFFF</color>
 </resources>
