@@ -96,11 +96,19 @@
         " }" +
         // Descendants on phones: the app lines up birth and death in four fixed columns sized
         // for a desktop, which runs off the right edge. Two columns instead: date, then place.
-        " @media (max-width: 600px) {" +
+        // Landscape phones too: Report View was 930px wide there, cut off at both sides.
+        " @media (max-width: 600px), (max-height: 599px) {" +
         " #descendants .birthDeathDetails { grid-template-columns: auto 1fr !important; column-gap: 8px; margin-right: 8px; }" +
         " #descendantsReportWrapper { padding: 12px !important; align-items: stretch !important; max-width: 100%; box-sizing: border-box; }" +
         " #descendantsReport { width: auto !important; min-width: 0 !important; max-width: 100% !important; overflow-wrap: anywhere; }" +
         " #descendantsReport img { max-width: 100%; height: auto; }" +
+        " }" +
+        // The site's own CSS under 980px makes body exactly 100vh tall with overflow-x hidden, so
+        // body becomes a screen-high scroll box instead of the page scrolling. Descendants places
+        // its expand/collapse triangles absolutely against body, so they stayed put while the
+        // list scrolled. Let body grow with the list so the page itself scrolls. Phones only.
+        " @media (max-width: 599px), (max-height: 599px) {" +
+        " html[data-wt-view=descendants] body { height: auto !important; }" +
         " }" +
         // Dynamic Tree, Couples Dynamic Tree and Super Tree: tree.css gives #view-container a
         // min-height of 1000px and the trees size their drawing area from it when they start,
