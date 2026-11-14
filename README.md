@@ -37,5 +37,7 @@ To build locally: open `android/` in Android Studio, or run `./gradlew assembleD
 - Choose the final application id (currently `org.wikitree.treeapps`); it can't change after the first upload.
 - Sign with a private release key kept out of this repo. `android/app/testing.keystore` is a throwaway key
   for test builds only.
-- Replace the placeholder icon with WikiTree Apps project artwork.
 - Publish under a WikiTree Apps project developer account.
+- List it in both stores as **WikiTree Tree Apps**. The label under the icon stays "Tree Apps" (`app_name` on
+  Android, `CFBundleDisplayName` on iPhone): the full name is too long for a home screen and would be cut
+  short, and the icon already carries the WikiTree emblem.
