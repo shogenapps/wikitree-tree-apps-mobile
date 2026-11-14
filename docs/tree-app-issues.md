@@ -190,10 +190,14 @@ any shell workaround.
 - **Source:** `views/couplesTree/couples_tree.js`.
 - **Seen:** iPhone shell, 2026-11-14. Shell workaround: none (minor).
 
-### Timeline: earliest labels cut off at the left
-- **Symptom:** the earliest labels start cut off at the left edge until you pan.
-- **Source:** `views/timeline/`.
-- **Seen:** iPhone shell, 2026-11-14. Shell workaround: none.
+### Timeline: earliest labels cut off at the left (and latest at the right)
+- **Symptom:** the earliest labels (the parents) start cut off at the left edge, and the latest
+  (the children) at the right, until you pan. vis-timeline fits its window to the dates, but each
+  label is a box much wider than its date. A one-year range (a child who died young) is drawn
+  about 9px wide, so its label is hidden altogether.
+- **Source:** `views/timeline/TimelineView.js` (the `vis.Timeline` options).
+- **Seen:** iPhone and Android shells, 2026-11-14 (Knopp-385). Shell workaround: `fitTimeline()`
+  widens the window until every label is inside.
 
 ## Touch and wording
 

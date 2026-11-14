@@ -348,6 +348,39 @@
         }, 300);
     }
 
+    // Family Timeline on phones: vis-timeline starts with its window set to the people's dates,
+    // but each label is a box much wider than its date, so on a phone the earliest labels (the
+    // parents) were cut off at the left and the latest (children) at the right until panned.
+    // Once a new timeline has drawn, widen its window until every label is inside. Drag and
+    // pinch carry on from there. Tree App issue, see docs/tree-app-issues.md.
+    var timelineTimer;
+    function fitTimeline() {
+        var tries = 0, done;
+        clearInterval(timelineTimer);
+        var timer = (timelineTimer = setInterval(function () {
+            if (++tries > 120 || document.documentElement.getAttribute("data-wt-view") !== "timeline") return clearInterval(timer);
+            var view = window.wtViewRegistry && wtViewRegistry.views && wtViewRegistry.views.timeline;
+            var tl = view && view.timeline;
+            var panel = document.querySelector("#view-container .vis-panel.vis-center");
+            if (!tl || tl === done || !panel || !matchMedia(PHONE_QUERY).matches) return;
+            var p = panel.getBoundingClientRect();
+            var l = Infinity, r = -Infinity, widest = 0;
+            [].forEach.call(panel.querySelectorAll(".vis-item.vis-box, .vis-item.vis-range"), function (e) {
+                var b = e.getBoundingClientRect();
+                if (!b.width) return;
+                l = Math.min(l, b.left); r = Math.max(r, b.right); widest = Math.max(widest, b.width);
+            });
+            // The app keeps the view 0 wide until the timeline has drawn.
+            if (p.width < 100 || !(l < r)) return;
+            var over = Math.max(0, p.left + 6 - l), overR = Math.max(0, r - p.right + 6);
+            // Done when all fit, or when one label alone is wider than the screen.
+            if ((over < 1 && overR < 1) || widest > p.width - 12) { done = tl; return; }
+            var w = tl.getWindow(), s = +w.start, e = +w.end, per = (e - s) / p.width;
+            // Widening the window shrinks everything else, so overshoot a little and check again.
+            tl.setWindow(s - over * per * 1.2, e + overR * per * 1.2, { animation: false });
+        }, 250));
+    }
+
     // The current Tree App's key (from #view=...) on <html>, for per-app rules above.
     function setViewAttr() {
         var m = /[#&]view=([^&]*)/.exec(location.hash);
@@ -357,6 +390,7 @@
         if (view === "superbig" && Math.min(screen.width, screen.height) < 600) superStart();
         if (BOARDS[view] && Math.min(screen.width, screen.height) < 600) fitBoard(view);
         if (view === "xtree" && Math.min(screen.width, screen.height) < 600) fitXTree();
+        if (view === "timeline" && Math.min(screen.width, screen.height) < 600) fitTimeline();
         // Uses the screen, not PHONE_QUERY: at document start the page has no viewport yet.
         if (view === "calendar" && Math.min(screen.width, screen.height) < 600) addCalendarMonth();
     }
