@@ -16,6 +16,14 @@ struct TreeAppsApp: App {
 }
 
 final class AppDelegate: NSObject, UIApplicationDelegate {
+    /// The scene delegate receives home-screen quick actions (see People.swift).
+    func application(_ application: UIApplication, configurationForConnecting session: UISceneSession,
+                     options: UIScene.ConnectionOptions) -> UISceneConfiguration {
+        let config = UISceneConfiguration(name: nil, sessionRole: session.role)
+        config.delegateClass = SceneDelegate.self
+        return config
+    }
+
     func application(_ application: UIApplication,
                      supportedInterfaceOrientationsFor window: UIWindow?) -> UIInterfaceOrientationMask {
         Rotation.mask

@@ -10,6 +10,7 @@
 		A10000000000000000000001 /* TreeAppsApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000001 /* TreeAppsApp.swift */; };
 		A10000000000000000000002 /* ShellModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000002 /* ShellModel.swift */; };
 		A10000000000000000000003 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000003 /* ContentView.swift */; };
+		A10000000000000000000006 /* People.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000006 /* People.swift */; };
 		A10000000000000000000004 /* shell.js in Resources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000004 /* shell.js */; };
 		A10000000000000000000005 /* views.json in Resources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000005 /* views.json */; };
 		A100000000000000000000A1 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A200000000000000000000A1 /* Assets.xcassets */; };
@@ -20,6 +21,7 @@
 		A20000000000000000000001 /* TreeAppsApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TreeAppsApp.swift; sourceTree = "<group>"; };
 		A20000000000000000000002 /* ShellModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShellModel.swift; sourceTree = "<group>"; };
 		A20000000000000000000003 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		A20000000000000000000006 /* People.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = People.swift; sourceTree = "<group>"; };
 		A20000000000000000000004 /* shell.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = shell.js; sourceTree = "<group>"; };
 		A20000000000000000000005 /* views.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = views.json; sourceTree = "<group>"; };
 		A200000000000000000000A1 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -51,6 +53,7 @@
 				A20000000000000000000001 /* TreeAppsApp.swift */,
 				A20000000000000000000002 /* ShellModel.swift */,
 				A20000000000000000000003 /* ContentView.swift */,
+				A20000000000000000000006 /* People.swift */,
 				A200000000000000000000A1 /* Assets.xcassets */,
 			);
 			path = TreeApps;
@@ -143,6 +146,7 @@
 				A10000000000000000000001 /* TreeAppsApp.swift in Sources */,
 				A10000000000000000000002 /* ShellModel.swift in Sources */,
 				A10000000000000000000003 /* ContentView.swift in Sources */,
+				A10000000000000000000006 /* People.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -184,6 +188,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = TreeApps/TreeApps.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -211,6 +216,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = TreeApps/TreeApps.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				GENERATE_INFOPLIST_FILE = YES;

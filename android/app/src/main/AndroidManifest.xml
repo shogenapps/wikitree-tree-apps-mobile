@@ -19,13 +19,39 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-            <!-- Open Tree Apps links from other apps here. -->
-            <intent-filter android:autoVerify="false">
+        </activity>
+        <!-- Passes links and home-screen shortcuts on to MainActivity; it shows nothing itself. -->
+        <activity
+            android:name=".LinkActivity"
+            android:exported="true"
+            android:excludeFromRecents="true"
+            android:noHistory="true"
+            android:taskAffinity=""
+            android:theme="@android:style/Theme.NoDisplay">
+            <!-- Open Tree Apps links and profile links (/wiki/Windsor-1) from other apps here.
+                 Android only does this by itself once wikitree.com hosts /.well-known/assetlinks.json
+                 naming this app (see docs/wikitree-link-setup.md); until then the user can turn it on under
+                 the app's "Open by default" settings. The profile pattern needs Android 12. -->
+            <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="https" android:host="www.wikitree.com" android:pathPrefix="/apps/" />
+                <!-- The matcher does not backtrack, so a hyphen in the last name needs its own pattern. -->
+                <data android:pathAdvancedPattern="/wiki/[^:/-]+-[0-9]+" />
+                <data android:pathAdvancedPattern="/wiki/[^:/-]+-[^:/-]+-[0-9]+" />
+                <data android:pathAdvancedPattern="/wiki/[^:/-]+-[^:/-]+-[^:/-]+-[0-9]+" />
             </intent-filter>
         </activity>
+        <!-- Hands a captured chart image to the share sheet. -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.files"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
     </application>
 </manifest>

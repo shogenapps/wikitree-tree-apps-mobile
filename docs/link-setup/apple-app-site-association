@@ -1,0 +1,14 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": ["REPLACE_WITH_TEAM_ID.org.wikitree.treeapps"],
+        "components": [
+          { "/": "/apps/*", "comment": "Tree Apps" },
+          { "/": "/wiki/*:*", "exclude": true, "comment": "Help:, Space:, Category: and other non-profile pages stay in the browser" },
+          { "/": "/wiki/*-*", "comment": "Profiles, e.g. /wiki/Windsor-1" }
+        ]
+      }
+    ]
+  }
+}

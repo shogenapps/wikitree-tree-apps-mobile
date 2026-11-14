@@ -1,5 +1,6 @@
 import Combine
 import Foundation
+import LinkPresentation
 import UIKit
 import WebKit
 
@@ -33,8 +34,12 @@ final class ShellModel: NSObject, ObservableObject, WKNavigationDelegate, WKUIDe
     @Published var failed = false
     /// A page shown in a browser sheet over the tree (profiles, sources, help pages).
     @Published var sheet: SheetURL?
+    /// False while the start screen is up after a fresh launch: nothing has been loaded yet.
+    @Published var started = false
 
     let webView: WKWebView
+    /// Saved and recent people, kept on the phone.
+    let people = PeopleStore()
 
     private let defaultView: String
     private var urlObserver: AnyCancellable?
@@ -89,7 +94,25 @@ final class ShellModel: NSObject, ObservableObject, WKNavigationDelegate, WKUIDe
         urlObserver = webView.publisher(for: \.url).sink { [weak self] url in
             if let url { self?.readHash(url) }
         }
+        // A fresh launch (also after an update) shows the start screen and loads nothing until
+        // something is chosen there. The very first run has nothing to offer, so it just loads.
+        if personId.isEmpty { start() }
+    }
+
+    /// Leave the start screen for the last person and app.
+    func start() {
+        started = true
         load(startURL())
+    }
+
+    /// "Home" in the menu: back to the start screen, leaving the Tree App as it is underneath.
+    func goHome() {
+        started = false
+    }
+
+    /// "Continue" on the start screen: back to the Tree App if it is loaded, else load it.
+    func resume() {
+        if let url = webView.url, Self.isTreeApps(url) { started = true } else { start() }
     }
 
     var appTitle: String {
@@ -106,6 +129,7 @@ final class ShellModel: NSObject, ObservableObject, WKNavigationDelegate, WKUIDe
             save()
             return
         }
+        started = true
         let v = view.isEmpty ? defaultView : view
         let hash = "#name=\(Self.encode(id))&view=\(Self.encode(v))"
         if let url = webView.url, Self.isTreeApps(url) {
@@ -116,8 +140,50 @@ final class ShellModel: NSObject, ObservableObject, WKNavigationDelegate, WKUIDe
         }
     }
 
+    /// Show a person picked from outside the page (a home-screen shortcut), even while the page
+    /// is still starting up: a fresh load then remembers the person and app as its pending hash.
+    func jump(id: String, view: String) {
+        started = true
+        if loading || webView.url == nil {
+            let v = view.isEmpty ? (viewKey.isEmpty ? defaultView : viewKey) : view
+            let hash = "#name=\(Self.encode(id))&view=\(Self.encode(v))"
+            if let url = URL(string: Self.appsURL + Self.encode(id) + hash) { load(url) }
+        } else {
+            show(id: id, view: view.isEmpty ? viewKey : view)
+        }
+    }
+
+    /// Capture what is on screen as a picture and offer it to the share sheet, with a link to
+    /// the same chart.
+    func shareChart() {
+        webView.takeSnapshot(with: nil) { [weak self] image, _ in
+            guard let self, let image else { return }
+            let title = [self.appTitle, self.personId].filter { !$0.isEmpty }.joined(separator: ": ")
+            let items: [Any] = [ChartImage(image: image, title: "WikiTree " + title), self.startURL()]
+            let sheet = UIActivityViewController(activityItems: items, applicationActivities: nil)
+            guard let scene = UIApplication.shared.connectedScenes.compactMap({ $0 as? UIWindowScene }).first,
+                  var top = scene.windows.first(where: \.isKeyWindow)?.rootViewController else { return }
+            while let next = top.presentedViewController { top = next }
+            // iPad shows the share sheet as a popover, which needs an anchor.
+            sheet.popoverPresentationController?.sourceView = top.view
+            sheet.popoverPresentationController?.sourceRect =
+                CGRect(x: top.view.bounds.maxX - 30, y: top.view.safeAreaInsets.top + 22, width: 1, height: 1)
+            top.present(sheet, animated: true)
+        }
+    }
+
     func open(_ url: URL) {
-        guard Self.isTreeApps(url) else { return }
+        // A profile link (/wiki/Windsor-1): show that person in the current Tree App.
+        if let id = Self.profileId(url) {
+            jump(id: id, view: "")
+            return
+        }
+        guard Self.isTreeApps(url) else {
+            // Some other wikitree.com page that iOS handed over: show it over the tree.
+            if url.host == Self.siteHost { sheet = SheetURL(url: url) }
+            return
+        }
+        started = true
         if let current = webView.url, Self.isTreeApps(current), let fragment = url.fragment {
             // The Tree Apps page switches person and app on a hash change, whatever its path.
             webView.evaluateJavaScript("location.hash = \(Self.quote("#" + fragment))")
@@ -134,6 +200,7 @@ final class ShellModel: NSObject, ObservableObject, WKNavigationDelegate, WKUIDe
 
     func reload() {
         failed = false
+        started = true
         if webView.url == nil { load(startURL()) } else { webView.reload() }
     }
 
@@ -214,6 +281,7 @@ final class ShellModel: NSObject, ObservableObject, WKNavigationDelegate, WKUIDe
     private func save() {
         UserDefaults.standard.set(personId, forKey: "id")
         UserDefaults.standard.set(viewKey, forKey: "view")
+        people.visit(personId, view: viewKey)
     }
 
     private func startURL() -> URL {
@@ -316,6 +384,15 @@ final class ShellModel: NSObject, ObservableObject, WKNavigationDelegate, WKUIDe
 
     // MARK: Helpers
 
+    /// The WikiTree ID in a profile link such as https://www.wikitree.com/wiki/Windsor-1, or nil.
+    /// A colon means a Help:, Space: or Category: page, not a person.
+    private static func profileId(_ url: URL) -> String? {
+        let parts = url.pathComponents
+        guard url.host == siteHost, parts.count == 3, parts[1] == "wiki",
+              parts[2].range(of: #"^[^:/]+-\d+$"#, options: .regularExpression) != nil else { return nil }
+        return parts[2]
+    }
+
     private static func isTreeApps(_ url: URL) -> Bool {
         url.host == siteHost && url.path.hasPrefix("/apps")
     }
@@ -337,5 +414,34 @@ final class ShellModel: NSObject, ObservableObject, WKNavigationDelegate, WKUIDe
         let data = try? JSONSerialization.data(withJSONObject: [text])
         let array = data.flatMap { String(data: $0, encoding: .utf8) } ?? "[\"\"]"
         return String(array.dropFirst().dropLast())
+    }
+}
+
+/// A chart picture for the share sheet, with a title for apps that show one (Mail's subject,
+/// the preview at the top of the sheet).
+private final class ChartImage: NSObject, UIActivityItemSource {
+    let image: UIImage
+    let title: String
+
+    init(image: UIImage, title: String) {
+        self.image = image
+        self.title = title
+    }
+
+    func activityViewControllerPlaceholderItem(_ controller: UIActivityViewController) -> Any { image }
+
+    func activityViewController(_ controller: UIActivityViewController,
+                                itemForActivityType activityType: UIActivity.ActivityType?) -> Any? { image }
+
+    func activityViewController(_ controller: UIActivityViewController,
+                                subjectForActivityType activityType: UIActivity.ActivityType?) -> String { title }
+
+    /// The top of the share sheet: the chart itself and its title, not a preview of the link.
+    func activityViewControllerLinkMetadata(_ controller: UIActivityViewController) -> LPLinkMetadata? {
+        let metadata = LPLinkMetadata()
+        metadata.title = title
+        metadata.imageProvider = NSItemProvider(object: image)
+        metadata.iconProvider = NSItemProvider(object: image)
+        return metadata
     }
 }

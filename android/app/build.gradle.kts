@@ -50,6 +50,7 @@ android {
 dependencies {
     implementation("androidx.webkit:webkit:1.12.1")
     implementation("androidx.browser:browser:1.8.0")
+    implementation("androidx.core:core:1.13.1")
 }
 
 // The page-hiding script and the Tree App list live in ../shared so an iOS app can use the same files.

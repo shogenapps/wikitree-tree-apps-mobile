@@ -5,8 +5,13 @@ import android.app.Activity
 import android.app.AlertDialog
 import android.content.ActivityNotFoundException
 import android.content.Intent
+import android.content.ClipData
 import android.content.pm.ActivityInfo
+import android.content.pm.ShortcutInfo
+import android.content.pm.ShortcutManager
 import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.drawable.Icon
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -30,9 +35,11 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.browser.customtabs.CustomTabColorSchemeParams
 import androidx.browser.customtabs.CustomTabsIntent
+import androidx.core.content.FileProvider
 import androidx.webkit.WebViewCompat
 import androidx.webkit.WebViewFeature
 import org.json.JSONObject
+import java.io.File
 
 /**
  * A thin shell around the WikiTree Tree Apps (https://www.wikitree.com/apps/).
@@ -40,7 +47,7 @@ import org.json.JSONObject
  * It loads the real Tree Apps page in a WebView, hides the site's header, Tree App/ID bar
  * and footer (see assets/shell.js), and puts a slim native bar on top with:
  *   - the current Tree App (tap to pick another),
- *   - the current WikiTree ID (tap to change person),
+ *   - the current WikiTree ID (tap for saved and recent people, or to type another ID),
  *   - a menu for Apps login/logout, reload, and opening things in the browser.
  *
  * Each Tree App keeps its own settings and controls, exactly as on the website.
@@ -55,6 +62,8 @@ class MainActivity : Activity() {
     private lateinit var errorText: TextView
 
     private val prefs by lazy { getSharedPreferences("shell", MODE_PRIVATE) }
+    /** Saved and recent people, kept on the phone. */
+    private val people by lazy { PeopleStore(this) }
     private val shellJs by lazy { assets.open("shell.js").bufferedReader().use { it.readText() } }
 
     /** shared/views.json: the Tree App list used until the page has loaded its own. */
@@ -82,10 +91,11 @@ class MainActivity : Activity() {
     /** Whether the current Tree App has controls the shell knows how to hide. */
     private var hasControls = false
     /** The launch link already opened, so a recreation from saved state does not open it again. */
-    private var handledLink: String? = null
     /** The #name=...&view=... of a link still to be confirmed once the page has finished loading. */
     private var pendingHash: String? = null
     private var controlsFor = ""
+    /** False while the start screen is up after a fresh launch: nothing has been loaded yet. */
+    private var started = true
 
     /** Set while heading back to the tree from a site page, so a failed return can't loop. */
     private var returning = false
@@ -111,36 +121,107 @@ class MainActivity : Activity() {
         updateBar()
 
         btnApp.setOnClickListener { pickApp() }
-        btnPerson.setOnClickListener { askPerson() }
+        btnPerson.setOnClickListener { showPeople() }
         btnControls.setOnClickListener { if (hasControls) setControls(!showControls) }
         findViewById<Button>(R.id.btn_menu).setOnClickListener { showMenu(it) }
 
         setUpWebView()
 
-        val link = intent?.data?.takeIf { isTreeAppsUrl(it) }
-        // When Android recreates the app from saved state it hands back the intent the app was
-        // opened with. A link that was already opened before (the same launch) must not undo
-        // where the user has been since; a new link must win over the old page.
-        val handled = savedInstanceState?.getString(KEY_HANDLED_LINK)
-        if (savedInstanceState != null && (link == null || link.toString() == handled)) {
-            web.restoreState(savedInstanceState)
-        } else if (link != null) {
+        // When Android recreates the app (after closing it in the background, or after an
+        // update) it hands back the intent the app was opened with. A link or shortcut that was
+        // already acted on must not undo where the user has been since, so each one carries a
+        // stamp from LinkActivity and the last stamp acted on is remembered.
+        val stamp = intent?.getLongExtra(LinkActivity.EXTRA_STAMP, 0L) ?: 0L
+        val isNew = stamp != 0L && stamp != prefs.getLong(KEY_HANDLED_STAMP, 0L)
+        val link = intent?.data?.takeIf { isNew && isShellLink(it) }
+        val people = isNew && intent?.action == ACTION_PEOPLE
+        if (isNew) prefs.edit().putLong(KEY_HANDLED_STAMP, stamp).apply()
+        // After an update Android can start the app twice in a row for one link: once with the
+        // link, then again with the intent the old task was opened with. The second start must
+        // not put the start screen over the link, so it just loads what the link chose.
+        val afterLink = android.os.SystemClock.elapsedRealtime() - lastLinkAt < 10_000
+        if (link != null) {
+            lastLinkAt = android.os.SystemClock.elapsedRealtime()
             openLink(link)
+        } else if (currentId.isBlank() || people || afterLink) {
+            // The very first run, or the "Change person" shortcut: load, then (for the shortcut)
+            // offer the People screen.
+            loadStart()
+            if (people) web.post { showPeople() }
         } else {
-            val start = startUrl()
-            pendingHash = Uri.parse(start).encodedFragment
-            web.loadUrl(start)
+            // A fresh launch, or Android bringing the app back after closing it (as it does
+            // after an update): offer where to go instead of reloading the last Tree App.
+            started = false
+            applyOrientation()
+            web.post { showStart() }
         }
-        handledLink = link?.toString()
+        updateShortcuts()
     }
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
-        intent.data?.takeIf { isTreeAppsUrl(it) }?.let {
-            handledLink = it.toString()
+        val stamp = intent.getLongExtra(LinkActivity.EXTRA_STAMP, 0L)
+        if (stamp != 0L) prefs.edit().putLong(KEY_HANDLED_STAMP, stamp).apply()
+        if (intent.action == ACTION_PEOPLE) {
+            if (!started) {
+                leaveStart()
+                loadStart()
+            }
+            showPeople()
+        }
+        intent.data?.takeIf { isShellLink(it) }?.let {
+            leaveStart()
             openLink(it)
         }
+    }
+
+    /** Load the last person and app (or the Tree Apps front page when there is none yet). */
+    private fun loadStart() {
+        val start = startUrl()
+        pendingHash = Uri.parse(start).encodedFragment
+        web.loadUrl(start)
+    }
+
+    private var startDialog: PeopleDialog? = null
+
+    /** The start screen: continue, pick a saved or recent person, or pick a Tree App. */
+    private fun showStart() {
+        if (started || isFinishing) return
+        // Reached from the menu ("Home"), the Tree App stays loaded underneath: Continue and
+        // Back simply return to it.
+        val loaded = isTreeAppsUrl(Uri.parse(web.url ?: ""))
+        val title = viewTitle(currentView.ifBlank { defaultView }) ?: getString(R.string.choose_app)
+        startDialog = PeopleDialog(
+            activity = this,
+            store = people,
+            currentId = currentId,
+            currentView = currentView,
+            appTitle = { viewTitle(it) },
+            onPick = { leaveStart(); show(it.id, it.view.ifBlank { currentView }) },
+            start = PeopleDialog.Start(
+                continueLabel = getString(R.string.start_continue, title, currentId),
+                apps = views(),
+                onContinue = { leaveStart(); if (!loaded) loadStart() },
+                onApp = { leaveStart(); show(currentId, it) },
+                onBack = { if (loaded) leaveStart() else finish() },
+            ),
+        ).also { it.show() }
+    }
+
+    /** "Home" in the menu: back to the start screen, leaving the Tree App as it is underneath. */
+    private fun showHome() {
+        started = false
+        applyOrientation()
+        showStart()
+    }
+
+    /** Something was chosen (or a link arrived): the start screen is done with. */
+    private fun leaveStart() {
+        started = true
+        startDialog?.dismiss()
+        startDialog = null
+        applyOrientation()
     }
 
     /**
@@ -149,6 +230,14 @@ class MainActivity : Activity() {
      * page is already open, a link that only differs in its #hash switches in place.
      */
     private fun openLink(uri: Uri) {
+        // A profile link (/wiki/Windsor-1) from outside: show that person in the current Tree App.
+        profileId(uri)?.let {
+            currentId = it
+            save()
+            updateBar()
+            show(it, currentView)
+            return
+        }
         readHash(uri)
         pendingHash = uri.encodedFragment
         val current = Uri.parse(web.url ?: "")
@@ -167,7 +256,7 @@ class MainActivity : Activity() {
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         web.saveState(outState)
-        handledLink?.let { outState.putString(KEY_HANDLED_LINK, it) }
+        outState.putBoolean(KEY_STARTED, started)
     }
 
     /** Where a touch that started on the green bar went down, or null. */
@@ -379,6 +468,9 @@ class MainActivity : Activity() {
 
     private fun save() {
         prefs.edit().putString(KEY_ID, currentId).putString(KEY_VIEW, currentView).apply()
+        if (currentId.isNotBlank() && currentView.isNotBlank() && people.visit(currentId, currentView)) {
+            updateShortcuts()
+        }
     }
 
     private fun updateBar() {
@@ -424,7 +516,8 @@ class MainActivity : Activity() {
 
     private fun applyOrientation() {
         val isPhone = resources.configuration.smallestScreenWidthDp < 600
-        val lock = isPhone && prefs.getBoolean(KEY_AUTO_ROTATE, true) && currentView in landscapeViews
+        // The start screen is not a wide chart, whatever the last app was.
+        val lock = started && isPhone && prefs.getBoolean(KEY_AUTO_ROTATE, true) && currentView in landscapeViews
         val wanted = if (lock) ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
         else ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
         if (requestedOrientation != wanted) requestedOrientation = wanted
@@ -468,12 +561,96 @@ class MainActivity : Activity() {
             .setView(box)
             .setPositiveButton(R.string.go) { _, _ ->
                 val id = input.text.toString().trim()
-                if (id.isNotEmpty()) show(id, currentView)
+                if (id.isNotEmpty()) {
+                    leaveStart()
+                    show(id, currentView)
+                }
             }
             .setNegativeButton(R.string.cancel, null)
             .create()
         dialog.window?.setSoftInputMode(android.view.WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE)
         dialog.show()
+    }
+
+    /** The People screen: saved and recent people, and a way to type a WikiTree ID. */
+    private fun showPeople() {
+        PeopleDialog(
+            activity = this,
+            store = people,
+            currentId = currentId,
+            currentView = currentView,
+            appTitle = { viewTitle(it) },
+            onPick = { show(it.id, it.view.ifBlank { currentView }) },
+        ).show()
+    }
+
+    /**
+     * Long-press shortcuts on the app icon: saved people first, then recent ones, each opening in
+     * the Tree App they were last shown in, plus one to type a new ID. They open as Tree Apps links.
+     */
+    private fun updateShortcuts() {
+        val manager = getSystemService(ShortcutManager::class.java) ?: return
+        val max = (manager.maxShortcutCountPerActivity - 1).coerceIn(0, 3)
+        val picks = (people.saved() + people.recent()).distinctBy { it.id.lowercase() }.take(max)
+        val list = picks.map { p ->
+            val v = p.view.ifBlank { defaultView }
+            val uri = Uri.parse("$APPS_URL${Uri.encode(p.id)}#name=${Uri.encode(p.id)}&view=${Uri.encode(v)}")
+            val label = p.name.ifBlank { p.id }
+            ShortcutInfo.Builder(this, "person_" + p.id.lowercase())
+                .setShortLabel(label.take(24))
+                .setLongLabel(listOfNotNull(label, viewTitle(v)).joinToString(" · ").take(48))
+                .setIcon(Icon.createWithResource(this, R.drawable.ic_shortcut_person))
+                .setIntent(Intent(Intent.ACTION_VIEW, uri, this, LinkActivity::class.java))
+                .build()
+        } + ShortcutInfo.Builder(this, "people")
+            .setShortLabel(getString(R.string.shortcut_new))
+            .setIcon(Icon.createWithResource(this, R.drawable.ic_shortcut_search))
+            .setIntent(Intent(ACTION_PEOPLE, null, this, LinkActivity::class.java))
+            .build()
+        try {
+            manager.dynamicShortcuts = list
+        } catch (_: Exception) {
+            // Rate-limited or not allowed on this launcher; the shortcuts are a convenience.
+        }
+    }
+
+    /** Capture what is on screen and offer it to the share sheet, with a link to the same chart. */
+    private fun shareChart() {
+        val bitmap = try {
+            Bitmap.createBitmap(web.width, web.height, Bitmap.Config.ARGB_8888).also {
+                // Draw the visible part of the page, where it is scrolled to.
+                val canvas = Canvas(it)
+                canvas.translate(-web.scrollX.toFloat(), -web.scrollY.toFloat())
+                web.draw(canvas)
+            }
+        } catch (_: Exception) {
+            null
+        }
+        val uri = bitmap?.let {
+            try {
+                val dir = File(cacheDir, "shared").apply { mkdirs() }
+                val file = File(dir, "wikitree-chart.png")
+                file.outputStream().use { out -> it.compress(Bitmap.CompressFormat.PNG, 100, out) }
+                FileProvider.getUriForFile(this, "$packageName.files", file)
+            } catch (_: Exception) {
+                null
+            }
+        }
+        if (uri == null) {
+            Toast.makeText(this, R.string.share_failed, Toast.LENGTH_SHORT).show()
+            return
+        }
+        val title = listOfNotNull(viewTitle(currentView), currentId.ifBlank { null }).joinToString(": ")
+        val link = startUrl()
+        val send = Intent(Intent.ACTION_SEND).apply {
+            type = "image/png"
+            putExtra(Intent.EXTRA_STREAM, uri)
+            putExtra(Intent.EXTRA_SUBJECT, "WikiTree $title")
+            putExtra(Intent.EXTRA_TEXT, "$title\n$link")
+            clipData = ClipData.newRawUri(title, uri)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+        startActivity(Intent.createChooser(send, getString(R.string.share_title)))
     }
 
     /** Show [id] in Tree App [view], switching in place when the Tree Apps page is already open. */
@@ -489,9 +666,13 @@ class MainActivity : Activity() {
         val hash = "#name=${Uri.encode(id)}&view=${Uri.encode(v)}"
         val onAppsPage = Uri.parse(web.url ?: "").let { it.host == SITE_HOST && it.path?.startsWith("/apps") == true }
         if (onAppsPage) {
-            // The Tree Apps page listens for hash changes and redraws without a reload.
+            // The Tree Apps page listens for hash changes and redraws without a reload. If it is
+            // still loading, the hash is applied again once it is up.
+            pendingHash = hash.removePrefix("#")
             web.evaluateJavascript("location.hash = ${JSONObject.quote(hash)}", null)
         } else {
+            // A fresh load: remember what was asked for, to apply again once the page is up.
+            pendingHash = hash.removePrefix("#")
             web.loadUrl("$APPS_URL${Uri.encode(id)}$hash")
         }
     }
@@ -499,9 +680,12 @@ class MainActivity : Activity() {
     private fun showMenu(anchor: View) {
         val menu = PopupMenu(this, anchor)
         val m = menu.menu
+        if (currentId.isNotBlank()) m.add(0, 9, 0, R.string.menu_home)
         m.add(0, 1, 0, if (loggedIn) R.string.menu_logout else R.string.menu_login)
         m.add(0, 2, 1, R.string.menu_reload)
         if (currentId.isNotBlank()) m.add(0, 3, 2, R.string.menu_profile)
+        m.add(0, 7, 3, R.string.menu_share)
+        m.add(0, 8, 3, R.string.menu_people)
         m.add(0, 4, 3, R.string.menu_browser)
         m.add(0, 5, 4, if (showBars) R.string.menu_hide_bars else R.string.menu_show_bars)
         if (resources.configuration.smallestScreenWidthDp < 600) {
@@ -520,6 +704,9 @@ class MainActivity : Activity() {
                 2 -> web.reload()
                 3 -> openInSheet(Uri.parse("https://www.wikitree.com/wiki/${Uri.encode(currentId)}"))
                 4 -> web.url?.let { u -> openExternally(Uri.parse(u)) }
+                7 -> shareChart()
+                8 -> showPeople()
+                9 -> showHome()
                 6 -> {
                     prefs.edit().putBoolean(KEY_AUTO_ROTATE, !prefs.getBoolean(KEY_AUTO_ROTATE, true)).apply()
                     applyOrientation()
@@ -539,6 +726,17 @@ class MainActivity : Activity() {
     private fun startUrl(): String =
         if (currentId.isBlank()) APPS_URL
         else "$APPS_URL${Uri.encode(currentId)}#name=${Uri.encode(currentId)}&view=${Uri.encode(currentView.ifBlank { defaultView })}"
+
+    /** The WikiTree ID in a profile link such as https://www.wikitree.com/wiki/Windsor-1, or null. */
+    private fun profileId(uri: Uri): String? {
+        if (uri.host != SITE_HOST) return null
+        val parts = uri.pathSegments
+        if (parts.size != 2 || parts[0] != "wiki") return null
+        return parts[1].takeIf { PROFILE_ID.matches(it) }
+    }
+
+    /** A link from another app that the shell opens itself: a Tree App, or a person's profile. */
+    private fun isShellLink(uri: Uri) = isTreeAppsUrl(uri) || profileId(uri) != null
 
     private fun isTreeAppsUrl(uri: Uri) = uri.host == SITE_HOST && uri.path?.startsWith("/apps") == true
 
@@ -593,9 +791,18 @@ class MainActivity : Activity() {
         private const val APPS_URL = "https://www.wikitree.com/apps/"
         private const val KEY_ID = "id"
         private const val KEY_VIEW = "view"
-        private const val KEY_HANDLED_LINK = "handledLink"
+        private const val KEY_HANDLED_STAMP = "handledStamp"
+
+        /** When this process last opened a link at start-up (elapsedRealtime), or 0. */
+        private var lastLinkAt = 0L
+
+        /** "Windsor-1": no colon (that would be a Help:, Space: or Category: page), then -number. */
+        private val PROFILE_ID = Regex("[^:/]+-\\d+")
+        private const val KEY_STARTED = "started"
         private const val KEY_AUTO_ROTATE = "autoRotate"
         private const val REQ_FILE = 1
+        /** The "Change person" home-screen shortcut opens the People screen. */
+        private const val ACTION_PEOPLE = LinkActivity.ACTION_PEOPLE
 
     }
 }

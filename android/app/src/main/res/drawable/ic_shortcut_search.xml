@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Home-screen shortcut icon: a magnifier on the shell's green. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp" android:height="48dp"
+    android:viewportWidth="48" android:viewportHeight="48">
+    <path android:fillColor="#25422D" android:pathData="M24,0 A24,24 0 1,1 23.99,0 Z" />
+    <path android:fillColor="#F2C14E" android:fillType="evenOdd"
+        android:pathData="M21,13 A8,8 0 1,1 20.99,13 Z M21,16 A5,5 0 1,0 21.01,16 Z M26.5,28.5 L29,26 L35,32 L32.5,34.5 Z" />
+</vector>

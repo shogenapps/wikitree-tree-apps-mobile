@@ -8,19 +8,34 @@ private let wtTan = Color(red: 0xF7 / 255, green: 0xF6 / 255, blue: 0xF0 / 255)
 
 struct ContentView: View {
     @EnvironmentObject private var shell: ShellModel
-    @State private var askingPerson = false
-    @State private var personDraft = ""
+    @State private var showingPeople = false
     @State private var autoRotate = Rotation.auto
     @State private var showHint = false
 
     var body: some View {
         VStack(spacing: 0) {
-            bar
+            if shell.started { bar }
             if shell.loading {
                 ProgressView().progressViewStyle(.linear).tint(wtGreen)
             }
             ZStack(alignment: .top) {
                 WebViewHolder(webView: shell.webView)
+                if !shell.started {
+                    // The start screen after a fresh launch: nothing loads until a choice is made.
+                    PeopleView(
+                        store: shell.people,
+                        currentId: shell.personId,
+                        currentView: shell.viewKey,
+                        appTitle: { key in shell.apps.first { $0.key == key }?.title },
+                        onPick: { id, view in shell.show(id: id, view: view.isEmpty ? shell.viewKey : view) },
+                        start: PeopleView.Start(
+                            continueTitle: "Continue: \(shell.appTitle) for \(shell.personId)",
+                            apps: shell.apps.map { ($0.key, $0.title) },
+                            onContinue: { shell.resume() },
+                            onApp: { key in shell.show(id: shell.personId, view: key) }
+                        )
+                    )
+                }
                 if showHint {
                     Label("This app's controls are hidden. Tap the sliders button or swipe down on the green bar to show them.",
                           systemImage: "slider.horizontal.3")
@@ -46,18 +61,23 @@ struct ContentView: View {
         }
         .background(wtGreen.ignoresSafeArea(edges: .top))
         .background(wtTan.ignoresSafeArea())
-        .alert("Person", isPresented: $askingPerson) {
-            TextField("WikiTree ID, e.g. Windsor-1", text: $personDraft)
-                .textInputAutocapitalization(.never)
-                .autocorrectionDisabled()
-            Button("Go") { shell.show(id: personDraft, view: shell.viewKey) }
-            Button("Cancel", role: .cancel) {}
+        .sheet(isPresented: $showingPeople) {
+            PeopleView(
+                store: shell.people,
+                currentId: shell.personId,
+                currentView: shell.viewKey,
+                appTitle: { key in shell.apps.first { $0.key == key }?.title },
+                onPick: { id, view in shell.show(id: id, view: view.isEmpty ? shell.viewKey : view) }
+            )
         }
+        .onAppear(perform: runQuickAction)
+        .onReceive(NotificationCenter.default.publisher(for: QuickAction.chosen)) { _ in runQuickAction() }
         .sheet(item: $shell.sheet) { item in
             SafariSheet(url: item.url).ignoresSafeArea()
         }
         .preferredColorScheme(.light)
-        .onAppear { Rotation.apply(for: shell.viewKey) }
+        .onAppear { Rotation.apply(for: shell.started ? shell.viewKey : "") }
+        .onChange(of: shell.started) { _ in Rotation.apply(for: shell.viewKey) }
         .onChange(of: shell.hasControls) { has in
             // Explain the hidden controls the first few times they are hidden.
             let shown = UserDefaults.standard.integer(forKey: "controlsHintCount")
@@ -66,7 +86,7 @@ struct ContentView: View {
             withAnimation { showHint = true }
             DispatchQueue.main.asyncAfter(deadline: .now() + 5) { withAnimation { showHint = false } }
         }
-        .onChange(of: shell.viewKey) { key in Rotation.apply(for: key) }
+        .onChange(of: shell.viewKey) { key in if shell.started { Rotation.apply(for: key) } }
     }
 
     /// The slim bar that replaces the site header and the Tree App / ID form.
@@ -122,8 +142,13 @@ struct ContentView: View {
             }
 
             Menu {
+                if !shell.personId.isEmpty {
+                    Button { shell.goHome() } label: { Label("Home", systemImage: "house") }
+                }
                 Button(shell.loggedIn ? "Log out of Apps" : "Apps login") { shell.toggleLogin() }
                 Button("Reload") { shell.reload() }
+                Button { shell.shareChart() } label: { Label("Share this chart", systemImage: "square.and.arrow.up") }
+                Button { askPerson() } label: { Label("Saved and recent people", systemImage: "star") }
                 if !shell.personId.isEmpty {
                     Button("Open profile") { shell.openProfile() }
                 }
@@ -166,8 +191,25 @@ struct ContentView: View {
     }
 
     private func askPerson() {
-        personDraft = shell.personId
-        askingPerson = true
+        showingPeople = true
+    }
+
+    /// Act on a home-screen quick action: open the chosen person, or the People screen.
+    private func runQuickAction() {
+        if let link = QuickAction.pendingLink {
+            QuickAction.pendingLink = nil
+            showingPeople = false
+            shell.open(link)
+        }
+        guard let item = QuickAction.pending else { return }
+        QuickAction.pending = nil
+        if item.type == QuickAction.person, let id = item.userInfo?["id"] as? String {
+            showingPeople = false
+            shell.jump(id: id, view: item.userInfo?["view"] as? String ?? "")
+        } else {
+            if !shell.started { shell.start() }
+            askPerson()
+        }
     }
 }
 
