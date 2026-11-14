@@ -349,6 +349,41 @@
         d3.select(svg).call(app.zoom.transform, d3.zoomIdentity.translate(w / 2 - cx * k, h / 2 - cy * k).scale(k));
     }
 
+    // Super Tree: it fetches the whole family before it draws anything, which takes a while,
+    // and its own "Please wait" line sits in its button bar, hidden with the other controls,
+    // so the screen stayed empty. Show the Tree Apps' own shaking tree (the one CC7, Ahnentafel
+    // and Descendants use) in the middle of the screen until people are drawn, the app clears
+    // its wait message, another app opens, or two minutes pass. All screen sizes.
+    var superLoadingTimer;
+    function superLoading() {
+        if (document.getElementById("wt-shell-loading") || superDrawn()) return;
+        var img = document.createElement("img");
+        img.id = "wt-shell-loading";
+        img.src = "views/cc7/images/tree.gif";
+        img.alt = "Loading";
+        // Styled on the element, so it stays centred when the WikiTree page bars are shown
+        // (which removes the shell's style sheet).
+        img.style.cssText = "position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 1000; pointer-events: none; width: 100px; height: auto;";
+        (document.body || document.documentElement).appendChild(img);
+        var tries = 0, waited = false;
+        clearInterval(superLoadingTimer);
+        var timer = (superLoadingTimer = setInterval(function () {
+            var note = document.getElementById("WarningMessageBelowButtonBar");
+            if (note && /wait/i.test(note.textContent)) waited = true;
+            if (++tries > 240 || superDrawn() || (waited && note && !/wait/i.test(note.textContent)) ||
+                document.documentElement.getAttribute("data-wt-view") !== "superbig") {
+                clearInterval(timer);
+                img.remove();
+            }
+        }, 500));
+    }
+    function superDrawn() {
+        var svg = document.getElementById("superbigChartSVG");
+        return !!svg && [].some.call(svg.querySelectorAll("g.person"), function (g) {
+            return g.getBoundingClientRect().width > 0;
+        });
+    }
+
     // X Family Tree on phones (see its CSS block): while it is open, scale its SVG to show all
     // generations in the view, never larger than drawn and never below 0.45 (smaller is
     // unreadable; then the view scrolls, starting with the start person in view). Refitted when
@@ -417,6 +452,7 @@
         document.documentElement.setAttribute("data-wt-view", view);
         if ((view === "wt-dynamic-tree" || view === "couples") && matchMedia(PHONE_QUERY).matches) recentre();
         if (view === "superbig" && Math.min(screen.width, screen.height) < 600) superStart();
+        if (view === "superbig") superLoading();
         if (BOARDS[view] && Math.min(screen.width, screen.height) < 600) fitBoard(view);
         if (view === "xtree" && Math.min(screen.width, screen.height) < 600) fitXTree();
         if (view === "timeline" && Math.min(screen.width, screen.height) < 600) fitTimeline();
