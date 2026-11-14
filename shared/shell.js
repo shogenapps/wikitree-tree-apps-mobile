@@ -915,8 +915,20 @@
     });
     var STALE = { ahnentafel: "#ahnentafelAncestorList, #ahnentafelHeaderBox" };
     var staleTimer = null;
+    // Ahnentafel's report title "Ancestors of Ian Christopher Beacall (1969 – )" broke on a phone
+    // with "– )" alone on the second line. Join the spaces inside a heading's closing "(...)" with
+    // no-break spaces, so the dates move to the next line together.
+    var keepDatesTogether = function () {
+        [].forEach.call(document.querySelectorAll("#ahnentafelReport h1, #ahnentafelReport h2, #ahnentafelReport h3"), function (h) {
+            var t = h.lastChild;
+            if (!t || t.nodeType !== 3) return;
+            var fixed = t.data.replace(/\([^()]*\)\s*$/, function (m) { return m.replace(/ +/g, "\u00a0"); });
+            if (fixed !== t.data) t.data = fixed;
+        });
+    };
     var clearStale = function () {
         staleTimer = null;
+        keepDatesTogether();
         var view = document.documentElement.getAttribute("data-wt-view");
         for (var key in STALE) {
             if (key === view || !document.querySelector(STALE[key])) continue;
