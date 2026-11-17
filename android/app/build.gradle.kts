@@ -13,8 +13,11 @@ android {
         applicationId = "org.wikitree.treeapps"
         minSdk = 26
         targetSdk = 35
-        versionCode = (System.getenv("GITHUB_RUN_NUMBER") ?: "1").toInt()
-        versionName = "0.1." + (System.getenv("GITHUB_RUN_NUMBER") ?: "0")
+        // Run numbers restarted at 1 when the project moved to a fresh repo, so add 1000
+        // to stay above every earlier test build and keep installing over it.
+        val build = 1000 + (System.getenv("GITHUB_RUN_NUMBER") ?: "0").toInt()
+        versionCode = build
+        versionName = "0.1.$build"
     }
 
     signingConfigs {
