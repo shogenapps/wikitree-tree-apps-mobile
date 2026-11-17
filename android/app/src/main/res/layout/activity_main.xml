@@ -25,6 +25,29 @@
             android:maxLines="1"
             android:text="@string/choose_app" />
 
+        <!-- Share, Print and Saved people: on tablets only (see MainActivity.updateTabletBar),
+             where the bar has room for them; phones keep them in the ⋮ menu. -->
+        <ImageButton
+            android:id="@+id/btn_share"
+            style="@style/BarIconButton"
+            android:contentDescription="@string/menu_share"
+            android:src="@drawable/ic_bar_share"
+            android:visibility="gone" />
+
+        <ImageButton
+            android:id="@+id/btn_print"
+            style="@style/BarIconButton"
+            android:contentDescription="@string/menu_print"
+            android:src="@drawable/ic_bar_print"
+            android:visibility="gone" />
+
+        <ImageButton
+            android:id="@+id/btn_saved"
+            style="@style/BarIconButton"
+            android:contentDescription="@string/menu_people"
+            android:src="@drawable/ic_bar_saved"
+            android:visibility="gone" />
+
         <Button
             android:id="@+id/btn_controls"
             style="@style/BarButton"

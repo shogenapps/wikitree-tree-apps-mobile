@@ -140,6 +140,10 @@ class MainActivity : Activity() {
         btnPerson.setOnClickListener { showPeople() }
         btnControls.setOnClickListener { if (hasControls) setControls(!showControls) }
         findViewById<Button>(R.id.btn_menu).setOnClickListener { showMenu(it) }
+        findViewById<View>(R.id.btn_share).setOnClickListener { shareChart() }
+        findViewById<View>(R.id.btn_print).setOnClickListener { printChart() }
+        findViewById<View>(R.id.btn_saved).setOnClickListener { showPeople() }
+        updateTabletBar(resources.configuration)
 
         setUpWebView()
 
@@ -688,8 +692,18 @@ class MainActivity : Activity() {
      * The phone switched between light and dark while the app was open. The app handles uiMode
      * itself (see the manifest) so the chart is not reloaded; the colours are put right here.
      */
+    /** Share, Print and Saved people get their own bar buttons when the window is tablet-sized
+     *  (at least 600dp each way, so a split screen follows the window, not the device). */
+    private fun updateTabletBar(config: Configuration) {
+        val tablet = config.screenWidthDp >= 600 && config.screenHeightDp >= 600
+        for (id in intArrayOf(R.id.btn_share, R.id.btn_print, R.id.btn_saved)) {
+            findViewById<View>(id).visibility = if (tablet) View.VISIBLE else View.GONE
+        }
+    }
+
     override fun onConfigurationChanged(newConfig: Configuration) {
         super.onConfigurationChanged(newConfig)
+        updateTabletBar(newConfig)
         if (isNight(newConfig) == night) return
         tellPageNight()
         val tan = getColor(R.color.wt_tan)
