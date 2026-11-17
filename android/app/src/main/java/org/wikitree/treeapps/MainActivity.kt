@@ -74,7 +74,23 @@ class MainActivity : Activity() {
     /** The member's watchlist, for birthdays and name suggestions. */
     private val watchlist by lazy { WatchlistStore(this) }
     private var notifyAnswer: ((Boolean) -> Unit)? = null
-    private val shellJs by lazy { assets.open("shell.js").bufferedReader().use { it.readText() } }
+    private val shellJs by lazy { shellTextJs() + assets.open("shell.js").bufferedReader().use { it.readText() } }
+
+    /** shell.js's own few words (shell_* strings), in the phone's language, as window.__wtShellText. */
+    private fun shellTextJs(): String {
+        val text = JSONObject()
+        mapOf(
+            "shell_about_numbers" to R.string.shell_about_numbers,
+            "shell_about_xtree" to R.string.shell_about_xtree,
+            "shell_age_now" to R.string.shell_age_now,
+            "shell_age_minutes" to R.string.shell_age_minutes,
+            "shell_age_hours" to R.string.shell_age_hours,
+            "shell_saved_note" to R.string.shell_saved_note,
+            "shell_saved_chip" to R.string.shell_saved_chip,
+            "shell_updating" to R.string.shell_updating,
+        ).forEach { (key, id) -> text.put(key, getString(id)) }
+        return "window.__wtShellText = $text;\n"
+    }
 
     /** shared/views.json: the Tree App list used until the page has loaded its own. */
     private val viewsJson by lazy { JSONObject(assets.open("views.json").bufferedReader().use { it.readText() }) }

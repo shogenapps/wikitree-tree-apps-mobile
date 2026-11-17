@@ -82,7 +82,7 @@ final class ShellModel: NSObject, ObservableObject, WKNavigationDelegate, WKUIDe
         if let url = Bundle.main.url(forResource: "shell", withExtension: "js"),
            let js = try? String(contentsOf: url, encoding: .utf8) {
             config.userContentController.addUserScript(
-                WKUserScript(source: js, injectionTime: .atDocumentStart, forMainFrameOnly: true))
+                WKUserScript(source: Self.shellText() + js, injectionTime: .atDocumentStart, forMainFrameOnly: true))
         }
         webView = WKWebView(frame: .zero, configuration: config)
         super.init()
@@ -122,8 +122,29 @@ final class ShellModel: NSObject, ObservableObject, WKNavigationDelegate, WKUIDe
         if let url = webView.url, Self.isTreeApps(url) { started = true } else { start() }
     }
 
+    /// shell.js's own few words, in the phone's language, as window.__wtShellText (keys as in
+    /// shell.js and Android's strings.xml; English is in shell.js itself). A new one is added
+    /// here, in shell.js and in strings.xml.
+    private static func shellText() -> String {
+        // shell.js puts the number or age where "%s" is; here that is an argument, %@ to translators.
+        let n = "%s"
+        let text: [String: String] = [
+            "shell_about_numbers": String(localized: "About these numbers"),
+            "shell_about_xtree": String(localized: "About the X-chromosome tree"),
+            "shell_age_now": String(localized: "just now"),
+            "shell_age_minutes": String(localized: "\(n) min ago", comment: "A number of minutes"),
+            "shell_age_hours": String(localized: "\(n) h ago", comment: "A number of hours"),
+            "shell_saved_note": String(localized: "Saved data from \(n). Tap to update", comment: "An age such as 5 min ago"),
+            "shell_saved_chip": String(localized: "Saved \(n)", comment: "An age such as 5 min ago"),
+            "shell_updating": String(localized: "Updating…"),
+        ]
+        guard let data = try? JSONSerialization.data(withJSONObject: text),
+              let json = String(data: data, encoding: .utf8) else { return "" }
+        return "window.__wtShellText = \(json);\n"
+    }
+
     var appTitle: String {
-        apps.first { $0.key == viewKey }?.title ?? "Tree App"
+        apps.first { $0.key == viewKey }?.title ?? String(localized: "Tree App")
     }
 
     // MARK: Bar actions

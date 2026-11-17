@@ -89,12 +89,12 @@ private struct KindBadge: View {
     let kind: Anniversary.Kind
 
     var body: some View {
-        Text(kind == .birth ? "b." : "d.")
+        Text(kind == .birth ? String(localized: "b.") : String(localized: "d."))
             .font(.system(size: 10, weight: .bold, design: .rounded))
             .foregroundColor(kind == .birth ? Palette.gold : Palette.deathInk)
             .frame(width: 20, height: 20)
             .background(Circle().fill(kind == .birth ? Palette.green : Palette.deathFill))
-            .accessibilityLabel(kind == .birth ? "Born" : "Died")
+            .accessibilityLabel(kind == .birth ? String(localized: "Born") : String(localized: "Died"))
     }
 }
 
@@ -179,7 +179,7 @@ struct BirthdayWidgetView: View {
                 KindBadge(kind: item.kind)
                 VStack(alignment: .leading, spacing: 0) {
                     Text(item.person.name).font(.subheadline.weight(.medium)).lineLimit(1)
-                    Text(item.kind == .birth ? "Born \(String(item.year))" : "Died \(String(item.year))")
+                    Text(item.kind == .birth ? String(localized: "Born \(String(item.year))") : String(localized: "Died \(String(item.year))"))
                         .font(.caption).foregroundColor(Palette.muted)
                 }
                 Spacer(minLength: 4)

@@ -178,10 +178,10 @@ struct ContentView: View {
             }
             .opacity(shell.hasControls ? 1 : 0.35)
             .disabled(!shell.hasControls)
-            .accessibilityLabel(shell.showControls ? "Hide this app's controls" : "Show this app's controls")
+            .accessibilityLabel(shell.showControls ? String(localized: "Hide this app's controls") : String(localized: "Show this app's controls"))
 
             Button(action: askPerson) {
-                Text(shell.personId.isEmpty ? "Person" : shell.personId)
+                Text(shell.personId.isEmpty ? String(localized: "Person") : shell.personId)
                     .lineLimit(1)
                     .padding(.horizontal, 12)
                     .frame(maxWidth: 170, maxHeight: .infinity)
@@ -215,7 +215,7 @@ struct ContentView: View {
                         Label("Listen to biography", systemImage: "speaker.wave.2")
                     }
                 }
-                Button(shell.showBars ? "Hide WikiTree page bars" : "Show WikiTree page bars") {
+                Button(shell.showBars ? String(localized: "Hide WikiTree page bars") : String(localized: "Show WikiTree page bars")) {
                     shell.toggleBars()
                 }
                 if Rotation.isPhone {

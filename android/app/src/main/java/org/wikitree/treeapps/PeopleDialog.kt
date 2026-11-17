@@ -424,7 +424,7 @@ class PeopleDialog(
             })
             p.notable?.let { n ->
                 addView(TextView(activity).apply {
-                    text = "✪  " + n.tag
+                    text = "✪  " + n.tag.ifBlank { activity.getString(R.string.notable) }
                     setTextSize(TypedValue.COMPLEX_UNIT_SP, 14f)
                     setTypeface(typeface, Typeface.BOLD)
                     setTextColor(activity.getColor(R.color.notable))
@@ -699,7 +699,7 @@ class PeopleDialog(
             val notable = p.notable
             view.findViewWithTag<TextView>("notable").apply {
                 visibility = if (notable == null) View.GONE else View.VISIBLE
-                text = notable?.let { "✪  " + it.tag }
+                text = notable?.let { "✪  " + it.tag.ifBlank { activity.getString(R.string.notable) } }
             }
             view.findViewWithTag<TextView>("about").apply {
                 visibility = if (notable?.about.isNullOrBlank()) View.GONE else View.VISIBLE

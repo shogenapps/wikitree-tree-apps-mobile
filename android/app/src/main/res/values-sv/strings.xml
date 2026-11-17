@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Machine translation, not yet checked. Native-speaking WikiTree members: please review and
+     correct; see docs/translations.md. English source: values/strings.xml. -->
+<resources>
+    <string name="change_person">Person</string>
+    <string name="person_prompt">WikiTree-ID, t.ex. Windsor-1</string>
+    <string name="go">Gå</string>
+    <string name="cancel">Avbryt</string>
+    <string name="menu">Mer</string>
+    <string name="menu_login">Logga in på WikiTree</string>
+    <string name="menu_logout">Logga ut från WikiTree</string>
+    <string name="menu_reload">Läs in igen</string>
+    <string name="menu_profile">Öppna profilen</string>
+    <string name="menu_browser">Öppna sidan i webbläsaren</string>
+    <string name="menu_show_bars">Visa WikiTree-sidans fält</string>
+    <string name="menu_hide_bars">Dölj WikiTree-sidans fält</string>
+    <string name="menu_auto_landscape">Liggande för breda diagram</string>
+    <string name="controls">Visa eller dölj appens kontroller</string>
+    <string name="controls_hint">Appens kontroller är dolda. Tryck på ⚙ eller svep nedåt på det gröna fältet för att visa dem.</string>
+    <string name="offline">WikiTree kunde inte läsas in. Kontrollera anslutningen och tryck på Läs in igen.</string>
+    <string name="done">Klar</string>
+    <string name="open_in_browser">Webbläsare</string>
+    <string name="people_title">Personer</string>
+    <string name="logged_in_as">Inloggad som</string>
+    <string name="log_in_again">Logga in på WikiTree</string>
+    <string name="login_title">Logga in på WikiTree</string>
+    <string name="login_email">E-post</string>
+    <string name="login_password">Lösenord</string>
+    <string name="login_note">Din e-post och ditt lösenord skickas bara till WikiTree. Appen sparar dem inte.</string>
+    <string name="login_go">Logga in</string>
+    <string name="login_busy">Loggar in…</string>
+    <string name="login_web">Webbsida</string>
+    <string name="login_refused">WikiTree loggade inte in dig.</string>
+    <string name="login_no_page">WikiTrees inloggningssida öppnades inte. Prova webbsidan i stället.</string>
+    <string name="login_failed">Inloggningen gick inte igenom. Kontrollera anslutningen och försök igen.</string>
+    <string name="open_profile_of">Öppna WikiTree-profilen för %1$s</string>
+    <string name="people_saved">Sparade</string>
+    <string name="people_recent">Senaste</string>
+    <string name="people_saved_empty">Tryck på ☆ bredvid en person för att spara personen här.</string>
+    <string name="people_recent_empty">Personer du tittar på visas här.</string>
+    <string name="save_person">Spara %1$s</string>
+    <string name="unsave_person">Ta bort %1$s från sparade</string>
+    <string name="remove_saved">Ta bort från Sparade</string>
+    <string name="remove_recent">Ta bort från Senaste</string>
+    <string name="clear_recent">Rensa alla senaste</string>
+    <string name="menu_all_apps">Alla Tree Apps…</string>
+    <string name="person_menu_profile">WikiTree-profil</string>
+    <string name="menu_save">Spara</string>
+    <string name="menu_unsave">Ta bort från sparade</string>
+    <string name="menu_share_link">Dela profillänk</string>
+    <string name="menu_copy_id">Kopiera WikiTree-ID</string>
+    <string name="menu_copied">%1$s kopierat</string>
+    <string name="menu_share_text">%1$s (%2$s) på WikiTree: %3$s</string>
+    <string name="menu_read_bio">Läs upp biografin</string>
+    <string name="menu_listen">Lyssna på biografin</string>
+    <string name="bio_listen">Lyssna</string>
+    <string name="bio_listen_long">Läs upp biografin</string>
+    <string name="bio_fetching">Hämtar biografin…</string>
+    <string name="bio_reading">Läser upp biografin för %1$s</string>
+    <string name="bio_paused">Pausad: %1$s</string>
+    <string name="bio_pause">Pausa</string>
+    <string name="bio_resume">Spela</string>
+    <string name="bio_stop">Stoppa</string>
+    <string name="bio_close">Stäng</string>
+    <string name="bio_private">Biografin är privat. Logga in på WikiTree för att höra den om du finns på dess Trusted List.</string>
+    <string name="bio_empty">Profilen har ännu ingen biografi att läsa upp.</string>
+    <string name="bio_failed">Biografin kunde inte läsas in. Kontrollera anslutningen och försök igen.</string>
+    <string name="bio_no_voice">Telefonen har ingen röst för text till tal. Lägg till en i Inställningar, Text till tal-utdata.</string>
+    <string name="menu_home">Start</string>
+    <string name="menu_people">Sparade och senaste personer</string>
+    <string name="menu_share">Dela det här diagrammet</string>
+    <string name="menu_print">Skriv ut eller spara som PDF</string>
+    <string name="share_title">Dela diagram</string>
+    <string name="share_failed">Det gick inte att fånga diagrammet.</string>
+    <string name="shortcut_new">Byt person</string>
+    <string name="find_hint">Namn eller WikiTree-ID</string>
+    <string name="find_go">Sök</string>
+    <string name="find_matches">Träffar</string>
+    <string name="find_searching">Söker i WikiTree…</string>
+    <string name="find_failed">Sökningen fungerade inte. Kontrollera anslutningen och försök igen.</string>
+    <string name="find_none">Ingen hittades för ”%1$s”. Prova med förnamn och efternamn.</string>
+    <string name="find_more">Visar %1$d av %2$d. Lägg till ett förnamn för att begränsa.</string>
+    <string name="start_apps">Tree Apps för %1$s</string>
+    <string name="born_title">Årsdagar</string>
+    <string name="born_header">Årsdagar, %1$s</string>
+    <string name="born_show_all">Visa alla %1$d</string>
+    <string name="born_nobody">Ingen på din bevakningslista föddes eller dog den här dagen.</string>
+    <string name="born_widget_nobody">Inga födslar eller dödsfall på din bevakningslista i dag.</string>
+    <string name="born_more">och %1$d till</string>
+    <string name="born_in">född %1$d</string>
+    <string name="died_in">död %1$d</string>
+    <string name="born_short">Född %1$d</string>
+    <string name="died_short">Död %1$d</string>
+    <string name="born_badge">f.</string>
+    <string name="died_badge">d.</string>
+    <string name="born_label">Född</string>
+    <string name="died_label">Död</string>
+    <string name="count_today">%1$d i dag</string>
+    <string name="years_chip">%1$d år</string>
+    <plurals name="born_years_ago">
+        <item quantity="one">född %1$d · för %2$d år sedan</item>
+        <item quantity="other">född %1$d · för %2$d år sedan</item>
+    </plurals>
+    <plurals name="died_years_ago">
+        <item quantity="one">död %1$d · för %2$d år sedan</item>
+        <item quantity="other">död %1$d · för %2$d år sedan</item>
+    </plurals>
+    <plurals name="count_births">
+        <item quantity="one">%1$d födelse</item>
+        <item quantity="other">%1$d födslar</item>
+    </plurals>
+    <plurals name="count_deaths">
+        <item quantity="one">%1$d dödsfall</item>
+        <item quantity="other">%1$d dödsfall</item>
+    </plurals>
+    <string name="watchlist_status">Bevakningslista: %1$s personer, uppdaterad %2$s. Tryck för att uppdatera.</string>
+    <string name="watchlist_none">Tryck för att läsa in din bevakningslista.</string>
+    <string name="watchlist_loading">Läser in din bevakningslista. Det kan ta en minut eller två…</string>
+    <string name="watchlist_failed">Bevakningslistan lästes inte in. Kontrollera anslutningen och tryck för att försöka igen.</string>
+    <string name="watchlist_logged_out">Inte inloggad på WikiTree. Öppna en Tree App, logga in och tryck sedan för att försöka igen.</string>
+    <string name="watchlist_suggestions">Från din bevakningslista</string>
+    <string name="notify_on">Daglig avisering om årsdagar: på. Tryck för att stänga av.</string>
+    <string name="notify_off">Daglig avisering om årsdagar: av. Tryck för att slå på.</string>
+    <string name="widget_description">Personer på din WikiTree-bevakningslista som föddes eller dog den här dagen.</string>
+    <string name="widget_no_watchlist">Öppna WikiTree Tree Apps och läs in din bevakningslista.</string>
+    <string name="notable">Känd</string>
+    <string name="shell_about_numbers">Om de här siffrorna</string>
+    <string name="shell_about_xtree">Om X-kromosomträdet</string>
+    <string name="shell_age_now">nyss</string>
+    <string name="shell_age_minutes" formatted="false">för %s min sedan</string>
+    <string name="shell_age_hours" formatted="false">för %s tim sedan</string>
+    <string name="shell_saved_note" formatted="false">Sparade data från %s. Tryck för att uppdatera</string>
+    <string name="shell_saved_chip" formatted="false">Sparat %s</string>
+    <string name="shell_updating">Uppdaterar…</string>
+</resources>

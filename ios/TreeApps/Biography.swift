@@ -221,11 +221,11 @@ final class BioReader: NSObject, ObservableObject, AVSpeechSynthesizerDelegate {
                 guard !Task.isCancelled else { return }
                 switch error as? Biography.Failure {
                 case .isPrivate?:
-                    phase = .message("This biography is private. Log in to WikiTree to hear it if you are on its Trusted List.")
+                    phase = .message(String(localized: "This biography is private. Log in to WikiTree to hear it if you are on its Trusted List."))
                 case .empty?:
-                    phase = .message("This profile has no biography to read yet.")
+                    phase = .message(String(localized: "This profile has no biography to read yet."))
                 default:
-                    phase = .message("The biography could not be loaded. Check the connection and try again.")
+                    phase = .message(String(localized: "The biography could not be loaded. Check the connection and try again."))
                 }
             }
         }
@@ -299,7 +299,7 @@ struct BioPlayerBar: View {
                         Image(systemName: reader.phase == .paused ? "play.fill" : "pause.fill")
                             .frame(width: 44, height: 44)
                     }
-                    .accessibilityLabel(reader.phase == .paused ? "Play" : "Pause")
+                    .accessibilityLabel(reader.phase == .paused ? String(localized: "Play") : String(localized: "Pause"))
                 }
                 if reader.phase == .fetching {
                     ProgressView().frame(width: 44, height: 44)
@@ -324,9 +324,9 @@ struct BioPlayerBar: View {
 
     private var status: String {
         switch reader.phase {
-        case .fetching: return "Getting the biography…"
-        case .reading: return "Reading the biography of \(reader.name)"
-        case .paused: return "Paused: \(reader.name)"
+        case .fetching: return String(localized: "Getting the biography…")
+        case .reading: return String(localized: "Reading the biography of \(reader.name)")
+        case .paused: return String(localized: "Paused: \(reader.name)")
         case .message(let text): return text
         case .idle: return ""
         }
