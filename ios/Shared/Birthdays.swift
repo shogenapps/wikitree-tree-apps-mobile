@@ -33,10 +33,10 @@ struct Anniversary: Identifiable, Equatable {
 
     /// "born 1841 · 185 years ago" or "died 1902 · 124 years ago"
     func detail(on day: Date = Date()) -> String {
-        let verb = kind == .birth ? "born" : "died"
         let y = years(on: day)
-        guard y > 0 else { return "\(verb) \(year)" }
-        return "\(verb) \(year) · \(y) \(y == 1 ? "year" : "years") ago"
+        let event = kind == .birth ? String(localized: "born \(String(year))") : String(localized: "died \(String(year))")
+        guard y > 0 else { return event }
+        return event + " · " + String(localized: "\(y) years ago")
     }
 }
 
@@ -119,14 +119,14 @@ enum WatchlistFile {
     }
 
     /// "9 today", short enough for the small widget.
-    static func shortSummary(_ list: [Anniversary]) -> String { "\(list.count) today" }
+    static func shortSummary(_ list: [Anniversary]) -> String { String(localized: "\(list.count) today") }
 
     /// "3 births · 2 deaths"
     static func summary(_ list: [Anniversary]) -> String {
         let births = list.filter { $0.kind == .birth }.count, deaths = list.count - births
         var parts: [String] = []
-        if births > 0 { parts.append("\(births) \(births == 1 ? "birth" : "births")") }
-        if deaths > 0 { parts.append("\(deaths) \(deaths == 1 ? "death" : "deaths")") }
+        if births > 0 { parts.append(String(localized: "\(births) births")) }
+        if deaths > 0 { parts.append(String(localized: "\(deaths) deaths")) }
         return parts.joined(separator: " · ")
     }
 

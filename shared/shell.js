@@ -6,6 +6,15 @@
     if (window.__wtShell) return;
     window.__wtShell = true;
 
+    // The few words the shell itself puts on the page, in the phone's language. The app sets
+    // window.__wtShellText from its own translations (Android strings.xml, iOS Localizable.xcstrings,
+    // keys shell_*) before this file runs; the English here is used when it doesn't.
+    var TEXT = window.__wtShellText || {};
+    var text = function (key, english, arg) {
+        var s = TEXT[key] || english;
+        return arg === undefined ? s : s.replace("%s", arg);
+    };
+
     var CSS =
         "#offcanvasNavbar, #searchBar, .tabs--wrapper, #subfooter, .bg--tan, body > footer" +
         " { display: none !important; }" +
@@ -312,7 +321,6 @@
         clearInterval(boardTimer);
         var timer = (boardTimer = setInterval(function () {
             if (++tries > 120) return clearInterval(timer);
-            if (capture) return;
             var svg = document.querySelector("#view-container > svg");
             var g = svg && svg.querySelector(":scope > g");
             var t = svg && svg.__zoom;
@@ -537,7 +545,7 @@
             if (document.documentElement.getAttribute("data-wt-view") !== "xtree") return clearInterval(xtreeTimer);
             var svg = document.getElementById("outerSVG");
             var view = document.getElementById("view-container");
-            if (!svg || !view || capture || !matchMedia(PHONE_QUERY).matches) return;
+            if (!svg || !view || !matchMedia(PHONE_QUERY).matches) return;
             var w = +svg.getAttribute("width"), h = +svg.getAttribute("height");
             var cw = view.clientWidth, ch = view.clientHeight;
             var key = [w, h, cw, ch, svg.getAttribute("data-wt-fit") || ""].join();
@@ -569,7 +577,7 @@
             if (view && typeof view.then === "function") { view.then(function (v) { resolved = v; }); view = resolved; }
             var tl = view && view.timeline;
             var panel = document.querySelector("#view-container .vis-panel.vis-center");
-            if (!tl || tl === done || !panel || capture || !matchMedia(PHONE_QUERY).matches) return;
+            if (!tl || tl === done || !panel || !matchMedia(PHONE_QUERY).matches) return;
             var p = panel.getBoundingClientRect();
             var l = Infinity, r = -Infinity, widest = 0;
             [].forEach.call(panel.querySelectorAll(".vis-item.vis-box, .vis-item.vis-range"), function (e) {
@@ -1082,7 +1090,7 @@
         cc7: {
             after: "#degreesTable",
             hide: "#degreesTable td.trueSize > .wt-more-note, #ancReport",
-            label: "About these numbers",
+            label: text("shell_about_numbers", "About these numbers"),
             // The note shares its cell with the size line, as bare text after a <br>: wrap it.
             prepare: function () {
                 var td = document.querySelector("#degreesTable td.trueSize");
@@ -1102,7 +1110,7 @@
         xtree: {
             before: "#XTreeAncestorList",
             hide: "#XTreeAncestorList:not(:has(button))",
-            label: "About the X-chromosome tree",
+            label: text("shell_about_xtree", "About the X-chromosome tree"),
         },
     };
     CSS += " .wt-more { display: none; }" + " @media (max-width: 599px), (max-height: 599px) {" +
@@ -1496,18 +1504,21 @@
         // Not for answers saved since this page was opened: those are as fresh as the page.
         if (savedNote || !document.body || t > performance.timeOrigin) return;
         var mins = Math.round((Date.now() - t) / 60000);
-        var age = mins < 1 ? "just now" : mins < 60 ? mins + " min ago" : Math.round(mins / 60) + " h ago";
+        var age = mins < 1 ? text("shell_age_now", "just now")
+            : mins < 60 ? text("shell_age_minutes", "%s min ago", mins)
+            : text("shell_age_hours", "%s h ago", Math.round(mins / 60));
         var note = null;
         savedNote = document.createElement("button");
         savedNote.type = "button";
         savedNote.id = "wt-shell-saved-note";
-        savedNote.textContent = "Saved data from " + age + ". Tap to update";
+        savedNote.textContent = text("shell_saved_note", "Saved data from %s. Tap to update", age);
         savedNote.style.cssText = "position:fixed;left:50%;bottom:calc(12px + env(safe-area-inset-bottom));" +
             "transform:translateX(-50%);z-index:2147483000;padding:8px 14px;border:0;border-radius:18px;" +
             "background:rgba(37,66,45,.92);color:#fff;font:13px/1.2 -apple-system,Roboto,sans-serif;" +
             "white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,.3);";
         savedNote.addEventListener("click", function () {
-            savedNote.textContent = "Updating…";
+            savedNote.textContent = text("shell_updating", "Updating…");
+            savedNote.dataset.updating = "1";
             savedClear().then(function () { location.reload(); });
         });
         document.body.appendChild(savedNote);
@@ -1515,8 +1526,8 @@
         // stays clear that the list is saved data and one tap still updates it.
         note = savedNote;
         setTimeout(function () {
-            if (note.textContent.indexOf("Saved") !== 0) return;
-            note.textContent = "\u21bb Saved " + age;
+            if (note.dataset.updating) return;
+            note.textContent = "\u21bb " + text("shell_saved_chip", "Saved %s", age);
             note.style.left = "auto";
             note.style.right = "8px";
             note.style.transform = "none";
@@ -1713,196 +1724,6 @@
             return;
         }
     };
-    // A picture of the whole chart, for the shell's "Share this chart" and "Print or save as
-    // PDF". A picture of the screen held only the part in view, with any controls that were
-    // showing. Now the phone asks the page to get ready first:
-    //   __wtShellCapture("begin") hides the app's controls and the shell's own notes, and
-    //     answers the size (CSS pixels, {w, h}) the web view needs to be to hold all of it;
-    //   the phone makes the web view that size, out of sight, and calls
-    //   __wtShellCapture("fit"), which lays the chart out in that space and answers the size
-    //     needed again (the phone grows the view again if it is bigger, a few times at most);
-    //   the phone takes the picture, puts the view back to its size and calls
-    //   __wtShellCapture("end"), which puts everything back as it was.
-    // Charts drawn in an SVG that the app pans and zooms with d3 (Fan Chart, Dynamic Tree, Super
-    // Tree, the webs, FanDoku, Fractal Tree...): the view is made big enough for the whole chart
-    // at the size it is shown, and the chart is moved and scaled to fill it with a margin. Only
-    // the drawing's transform changes, never the app's own zoom state, and it is put back.
-    // Lists, tables and reports that scroll: the view grows by what is scrolled out of sight, so
-    // everything is laid out at once from the top. Anything else: the screen, without controls.
-    // Each side is kept to CAPTURE_MAX device pixels; a longer list is cut off there. (Asked to
-    // draw a web view much taller, Android drew the wrong part of the page: 6000 was tested.)
-    var capture = null;
-    var CAPTURE_MAX = 6000;
-    var CAPTURE_MARGIN = 16;
-    var CAPTURE_HIDE = "#wt-shell-loading, #wt-shell-saved-note, button.wt-more";
-
-    // The element the app's d3 zoom is attached to (__zoom), with the chart's drawing: the SVG's
-    // group that carries the zoom transform, and any HTML layer moved with it (Dynamic Tree).
-    function captureChart() {
-        var best = null, bestArea = 0;
-        [].forEach.call(document.querySelectorAll("#view-container *"), function (e) {
-            if (!e.__zoom) return;
-            var r = e.getBoundingClientRect(), area = r.width * r.height;
-            if (area > bestArea) { best = e; bestArea = area; }
-        });
-        if (!best) return null;
-        var svg = best.tagName.toLowerCase() === "svg" ? best : best.querySelector(":scope > svg");
-        var g = svg && svg.querySelector(":scope > g[transform]");
-        if (!g) return null;
-        var layers = [].filter.call(best.children, function (e) {
-            return e !== svg && e.style && e.style.transform;
-        });
-        return {
-            box: best, svg: svg, g: g, layers: layers,
-            gTransform: g.getAttribute("transform"),
-            layerTransforms: layers.map(function (e) { return e.style.transform; }),
-        };
-    }
-
-    // What is drawn, in screen pixels. Skips what is not seen: hidden parts measure 0, and
-    // shapes with no fill and no outline (some apps lay a big empty rectangle under the chart to
-    // catch drags) are left out, as is Fractal Tree's invisible line far below the tree.
-    function captureExtent(c) {
-        var x1 = Infinity, y1 = Infinity, x2 = -Infinity, y2 = -Infinity;
-        var add = function (e) {
-            if (e.id === "lineAtBottomOfSVG") return;
-            var b = e.getBoundingClientRect();
-            if (!b.width && !b.height) return;
-            if (/^(rect|path|circle|ellipse|polygon)$/i.test(e.tagName)) {
-                var s = getComputedStyle(e);
-                var noFill = s.fill === "none" || /rgba\(.*,\s*0\)$/.test(s.fill) || s.fillOpacity === "0";
-                if (noFill && (s.stroke === "none" || s.strokeOpacity === "0")) return;
-            }
-            if (getComputedStyle(e).visibility === "hidden") return;
-            x1 = Math.min(x1, b.left); y1 = Math.min(y1, b.top);
-            x2 = Math.max(x2, b.right); y2 = Math.max(y2, b.bottom);
-        };
-        [].forEach.call(c.g.querySelectorAll("path, line, circle, ellipse, rect, polygon, polyline, text, image, foreignObject > *"), add);
-        c.layers.forEach(function (layer) {
-            [].forEach.call(layer.querySelectorAll("*"), function (e) {
-                if (!e.children.length || e.tagName.toLowerCase() === "img") add(e);
-            });
-        });
-        return x1 < x2 ? { left: x1, top: y1, width: x2 - x1, height: y2 - y1 } : null;
-    }
-
-    // Scroll boxes big enough to be the app (a quarter of the screen or more) that have more in
-    // them than shows, and the page itself.
-    function captureScrollers() {
-        // The page, and <body>: under 980px the site's own CSS makes body a screen-high box that
-        // scrolls (Ahnentafel), rather than the page.
-        var list = [document.scrollingElement || document.documentElement];
-        if (document.body && list.indexOf(document.body) < 0) list.push(document.body);
-        var min = (innerWidth * innerHeight) / 4;
-        [].forEach.call(document.querySelectorAll("main#main *"), function (e) {
-            if (e.scrollHeight <= e.clientHeight + 2 && e.scrollWidth <= e.clientWidth + 2) return;
-            if (e.clientWidth * e.clientHeight < min) return;
-            var s = getComputedStyle(e);
-            if (!/auto|scroll/.test(s.overflowX + s.overflowY)) return;
-            list.push(e);
-        });
-        return list;
-    }
-
-    function captureNeed() {
-        var w = innerWidth, h = innerHeight;
-        if (capture.chart) {
-            var c = capture.chart;
-            var e = captureExtent(c), r = c.box.getBoundingClientRect();
-            if (e) {
-                // Room for the whole chart at the size it is shown, plus whatever on the page is
-                // outside the chart's box (the app's own bars).
-                w = Math.max(w, e.width + 2 * CAPTURE_MARGIN + (innerWidth - r.width));
-                h = Math.max(h, e.height + 2 * CAPTURE_MARGIN + (innerHeight - r.height));
-            }
-        } else {
-            var extraW = 0, extraH = 0;
-            captureScrollers().forEach(function (s) {
-                extraW = Math.max(extraW, s.scrollWidth - s.clientWidth);
-                extraH = Math.max(extraH, s.scrollHeight - s.clientHeight);
-            });
-            w += extraW;
-            h += extraH;
-        }
-        var max = CAPTURE_MAX / (window.devicePixelRatio || 1);
-        return JSON.stringify({
-            w: Math.round(Math.min(max, w)),
-            h: Math.round(Math.min(max, h)),
-            chart: !!capture.chart,
-        });
-    }
-
-    // Move and scale the chart to fill its box (never more than 1.5 times the size it was shown
-    // at), centred, by changing the transform on the drawing and its HTML layers.
-    function captureFitChart(c) {
-        c.g.setAttribute("transform", c.gTransform);
-        c.layers.forEach(function (e, i) { e.style.transform = c.layerTransforms[i]; });
-        var e = captureExtent(c), r = c.box.getBoundingClientRect();
-        if (!e || !r.width || !r.height) return;
-        var f = Math.min(1.5, (r.width - 2 * CAPTURE_MARGIN) / e.width, (r.height - 2 * CAPTURE_MARGIN) / e.height);
-        if (!(f > 0)) return;
-        // The move wanted, in screen pixels: scale by f about the chart's centre, then put that
-        // centre in the middle of the box.
-        var move = new DOMMatrix()
-            .translate(r.left + r.width / 2, r.top + r.height / 2)
-            .scale(f)
-            .translate(-(e.left + e.width / 2), -(e.top + e.height / 2));
-        // The group's new transform = (its parent's screen matrix)^-1 · move · (its own screen matrix).
-        var parent = c.g.parentNode.getScreenCTM(), own = c.g.getScreenCTM();
-        if (parent && own) {
-            var m = DOMMatrix.fromMatrix(parent).inverse()
-                .multiply(move).multiply(DOMMatrix.fromMatrix(own));
-            c.g.setAttribute("transform", "matrix(" + [m.a, m.b, m.c, m.d, m.e, m.f].join(",") + ")");
-        }
-        // An HTML layer: the same move, put in front of its own transform, allowing for where
-        // the layer sits and its transform origin.
-        c.layers.forEach(function (layer, i) {
-            var lr = layer.offsetParent ? layer.offsetParent.getBoundingClientRect() : { left: 0, top: 0 };
-            var o = getComputedStyle(layer).transformOrigin.split(" ").map(parseFloat);
-            var ox = lr.left + layer.offsetLeft + (o[0] || 0), oy = lr.top + layer.offsetTop + (o[1] || 0);
-            var pre = new DOMMatrix().translate(-ox, -oy).multiply(move).multiply(new DOMMatrix().translate(ox, oy));
-            layer.style.transform = pre.toString() + " " + c.layerTransforms[i];
-        });
-    }
-
-    function captureEnd() {
-        if (!capture) return "";
-        var c = capture.chart;
-        if (c) {
-            c.g.setAttribute("transform", c.gTransform);
-            c.layers.forEach(function (e, i) { e.style.transform = c.layerTransforms[i]; });
-        }
-        capture.scrolls.forEach(function (s) { s.el.scrollLeft = s.x; s.el.scrollTop = s.y; });
-        capture.style.remove();
-        capture = null;
-        return "";
-    }
-
-    window.__wtShellCapture = function (step) {
-        if (step === "end") return captureEnd();
-        if (step === "fit") {
-            if (!capture) return "";
-            if (capture.chart) captureFitChart(capture.chart);
-            else capture.scrollers.forEach(function (s) { s.scrollLeft = 0; s.scrollTop = 0; });
-            return captureNeed();
-        }
-        captureEnd();
-        var style = document.createElement("style");
-        style.id = "wt-shell-capture";
-        style.textContent = CONTROLS.split(",").concat(CONTROLS_LATER, CAPTURE_HIDE.split(",")).map(function (sel) {
-            return "html.wt-shell-ready body " + sel.trim();
-        }).join(", ") + " { display: none !important; }" +
-            " ::-webkit-scrollbar { display: none !important; }";
-        (document.head || document.documentElement).appendChild(style);
-        capture = { style: style, chart: captureChart(), scrolls: [], scrollers: [] };
-        if (!capture.chart) {
-            capture.scrollers = captureScrollers();
-            capture.scrolls = capture.scrollers.map(function (s) { return { el: s, x: s.scrollLeft, y: s.scrollTop }; });
-            capture.scrollers.forEach(function (s) { s.scrollLeft = 0; s.scrollTop = 0; });
-        }
-        return captureNeed();
-    };
-
     new MutationObserver(function () {
         queueMore();
         cctHeight();
@@ -1911,7 +1732,6 @@
         if (!staleTimer) staleTimer = setTimeout(clearStale, 1000);
     }).observe(document.documentElement, { childList: true, subtree: true });
     window.addEventListener("resize", function () {
-        if (capture) return;
         var view = document.documentElement.getAttribute("data-wt-view");
         if (boardFit && BOARDS[view]) fitBoard(view, true);
     });

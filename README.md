@@ -12,7 +12,7 @@ so fixes there appear in the app without a new release.
 | --- | --- |
 | `shared/` | Pieces any platform can use. `shell.js` is injected into the Tree Apps page to hide the site bars and report state (person, app, login) to the shell. `views.json` is the Tree App list used before the page loads its own. |
 | `android/` | The Android app (Kotlin, one Activity with a WebView). |
-| `ios/` | The iPhone and iPad app (SwiftUI, a `WKWebView`), using the same `shared/` files. Open `ios/TreeApps.xcodeproj` in Xcode and run it in the Simulator (step by step: [docs/feature-list-and-simulator-guide.md](docs/feature-list-and-simulator-guide.md)). |
+| `ios/` | The iPhone and iPad app (SwiftUI, a `WKWebView`), using the same `shared/` files. Open `ios/TreeApps.xcodeproj` in Xcode and run it in the Simulator. |
 
 ## The shell's bar
 
@@ -22,6 +22,13 @@ so fixes there appear in the app without a new release.
   site's own bars again if something is hidden that shouldn't be.
 
 Each Tree App's own settings and controls are left exactly as they are on the website.
+
+## Languages
+
+The app's own words are in English, German, Dutch, French, Swedish, Spanish and Italian, following
+the phone's language. The translations are machine-made and waiting for review by native-speaking
+WikiTree members. See [docs/translations.md](docs/translations.md) for how to check them, add a
+language or add a new string.
 
 ## Trying the Android app
 

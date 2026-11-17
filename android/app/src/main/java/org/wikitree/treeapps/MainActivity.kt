@@ -62,11 +62,7 @@ class MainActivity : Activity() {
     private lateinit var btnPerson: Button
     private lateinit var btnControls: Button
     private lateinit var progress: ProgressBar
-    /** The "No connection" screen, over the WebView's own error page. */
-    private lateinit var offline: View
-    /** True from a page load's error until a load succeeds; the address that failed, for Retry. */
-    private var loadFailed = false
-    private var failedUrl: String? = null
+    private lateinit var errorText: TextView
 
     private val prefs by lazy { getSharedPreferences("shell", MODE_PRIVATE) }
     /** Saved and recent people, kept on the phone. */
@@ -74,7 +70,23 @@ class MainActivity : Activity() {
     /** The member's watchlist, for birthdays and name suggestions. */
     private val watchlist by lazy { WatchlistStore(this) }
     private var notifyAnswer: ((Boolean) -> Unit)? = null
-    private val shellJs by lazy { assets.open("shell.js").bufferedReader().use { it.readText() } }
+    private val shellJs by lazy { shellTextJs() + assets.open("shell.js").bufferedReader().use { it.readText() } }
+
+    /** shell.js's own few words (shell_* strings), in the phone's language, as window.__wtShellText. */
+    private fun shellTextJs(): String {
+        val text = JSONObject()
+        mapOf(
+            "shell_about_numbers" to R.string.shell_about_numbers,
+            "shell_about_xtree" to R.string.shell_about_xtree,
+            "shell_age_now" to R.string.shell_age_now,
+            "shell_age_minutes" to R.string.shell_age_minutes,
+            "shell_age_hours" to R.string.shell_age_hours,
+            "shell_saved_note" to R.string.shell_saved_note,
+            "shell_saved_chip" to R.string.shell_saved_chip,
+            "shell_updating" to R.string.shell_updating,
+        ).forEach { (key, id) -> text.put(key, getString(id)) }
+        return "window.__wtShellText = $text;\n"
+    }
 
     /** shared/views.json: the Tree App list used until the page has loaded its own. */
     private val viewsJson by lazy { JSONObject(assets.open("views.json").bufferedReader().use { it.readText() }) }
@@ -115,9 +127,6 @@ class MainActivity : Activity() {
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // "Share this chart" draws the whole chart, including the parts off screen (ChartCapture).
-        // Only allowed before the first web view is made.
-        try { WebView.enableSlowWholeDocumentDraw() } catch (_: Exception) {}
         setContentView(R.layout.activity_main)
         // Read the stored watchlist off the main thread, so the start screen does not wait for it.
         Thread { watchlist.all() }.start()
@@ -127,8 +136,7 @@ class MainActivity : Activity() {
         btnPerson = findViewById(R.id.btn_person)
         btnControls = findViewById(R.id.btn_controls)
         progress = findViewById(R.id.progress)
-        offline = findViewById(R.id.error)
-        findViewById<Button>(R.id.btn_retry).setOnClickListener { retryLoad() }
+        errorText = findViewById(R.id.error)
 
         applySystemBarInsets(findViewById(R.id.root))
 
@@ -397,17 +405,11 @@ class MainActivity : Activity() {
 
             override fun onPageStarted(view: WebView, url: String, favicon: Bitmap?) {
                 progress.visibility = View.VISIBLE
-                // The "No connection" screen stays up until a load succeeds, so a Retry that
-                // fails again doesn't flash the WebView's error page.
-                loadFailed = false
+                errorText.visibility = View.GONE
             }
 
             override fun onPageFinished(view: WebView, url: String) {
                 progress.visibility = View.GONE
-                // This is the WebView's error page finishing: leave it hidden behind the
-                // "No connection" screen and run none of the shell's page work on it.
-                if (loadFailed) return
-                setOffline(false)
                 view.evaluateJavascript(nightJs(), null)
                 val uri = Uri.parse(url)
                 if (shouldReturnToTree(uri)) {
@@ -445,9 +447,7 @@ class MainActivity : Activity() {
             override fun onReceivedError(view: WebView, request: WebResourceRequest, error: WebResourceError) {
                 if (request.isForMainFrame) {
                     progress.visibility = View.GONE
-                    loadFailed = true
-                    failedUrl = request.url.toString()
-                    setOffline(true)
+                    errorText.visibility = View.VISIBLE
                 }
             }
         }
@@ -470,21 +470,6 @@ class MainActivity : Activity() {
                 }
             }
         }
-    }
-
-    private fun setOffline(show: Boolean) {
-        offline.visibility = if (show) View.VISIBLE else View.GONE
-        // Keep the WebView's own error page from being read out behind the panel.
-        web.importantForAccessibility =
-            if (show) View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS else View.IMPORTANT_FOR_ACCESSIBILITY_AUTO
-    }
-
-    /** Retry on the "No connection" screen: load again the page that failed, where the user was. */
-    private fun retryLoad() {
-        val url = failedUrl?.takeIf { it.startsWith("http") }
-            ?: web.url?.takeIf { it.startsWith("http") }
-            ?: startUrl()
-        web.loadUrl(url)
     }
 
     @Deprecated("Deprecated in Java")
@@ -754,10 +739,15 @@ class MainActivity : Activity() {
     private fun chartTitle() = listOfNotNull(viewTitle(currentView), currentId.ifBlank { null }).joinToString(": ")
 
     /**
-     * Print the whole chart, with its title and a link back to the same chart. The system print
+     * Print what is on screen, with its title and a link back to the same chart. The system print
      * dialog also has "Save as PDF", which saves to Files, Drive and so on.
      */
-    private fun printChart() = captureWholeChart { bitmap ->
+    private fun printChart() {
+        val bitmap = captureChart()
+        if (bitmap == null) {
+            Toast.makeText(this, R.string.share_failed, Toast.LENGTH_SHORT).show()
+            return
+        }
         val title = "WikiTree ${chartTitle()}"
         val manager = getSystemService(PRINT_SERVICE) as PrintManager
         val attributes = PrintAttributes.Builder()
@@ -769,22 +759,10 @@ class MainActivity : Activity() {
         manager.print(title, ChartPrintAdapter(this, bitmap, title, startUrl()), attributes)
     }
 
-    /**
-     * The whole chart as a picture, without the app's controls (see ChartCapture), handed to
-     * [then]; a message instead if not even the screen could be had.
-     */
-    private fun captureWholeChart(then: (Bitmap) -> Unit) {
-        val screen = captureChart()
-        if (screen == null) {
-            Toast.makeText(this, R.string.share_failed, Toast.LENGTH_SHORT).show()
-            return
-        }
-        ChartCapture(web, screen, then).start()
-    }
-
-    /** A picture of the whole chart for the share sheet, with a link to the same chart. */
-    private fun shareChart() = captureWholeChart { bitmap ->
-        val uri = bitmap.let {
+    /** Capture what is on screen and offer it to the share sheet, with a link to the same chart. */
+    private fun shareChart() {
+        val bitmap = captureChart()
+        val uri = bitmap?.let {
             try {
                 val dir = File(cacheDir, "shared").apply { mkdirs() }
                 val file = File(dir, "wikitree-chart.png")
@@ -796,7 +774,7 @@ class MainActivity : Activity() {
         }
         if (uri == null) {
             Toast.makeText(this, R.string.share_failed, Toast.LENGTH_SHORT).show()
-            return@captureWholeChart
+            return
         }
         val title = chartTitle()
         val link = startUrl()
@@ -822,9 +800,7 @@ class MainActivity : Activity() {
         }
         val v = view.ifBlank { defaultView }
         val hash = "#name=${Uri.encode(id)}&view=${Uri.encode(v)}"
-        // After a failed load the WebView holds only its error page, so a hash change can't work.
-        val onAppsPage = !loadFailed &&
-            Uri.parse(web.url ?: "").let { it.host == SITE_HOST && it.path?.startsWith("/apps") == true }
+        val onAppsPage = Uri.parse(web.url ?: "").let { it.host == SITE_HOST && it.path?.startsWith("/apps") == true }
         if (onAppsPage) {
             // The Tree Apps page listens for hash changes and redraws without a reload. If it is
             // still loading, the hash is applied again once it is up.
@@ -874,7 +850,7 @@ class MainActivity : Activity() {
                     // The same native form as the start screen's button.
                     WikiTreeLogin(this) { web.reload() }.show()
                 }
-                2 -> if (loadFailed) retryLoad() else web.reload()
+                2 -> web.reload()
                 3 -> openInSheet(Uri.parse("https://www.wikitree.com/wiki/${Uri.encode(currentId)}"))
                 11 -> WikiTreeSheet(this).show(Uri.parse("https://www.wikitree.com/wiki/${Uri.encode(currentId)}"), listen = true)
                 4 -> web.url?.let { u -> openExternally(Uri.parse(u)) }

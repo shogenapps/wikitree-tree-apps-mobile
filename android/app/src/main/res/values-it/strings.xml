@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Machine translation, not yet checked. Native-speaking WikiTree members: please review and
+     correct; see docs/translations.md. English source: values/strings.xml. -->
+<resources>
+    <string name="change_person">Persona</string>
+    <string name="person_prompt">ID WikiTree, ad es. Windsor-1</string>
+    <string name="go">Vai</string>
+    <string name="cancel">Annulla</string>
+    <string name="menu">Altro</string>
+    <string name="menu_login">Accedi a WikiTree</string>
+    <string name="menu_logout">Esci da WikiTree</string>
+    <string name="menu_reload">Ricarica</string>
+    <string name="menu_profile">Apri profilo</string>
+    <string name="menu_browser">Apri questa pagina nel browser</string>
+    <string name="menu_show_bars">Mostra le barre della pagina WikiTree</string>
+    <string name="menu_hide_bars">Nascondi le barre della pagina WikiTree</string>
+    <string name="menu_auto_landscape">Orizzontale per i grafici larghi</string>
+    <string name="controls">Mostra o nascondi i controlli di questa app</string>
+    <string name="controls_hint">I controlli di questa app sono nascosti. Tocca ⚙ o scorri verso il basso sulla barra verde per mostrarli.</string>
+    <string name="offline">Impossibile caricare WikiTree. Controlla la connessione e tocca Ricarica.</string>
+    <string name="done">Fine</string>
+    <string name="open_in_browser">Browser</string>
+    <string name="people_title">Persone</string>
+    <string name="logged_in_as">Accesso effettuato come</string>
+    <string name="log_in_again">Accedi a WikiTree</string>
+    <string name="login_title">Accedi a WikiTree</string>
+    <string name="login_email">Email</string>
+    <string name="login_password">Password</string>
+    <string name="login_note">Email e password vanno solo a WikiTree. L’app non le conserva.</string>
+    <string name="login_go">Accedi</string>
+    <string name="login_busy">Accesso in corso…</string>
+    <string name="login_web">Pagina web</string>
+    <string name="login_refused">WikiTree non ti ha fatto accedere.</string>
+    <string name="login_no_page">La pagina di accesso di WikiTree non si è aperta. Prova invece la pagina web.</string>
+    <string name="login_failed">L’accesso non è riuscito. Controlla la connessione e riprova.</string>
+    <string name="open_profile_of">Apri il profilo WikiTree di %1$s</string>
+    <string name="people_saved">Salvati</string>
+    <string name="people_recent">Recenti</string>
+    <string name="people_saved_empty">Tocca ☆ accanto a una persona per tenerla qui.</string>
+    <string name="people_recent_empty">Le persone che guardi compaiono qui.</string>
+    <string name="save_person">Salva %1$s</string>
+    <string name="unsave_person">Rimuovi %1$s dai salvati</string>
+    <string name="remove_saved">Rimuovi dai salvati</string>
+    <string name="remove_recent">Rimuovi dai recenti</string>
+    <string name="clear_recent">Cancella tutti i recenti</string>
+    <string name="menu_all_apps">Tutte le Tree Apps…</string>
+    <string name="person_menu_profile">Profilo WikiTree</string>
+    <string name="menu_save">Salva</string>
+    <string name="menu_unsave">Rimuovi dai salvati</string>
+    <string name="menu_share_link">Condividi link del profilo</string>
+    <string name="menu_copy_id">Copia ID WikiTree</string>
+    <string name="menu_copied">%1$s copiato</string>
+    <string name="menu_share_text">%1$s (%2$s) su WikiTree: %3$s</string>
+    <string name="menu_read_bio">Leggi la biografia ad alta voce</string>
+    <string name="menu_listen">Ascolta la biografia</string>
+    <string name="bio_listen">Ascolta</string>
+    <string name="bio_listen_long">Leggi la biografia ad alta voce</string>
+    <string name="bio_fetching">Recupero della biografia…</string>
+    <string name="bio_reading">Lettura della biografia di %1$s</string>
+    <string name="bio_paused">In pausa: %1$s</string>
+    <string name="bio_pause">Pausa</string>
+    <string name="bio_resume">Riproduci</string>
+    <string name="bio_stop">Interrompi</string>
+    <string name="bio_close">Chiudi</string>
+    <string name="bio_private">Questa biografia è privata. Accedi a WikiTree per ascoltarla se sei nella sua Trusted List.</string>
+    <string name="bio_empty">Questo profilo non ha ancora una biografia da leggere.</string>
+    <string name="bio_failed">Impossibile caricare la biografia. Controlla la connessione e riprova.</string>
+    <string name="bio_no_voice">Questo telefono non ha una voce di sintesi vocale. Aggiungine una in Impostazioni, Output sintesi vocale.</string>
+    <string name="menu_home">Home</string>
+    <string name="menu_people">Persone salvate e recenti</string>
+    <string name="menu_share">Condividi questo grafico</string>
+    <string name="menu_print">Stampa o salva come PDF</string>
+    <string name="share_title">Condividi grafico</string>
+    <string name="share_failed">Impossibile acquisire il grafico.</string>
+    <string name="shortcut_new">Cambia persona</string>
+    <string name="find_hint">Nome o ID WikiTree</string>
+    <string name="find_go">Cerca</string>
+    <string name="find_matches">Risultati</string>
+    <string name="find_searching">Ricerca su WikiTree…</string>
+    <string name="find_failed">La ricerca non è riuscita. Controlla la connessione e riprova.</string>
+    <string name="find_none">Nessuno trovato per «%1$s». Prova con nome e cognome.</string>
+    <string name="find_more">Visualizzati %1$d di %2$d. Aggiungi un nome per restringere.</string>
+    <string name="start_apps">Tree Apps per %1$s</string>
+    <string name="born_title">Anniversari</string>
+    <string name="born_header">Anniversari, %1$s</string>
+    <string name="born_show_all">Mostra tutti (%1$d)</string>
+    <string name="born_nobody">Nessuno nella tua lista di osservazione è nato o morto in questo giorno.</string>
+    <string name="born_widget_nobody">Nessuna nascita o morte nella tua lista di osservazione oggi.</string>
+    <string name="born_more">e altri %1$d</string>
+    <string name="born_in">n. %1$d</string>
+    <string name="died_in">m. %1$d</string>
+    <string name="born_short">Nato/a nel %1$d</string>
+    <string name="died_short">Morto/a nel %1$d</string>
+    <string name="born_badge">n.</string>
+    <string name="died_badge">m.</string>
+    <string name="born_label">Nascita</string>
+    <string name="died_label">Morte</string>
+    <string name="count_today">%1$d oggi</string>
+    <string name="years_chip">%1$d anni</string>
+    <plurals name="born_years_ago">
+        <item quantity="one">n. %1$d · %2$d anno fa</item>
+        <item quantity="other">n. %1$d · %2$d anni fa</item>
+    </plurals>
+    <plurals name="died_years_ago">
+        <item quantity="one">m. %1$d · %2$d anno fa</item>
+        <item quantity="other">m. %1$d · %2$d anni fa</item>
+    </plurals>
+    <plurals name="count_births">
+        <item quantity="one">%1$d nascita</item>
+        <item quantity="other">%1$d nascite</item>
+    </plurals>
+    <plurals name="count_deaths">
+        <item quantity="one">%1$d morte</item>
+        <item quantity="other">%1$d morti</item>
+    </plurals>
+    <string name="watchlist_status">Lista di osservazione: %1$s persone, aggiornata il %2$s. Tocca per aggiornare.</string>
+    <string name="watchlist_none">Tocca per caricare la tua lista di osservazione.</string>
+    <string name="watchlist_loading">Caricamento della lista di osservazione. Può richiedere un paio di minuti…</string>
+    <string name="watchlist_failed">La lista di osservazione non è stata caricata. Controlla la connessione e tocca per riprovare.</string>
+    <string name="watchlist_logged_out">Non hai effettuato l’accesso a WikiTree. Apri una Tree App, accedi e tocca per riprovare.</string>
+    <string name="watchlist_suggestions">Dalla tua lista di osservazione</string>
+    <string name="notify_on">Notifica giornaliera degli anniversari: attivata. Tocca per disattivarla.</string>
+    <string name="notify_off">Notifica giornaliera degli anniversari: disattivata. Tocca per attivarla.</string>
+    <string name="widget_description">Le persone della tua lista di osservazione WikiTree nate o morte in questo giorno.</string>
+    <string name="widget_no_watchlist">Apri WikiTree Tree Apps e carica la tua lista di osservazione.</string>
+    <string name="notable">Notabile</string>
+    <string name="shell_about_numbers">Informazioni su questi numeri</string>
+    <string name="shell_about_xtree">Informazioni sull’albero del cromosoma X</string>
+    <string name="shell_age_now">poco fa</string>
+    <string name="shell_age_minutes" formatted="false">%s min fa</string>
+    <string name="shell_age_hours" formatted="false">%s h fa</string>
+    <string name="shell_saved_note" formatted="false">Dati salvati %s. Tocca per aggiornare</string>
+    <string name="shell_saved_chip" formatted="false">Salvato %s</string>
+    <string name="shell_updating">Aggiornamento…</string>
+</resources>

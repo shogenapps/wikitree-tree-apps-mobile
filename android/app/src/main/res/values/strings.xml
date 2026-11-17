@@ -1,6 +1,8 @@
 <resources>
-    <string name="app_name">Tree Apps</string>
-    <string name="choose_app">Tree App</string>
+    <!-- Translations are in values-xx/strings.xml; see docs/translations.md. "Tree Apps" and "Tree App"
+         are WikiTree's own names for the apps and stay in English. -->
+    <string name="app_name" translatable="false">Tree Apps</string>
+    <string name="choose_app" translatable="false">Tree App</string>
     <string name="change_person">Person</string>
     <string name="person_prompt">WikiTree ID, e.g. Windsor-1</string>
     <string name="go">Go</string>
@@ -16,14 +18,12 @@
     <string name="menu_auto_landscape">Landscape for wide charts</string>
     <string name="controls">Show or hide this app\'s controls</string>
     <string name="controls_hint">This app\'s controls are hidden. Tap ⚙ or swipe down on the green bar to show them.</string>
-    <string name="offline_title">No connection</string>
-    <string name="offline">Tree Apps couldn\'t reach WikiTree. Check your Wi-Fi or mobile data, then try again.</string>
-    <string name="retry">Retry</string>
+    <string name="offline">Couldn\'t load WikiTree. Check your connection and tap Reload.</string>
     <string name="done">Done</string>
     <string name="open_in_browser">Browser</string>
     <string name="people_title">People</string>
     <!-- The start screen's title bar. The home-screen label stays app_name, which has to be short. -->
-    <string name="start_title">WikiTree Tree Apps</string>
+    <string name="start_title" translatable="false">WikiTree Tree Apps</string>
     <string name="logged_in_as">Logged in as</string>
     <string name="log_in_again">Log in to WikiTree</string>
     <string name="login_title">Log in to WikiTree</string>
@@ -126,4 +126,17 @@
     <string name="notify_off">Daily anniversaries notification: off. Tap to turn on.</string>
     <string name="widget_description">People on your WikiTree watchlist who were born or died on this day.</string>
     <string name="widget_no_watchlist">Open WikiTree Tree Apps and load your watchlist.</string>
+    <!-- Shown as "✪ Notable" on a search match WikiTree counts as notable without naming a category. -->
+    <string name="notable">Notable</string>
+    <!-- Words shared/shell.js puts on the Tree Apps page itself, handed to it by
+         MainActivity.shellTextJs (iOS: ShellModel.shellText). A new one is added here, there and in
+         shell.js. %s stands for a number or an age such as "5 min ago". -->
+    <string name="shell_about_numbers">About these numbers</string>
+    <string name="shell_about_xtree">About the X-chromosome tree</string>
+    <string name="shell_age_now">just now</string>
+    <string name="shell_age_minutes" formatted="false">%s min ago</string>
+    <string name="shell_age_hours" formatted="false">%s h ago</string>
+    <string name="shell_saved_note" formatted="false">Saved data from %s. Tap to update</string>
+    <string name="shell_saved_chip" formatted="false">Saved %s</string>
+    <string name="shell_updating">Updating…</string>
 </resources>

@@ -67,55 +67,14 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent" />
 
-        <!-- Shown instead of the WebView's own error page when WikiTree can't be reached. -->
-        <LinearLayout
+        <TextView
             android:id="@+id/error"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:background="@color/wt_tan"
-            android:clickable="true"
-            android:focusable="true"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
             android:gravity="center"
-            android:orientation="vertical"
-            android:padding="32dp"
-            android:visibility="gone">
-
-            <ImageView
-                android:layout_width="64dp"
-                android:layout_height="64dp"
-                android:importantForAccessibility="no"
-                android:src="@drawable/ic_offline" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:text="@string/offline_title"
-                android:textColor="@color/text_primary"
-                android:textSize="20sp"
-                android:textStyle="bold" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:gravity="center"
-                android:maxWidth="320dp"
-                android:text="@string/offline"
-                android:textColor="@color/text_secondary"
-                android:textSize="15sp" />
-
-            <Button
-                android:id="@+id/btn_retry"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="24dp"
-                android:backgroundTint="@color/wt_button"
-                android:minWidth="160dp"
-                android:text="@string/retry"
-                android:textAllCaps="false"
-                android:textColor="@color/on_green"
-                android:textSize="16sp" />
-        </LinearLayout>
+            android:padding="24dp"
+            android:text="@string/offline"
+            android:visibility="gone" />
     </FrameLayout>
 </LinearLayout>

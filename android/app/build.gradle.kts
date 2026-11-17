@@ -17,6 +17,13 @@ android {
         versionName = "0.1." + (System.getenv("GITHUB_RUN_NUMBER") ?: "0")
     }
 
+    // Lists the app's languages (one per res/values-xx folder) for Android 13's per-app language
+    // setting, so people can run the app in another language than the phone's. See
+    // docs/translations.md; src/main/res/resources.properties names the default (English).
+    androidResources {
+        generateLocaleConfig = true
+    }
+
     signingConfigs {
         // A fixed key for test builds only, so each new test APK installs over the last one.
         // Store releases must use a separate private key kept out of the repo.

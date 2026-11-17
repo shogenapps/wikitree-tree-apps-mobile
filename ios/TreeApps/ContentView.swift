@@ -77,7 +77,16 @@ struct ContentView: View {
                         .transition(.opacity)
                         .onTapGesture { showHint = false }
                 }
-                if shell.failed { OfflineView(retry: shell.reload) }
+                if shell.failed {
+                    VStack(spacing: 12) {
+                        Text("Couldn't load WikiTree. Check your connection.")
+                            .multilineTextAlignment(.center)
+                        Button("Reload") { shell.reload() }
+                    }
+                    .padding(24)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(wtTan)
+                }
             }
         }
         .background(wtGreen.ignoresSafeArea(edges: .top))
@@ -155,10 +164,10 @@ struct ContentView: View {
             }
             .opacity(shell.hasControls ? 1 : 0.35)
             .disabled(!shell.hasControls)
-            .accessibilityLabel(shell.showControls ? "Hide this app's controls" : "Show this app's controls")
+            .accessibilityLabel(shell.showControls ? String(localized: "Hide this app's controls") : String(localized: "Show this app's controls"))
 
             Button(action: askPerson) {
-                Text(shell.personId.isEmpty ? "Person" : shell.personId)
+                Text(shell.personId.isEmpty ? String(localized: "Person") : shell.personId)
                     .lineLimit(1)
                     .padding(.horizontal, 12)
                     .frame(maxWidth: 170, maxHeight: .infinity)
@@ -192,7 +201,7 @@ struct ContentView: View {
                 if let url = shell.webView.url {
                     Button("Open this page in Safari") { UIApplication.shared.open(url) }
                 }
-                Button(shell.showBars ? "Hide WikiTree page bars" : "Show WikiTree page bars") {
+                Button(shell.showBars ? String(localized: "Hide WikiTree page bars") : String(localized: "Show WikiTree page bars")) {
                     shell.toggleBars()
                 }
                 if Rotation.isPhone {
@@ -388,40 +397,4 @@ struct SafariSheet: UIViewControllerRepresentable {
         return controller
     }
     func updateUIViewController(_ controller: SFSafariViewController, context: Context) {}
-}
-
-/// Shown over the web view when WikiTree can't be reached (no connection, a timeout, a DNS
-/// failure). Retry loads again the page that failed; the screen stays until a load succeeds.
-struct OfflineView: View {
-    let retry: () -> Void
-
-    var body: some View {
-        VStack(spacing: 0) {
-            Image(systemName: "wifi.slash")
-                .font(.system(size: 52, weight: .regular))
-                .foregroundStyle(wtAccent)
-                .accessibilityHidden(true)
-            Text("No connection")
-                .font(.title2.weight(.semibold))
-                .padding(.top, 16)
-            Text("Tree Apps couldn't reach WikiTree. Check your Wi-Fi or mobile data, then try again.")
-                .font(.callout)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-                .frame(maxWidth: 320)
-                .padding(.top, 8)
-            Button(action: retry) {
-                Text("Retry")
-                    .fontWeight(.semibold)
-                    .frame(minWidth: 140)
-                    .padding(.vertical, 4)
-            }
-            .buttonStyle(.borderedProminent)
-            .tint(wtButton)
-            .padding(.top, 24)
-        }
-        .padding(32)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(wtTan)
-    }
 }

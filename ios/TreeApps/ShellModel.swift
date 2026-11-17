@@ -34,8 +34,6 @@ final class ShellModel: NSObject, ObservableObject, WKNavigationDelegate, WKUIDe
     @Published var hasControls = false
     @Published var loading = false
     @Published var failed = false
-    /// The address whose load failed, so Retry goes back to where the user was.
-    private var failedURL: URL?
     /// A page shown in a browser sheet over the tree (profiles, sources, help pages).
     @Published var sheet: SheetURL?
     /// False while the start screen is up after a fresh launch: nothing has been loaded yet.
@@ -82,7 +80,7 @@ final class ShellModel: NSObject, ObservableObject, WKNavigationDelegate, WKUIDe
         if let url = Bundle.main.url(forResource: "shell", withExtension: "js"),
            let js = try? String(contentsOf: url, encoding: .utf8) {
             config.userContentController.addUserScript(
-                WKUserScript(source: js, injectionTime: .atDocumentStart, forMainFrameOnly: true))
+                WKUserScript(source: Self.shellText() + js, injectionTime: .atDocumentStart, forMainFrameOnly: true))
         }
         webView = WKWebView(frame: .zero, configuration: config)
         super.init()
@@ -122,8 +120,29 @@ final class ShellModel: NSObject, ObservableObject, WKNavigationDelegate, WKUIDe
         if let url = webView.url, Self.isTreeApps(url) { started = true } else { start() }
     }
 
+    /// shell.js's own few words, in the phone's language, as window.__wtShellText (keys as in
+    /// shell.js and Android's strings.xml; English is in shell.js itself). A new one is added
+    /// here, in shell.js and in strings.xml.
+    private static func shellText() -> String {
+        // shell.js puts the number or age where "%s" is; here that is an argument, %@ to translators.
+        let n = "%s"
+        let text: [String: String] = [
+            "shell_about_numbers": String(localized: "About these numbers"),
+            "shell_about_xtree": String(localized: "About the X-chromosome tree"),
+            "shell_age_now": String(localized: "just now"),
+            "shell_age_minutes": String(localized: "\(n) min ago", comment: "A number of minutes"),
+            "shell_age_hours": String(localized: "\(n) h ago", comment: "A number of hours"),
+            "shell_saved_note": String(localized: "Saved data from \(n). Tap to update", comment: "An age such as 5 min ago"),
+            "shell_saved_chip": String(localized: "Saved \(n)", comment: "An age such as 5 min ago"),
+            "shell_updating": String(localized: "Updating…"),
+        ]
+        guard let data = try? JSONSerialization.data(withJSONObject: text),
+              let json = String(data: data, encoding: .utf8) else { return "" }
+        return "window.__wtShellText = \(json);\n"
+    }
+
     var appTitle: String {
-        apps.first { $0.key == viewKey }?.title ?? "Tree App"
+        apps.first { $0.key == viewKey }?.title ?? String(localized: "Tree App")
     }
 
     // MARK: Bar actions
@@ -139,7 +158,7 @@ final class ShellModel: NSObject, ObservableObject, WKNavigationDelegate, WKUIDe
         started = true
         let v = view.isEmpty ? defaultView : view
         let hash = "#name=\(Self.encode(id))&view=\(Self.encode(v))"
-        if !failed, let url = webView.url, Self.isTreeApps(url) {
+        if let url = webView.url, Self.isTreeApps(url) {
             // The Tree Apps page listens for hash changes and redraws without a reload.
             webView.evaluateJavaScript("location.hash = \(Self.quote(hash))")
         } else if let url = URL(string: Self.appsURL + Self.encode(id) + hash) {
@@ -160,19 +179,20 @@ final class ShellModel: NSObject, ObservableObject, WKNavigationDelegate, WKUIDe
         }
     }
 
-    /// A picture of the whole chart for the share sheet, with a link to the same chart.
+    /// Capture what is on screen as a picture and offer it to the share sheet, with a link to
+    /// the same chart.
     func shareChart() {
-        captureWholeChart { [weak self] image in
-            guard let self else { return }
+        webView.takeSnapshot(with: nil) { [weak self] image, _ in
+            guard let self, let image else { return }
             self.present([ChartImage(image: image, title: "WikiTree " + self.chartTitle), self.startURL()])
         }
     }
 
-    /// Turn the whole chart into a one-page PDF (title, chart, link back) and offer it to the
+    /// Turn what is on screen into a one-page PDF (title, chart, link back) and offer it to the
     /// share sheet, which has Print, Save to Files and AirDrop for a PDF.
     func printChart() {
-        captureWholeChart { [weak self] image in
-            guard let self else { return }
+        webView.takeSnapshot(with: nil) { [weak self] image, _ in
+            guard let self, let image else { return }
             let title = "WikiTree " + self.chartTitle
             let name = title.replacingOccurrences(of: ":", with: "")
                 .replacingOccurrences(of: "/", with: "-")
@@ -229,16 +249,9 @@ final class ShellModel: NSObject, ObservableObject, WKNavigationDelegate, WKUIDe
     }
 
     func reload() {
+        failed = false
         started = true
-        if failed {
-            // After a failed load the web view still shows the page before it (or nothing),
-            // so load the address that failed. "No connection" stays up until a load succeeds.
-            load(failedURL ?? webView.url ?? startURL())
-        } else if webView.url == nil {
-            load(startURL())
-        } else {
-            webView.reload()
-        }
+        if webView.url == nil { load(startURL()) } else { webView.reload() }
     }
 
     /// "Log out of WikiTree": the Tree Apps logout (which also forgets saved data), then the
@@ -372,11 +385,7 @@ final class ShellModel: NSObject, ObservableObject, WKNavigationDelegate, WKUIDe
 
     func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
         loading = true
-    }
-
-    func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) {
         failed = false
-        failedURL = nil
     }
 
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
@@ -412,25 +421,11 @@ final class ShellModel: NSObject, ObservableObject, WKNavigationDelegate, WKUIDe
 
     func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
         loading = false
-        let error = error as NSError
-        // Cancelled loads (a new one started) and loads stopped by the shell's own link
-        // handling (WebKit error 102) are not failures.
-        if error.code == NSURLErrorCancelled { return }
-        if error.domain == "WebKitErrorDomain" && error.code == 102 { return }
-        failedURL = error.userInfo[NSURLErrorFailingURLErrorKey] as? URL ?? failedURL
-        failed = true
+        if (error as NSError).code != NSURLErrorCancelled { failed = true }
     }
 
     func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
         loading = false
-        // The connection dropped part way through loading the page.
-        let error = error as NSError
-        let lost = [NSURLErrorNotConnectedToInternet, NSURLErrorNetworkConnectionLost, NSURLErrorTimedOut,
-                    NSURLErrorCannotFindHost, NSURLErrorCannotConnectToHost, NSURLErrorDNSLookupFailed]
-        if error.domain == NSURLErrorDomain && lost.contains(error.code) {
-            failedURL = error.userInfo[NSURLErrorFailingURLErrorKey] as? URL ?? webView.url
-            failed = true
-        }
     }
 
     // MARK: WKUIDelegate
@@ -544,128 +539,6 @@ enum ChartPDF {
                 context.setURL(url, for: CGRect(x: margin, y: page.height - margin - linkFont.lineHeight,
                                                  width: width, height: linkFont.lineHeight))
             }
-        }
-    }
-}
-
-// MARK: - A picture of the whole chart
-
-extension ShellModel {
-    /// The whole chart as a picture, without the app's controls (see ChartCapture), handed to
-    /// `done`. Nothing happens if not even the screen could be had.
-    func captureWholeChart(_ done: @escaping (UIImage) -> Void) {
-        webView.takeSnapshot(with: nil) { [weak self] screen, _ in
-            guard let self, let screen else { return }
-            ChartCapture(webView: self.webView, screen: screen, done: done).start()
-        }
-    }
-}
-
-/// A picture of the whole chart, not just the part on screen, for "Share this chart" and
-/// "Print or save as PDF".
-///
-/// The page gets ready first (shell.js `__wtShellCapture`): the app's controls are hidden and it
-/// says how big the web view needs to be to hold all of the chart, or all of a list that scrolls.
-/// The web view is made that size behind a still picture of the screen (so nothing jumps about),
-/// the chart is laid out in it, a snapshot is taken, and everything is put back. If the page
-/// cannot do this (an older page, or something fails) it is the screen as it was.
-private final class ChartCapture {
-    private let webView: WKWebView
-    /// What is on screen, used as the cover and as the answer if the whole chart can't be had.
-    private let screen: UIImage
-    private let done: (UIImage) -> Void
-    private let oldFrame: CGRect
-    private var cover: UIImageView?
-    private var finished = false
-    /// Kept alive by itself until it has finished.
-    private var me: ChartCapture?
-
-    /// A long list is drawn smaller rather than run out of memory.
-    private static let maxPixels: CGFloat = 16_000_000
-    private static let layoutDelay = 0.5
-    private static let drawDelay = 0.3
-
-    init(webView: WKWebView, screen: UIImage, done: @escaping (UIImage) -> Void) {
-        self.webView = webView
-        self.screen = screen
-        self.done = done
-        oldFrame = webView.frame
-    }
-
-    func start() {
-        me = self
-        // A still picture of the screen over the web view while it is resized out of sight.
-        // It takes the taps too, so nothing on the page is touched meanwhile.
-        if let window = webView.window {
-            let view = UIImageView(image: screen)
-            view.frame = webView.convert(webView.bounds, to: window)
-            view.isUserInteractionEnabled = true
-            window.addSubview(view)
-            cover = view
-        }
-        // If anything hangs, the screen picture is shared after a while all the same.
-        DispatchQueue.main.asyncAfter(deadline: .now() + 10) { [weak self] in self?.finish(nil) }
-        ask("begin") { [self] size in
-            if let size { grow(size, pass: 0) } else { finish(nil) }
-        }
-    }
-
-    /// Make the web view `size` (CSS pixels, which are points here), let the page lay out, then
-    /// fit the chart to it.
-    private func grow(_ size: CGSize, pass: Int) {
-        guard !finished else { return }
-        webView.frame = CGRect(origin: oldFrame.origin, size: size)
-        DispatchQueue.main.asyncAfter(deadline: .now() + Self.layoutDelay) { [self] in
-            ask("fit") { [self] need in
-                guard let need else { return finish(nil) }
-                if pass < 3, abs(need.width - size.width) > 2 || abs(need.height - size.height) > 2 {
-                    // A list that grew taller when it got wider (or the like): grow again.
-                    grow(need, pass: pass + 1)
-                } else {
-                    // Let the page draw the chart where it was moved to.
-                    DispatchQueue.main.asyncAfter(deadline: .now() + Self.drawDelay) { [self] in draw() }
-                }
-            }
-        }
-    }
-
-    private func draw() {
-        guard !finished else { return }
-        let size = webView.bounds.size
-        let config = WKSnapshotConfiguration()
-        config.rect = webView.bounds
-        config.afterScreenUpdates = true
-        let scale = webView.window?.screen.scale ?? UIScreen.main.scale
-        let pixels = size.width * size.height * scale * scale
-        if pixels > Self.maxPixels {
-            config.snapshotWidth = NSNumber(value: Double(size.width * (Self.maxPixels / pixels).squareRoot()))
-        }
-        webView.takeSnapshot(with: config) { [self] image, _ in finish(image) }
-    }
-
-    /// Hand over the picture (or the screen), then put the web view and the page back.
-    private func finish(_ image: UIImage?) {
-        guard !finished else { return }
-        finished = true
-        webView.frame = oldFrame
-        done(image ?? screen)
-        // The page puts its scroll positions back once the view is its own size again.
-        DispatchQueue.main.asyncAfter(deadline: .now() + Self.layoutDelay) { [self] in
-            webView.evaluateJavaScript("window.__wtShellCapture && __wtShellCapture('end')")
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) { [self] in
-                cover?.removeFromSuperview()
-                me = nil
-            }
-        }
-    }
-
-    private func ask(_ step: String, answer: @escaping (CGSize?) -> Void) {
-        webView.evaluateJavaScript("window.__wtShellCapture ? __wtShellCapture('\(step)') : ''") { result, _ in
-            guard let text = result as? String, let data = text.data(using: .utf8),
-                  let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-                  let w = json["w"] as? Double, let h = json["h"] as? Double, w > 0, h > 0
-            else { return answer(nil) }
-            answer(CGSize(width: w, height: h))
         }
     }
 }

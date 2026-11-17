@@ -20,6 +20,8 @@
 		B10000000000000000000001 /* Birthdays.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000008 /* Birthdays.swift */; };
 		B10000000000000000000002 /* BirthdayWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000000000000000000002 /* BirthdayWidget.swift */; };
 		B10000000000000000000003 /* BirthdayWidget.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = B20000000000000000000000 /* BirthdayWidget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		A1000000000000000000000B /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000000B /* Localizable.xcstrings */; };
+		B10000000000000000000004 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000000B /* Localizable.xcstrings */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -36,6 +38,7 @@
 		A20000000000000000000008 /* Birthdays.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Birthdays.swift; sourceTree = "<group>"; };
 		B20000000000000000000000 /* BirthdayWidget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = BirthdayWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		B20000000000000000000002 /* BirthdayWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BirthdayWidget.swift; sourceTree = "<group>"; };
+		A2000000000000000000000B /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXContainerItemProxy section */
@@ -119,6 +122,7 @@
 			isa = PBXGroup;
 			children = (
 				A20000000000000000000008 /* Birthdays.swift */,
+				A2000000000000000000000B /* Localizable.xcstrings */,
 			);
 			path = Shared;
 			sourceTree = "<group>";
@@ -168,6 +172,7 @@
 			buildPhases = (
 				B60000000000000000000001 /* Sources */,
 				B30000000000000000000001 /* Frameworks */,
+				B60000000000000000000004 /* Resources */,
 			);
 			buildRules = (
 			);
@@ -195,6 +200,12 @@
 			knownRegions = (
 				en,
 				Base,
+				de,
+				nl,
+				fr,
+				sv,
+				es,
+				it,
 			);
 			mainGroup = A40000000000000000000000;
 			productRefGroup = A40000000000000000000003 /* Products */;
@@ -215,6 +226,15 @@
 				A10000000000000000000004 /* shell.js in Resources */,
 				A10000000000000000000005 /* views.json in Resources */,
 				A100000000000000000000A1 /* Assets.xcassets in Resources */,
+				A1000000000000000000000B /* Localizable.xcstrings in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B60000000000000000000004 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B10000000000000000000004 /* Localizable.xcstrings in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
