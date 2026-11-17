@@ -1,0 +1,993 @@
+package org.wikitree.treeapps
+
+import android.annotation.SuppressLint
+import android.app.Activity
+import android.app.AlertDialog
+import android.content.ActivityNotFoundException
+import android.content.Intent
+import android.content.ClipData
+import android.content.pm.ActivityInfo
+import android.content.res.Configuration
+import android.content.pm.ShortcutInfo
+import android.content.pm.ShortcutManager
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.drawable.Icon
+import android.net.Uri
+import android.os.Build
+import android.os.Bundle
+import android.print.PrintAttributes
+import android.print.PrintManager
+import android.text.InputType
+import android.view.MotionEvent
+import android.view.View
+import android.view.WindowInsets
+import android.webkit.CookieManager
+import android.webkit.ValueCallback
+import android.webkit.WebChromeClient
+import android.webkit.WebResourceError
+import android.webkit.WebResourceRequest
+import android.webkit.WebView
+import android.webkit.WebViewClient
+import android.widget.Button
+import android.widget.EditText
+import android.widget.FrameLayout
+import android.widget.PopupMenu
+import android.widget.ProgressBar
+import android.widget.TextView
+import android.widget.Toast
+import androidx.browser.customtabs.CustomTabColorSchemeParams
+import androidx.browser.customtabs.CustomTabsIntent
+import androidx.core.content.FileProvider
+import androidx.webkit.WebViewCompat
+import androidx.webkit.WebViewFeature
+import org.json.JSONObject
+import java.io.File
+
+/**
+ * A thin shell around the WikiTree Tree Apps (https://www.wikitree.com/apps/).
+ *
+ * It loads the real Tree Apps page in a WebView, hides the site's header, Tree App/ID bar
+ * and footer (see assets/shell.js), and puts a slim native bar on top with:
+ *   - the current Tree App (tap to pick another),
+ *   - the current WikiTree ID (tap for saved and recent people, or to type another ID),
+ *   - a menu for Apps login/logout, reload, and opening things in the browser.
+ *
+ * Each Tree App keeps its own settings and controls, exactly as on the website.
+ */
+class MainActivity : Activity() {
+
+    private lateinit var web: WebView
+    private lateinit var btnApp: Button
+    private lateinit var btnPerson: Button
+    private lateinit var btnControls: Button
+    private lateinit var progress: ProgressBar
+    /** The "No connection" screen, over the WebView's own error page. */
+    private lateinit var offline: View
+    /** True from a page load's error until a load succeeds; the address that failed, for Retry. */
+    private var loadFailed = false
+    private var failedUrl: String? = null
+
+    private val prefs by lazy { getSharedPreferences("shell", MODE_PRIVATE) }
+    /** Saved and recent people, kept on the phone. */
+    private val people by lazy { PeopleStore(this) }
+    /** The member's watchlist, for birthdays and name suggestions. */
+    private val watchlist by lazy { WatchlistStore(this) }
+    private var notifyAnswer: ((Boolean) -> Unit)? = null
+    private val shellJs by lazy { assets.open("shell.js").bufferedReader().use { it.readText() } }
+
+    /** shared/views.json: the Tree App list used until the page has loaded its own. */
+    private val viewsJson by lazy { JSONObject(assets.open("views.json").bufferedReader().use { it.readText() }) }
+    private val knownViews by lazy {
+        val arr = viewsJson.getJSONArray("views")
+        (0 until arr.length()).map { arr.getJSONObject(it).let { o -> o.getString("key") to o.getString("title") } }
+    }
+    /** Wide charts: on phones the shell turns to landscape and locks there while they are open. */
+    private val landscapeViews by lazy {
+        val arr = viewsJson.getJSONArray("views")
+        (0 until arr.length()).map { arr.getJSONObject(it) }
+            .filter { it.optBoolean("landscape") }.map { it.getString("key") }.toSet()
+    }
+    private val defaultView by lazy { viewsJson.optString("defaultView", "fanchart") }
+
+    private var currentId = ""
+    private var currentView = ""
+    private var loggedIn = false
+    private var pageViews: List<Pair<String, String>> = emptyList()
+    private var showBars = false
+
+    /** Whether the current Tree App's own controls are showing. They start hidden, per app. */
+    private var showControls = false
+    /** Whether the current Tree App has controls the shell knows how to hide. */
+    private var hasControls = false
+    /** The launch link already opened, so a recreation from saved state does not open it again. */
+    /** The #name=...&view=... of a link still to be confirmed once the page has finished loading. */
+    private var pendingHash: String? = null
+    private var controlsFor = ""
+    /** False while the start screen is up after a fresh launch: nothing has been loaded yet. */
+    private var started = true
+
+    /** Set while heading back to the tree from a site page, so a failed return can't loop. */
+    private var returning = false
+
+    private var fileCallback: ValueCallback<Array<Uri>>? = null
+
+    @SuppressLint("SetJavaScriptEnabled")
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        // "Share this chart" draws the whole chart, including the parts off screen (ChartCapture).
+        // Only allowed before the first web view is made.
+        try { WebView.enableSlowWholeDocumentDraw() } catch (_: Exception) {}
+        setContentView(R.layout.activity_main)
+        // Read the stored watchlist off the main thread, so the start screen does not wait for it.
+        Thread { watchlist.all() }.start()
+
+        web = findViewById(R.id.web)
+        btnApp = findViewById(R.id.btn_app)
+        btnPerson = findViewById(R.id.btn_person)
+        btnControls = findViewById(R.id.btn_controls)
+        progress = findViewById(R.id.progress)
+        offline = findViewById(R.id.error)
+        findViewById<Button>(R.id.btn_retry).setOnClickListener { retryLoad() }
+
+        applySystemBarInsets(findViewById(R.id.root))
+
+        currentId = prefs.getString(KEY_ID, "") ?: ""
+        currentView = prefs.getString(KEY_VIEW, "") ?: ""
+        updateBar()
+
+        btnApp.setOnClickListener { pickApp() }
+        btnPerson.setOnClickListener { showPeople() }
+        btnControls.setOnClickListener { if (hasControls) setControls(!showControls) }
+        findViewById<Button>(R.id.btn_menu).setOnClickListener { showMenu(it) }
+
+        setUpWebView()
+
+        // When Android recreates the app (after closing it in the background, or after an
+        // update) it hands back the intent the app was opened with. A link or shortcut that was
+        // already acted on must not undo where the user has been since, so each one carries a
+        // stamp from LinkActivity and the last stamp acted on is remembered.
+        val stamp = intent?.getLongExtra(LinkActivity.EXTRA_STAMP, 0L) ?: 0L
+        val isNew = stamp != 0L && stamp != prefs.getLong(KEY_HANDLED_STAMP, 0L)
+        val link = intent?.data?.takeIf { isNew && isShellLink(it) }
+        val people = isNew && intent?.action == ACTION_PEOPLE
+        if (isNew) prefs.edit().putLong(KEY_HANDLED_STAMP, stamp).apply()
+        // After an update Android can start the app twice in a row for one link: once with the
+        // link, then again with the intent the old task was opened with. The second start must
+        // not put the start screen over the link, so it just loads what the link chose.
+        val afterLink = android.os.SystemClock.elapsedRealtime() - lastLinkAt < 10_000
+        if (link != null) {
+            lastLinkAt = android.os.SystemClock.elapsedRealtime()
+            openLink(link)
+        } else if (people || afterLink) {
+            // The "Change person" shortcut: load, then offer the People screen. (The very first
+            // run gets the start screen too: loading the Tree Apps page with nobody chosen shows
+            // WikiTree's own login page to someone who is not logged in.)
+            loadStart()
+            if (people) web.post { showPeople() }
+        } else {
+            // A fresh launch, or Android bringing the app back after closing it (as it does
+            // after an update): offer where to go instead of reloading the last Tree App.
+            started = false
+            applyOrientation()
+            web.post { showStart() }
+        }
+        updateShortcuts()
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        val stamp = intent.getLongExtra(LinkActivity.EXTRA_STAMP, 0L)
+        if (stamp != 0L) prefs.edit().putLong(KEY_HANDLED_STAMP, stamp).apply()
+        if (intent.action == ACTION_PEOPLE) {
+            if (!started) {
+                leaveStart()
+                loadStart()
+            }
+            showPeople()
+        }
+        intent.data?.takeIf { isShellLink(it) }?.let {
+            leaveStart()
+            openLink(it)
+        }
+    }
+
+    /** Load the last person and app (or the Tree Apps front page when there is none yet). */
+    private fun loadStart() {
+        val start = startUrl()
+        pendingHash = Uri.parse(start).encodedFragment
+        web.loadUrl(start)
+    }
+
+    private var startDialog: PeopleDialog? = null
+
+    /** The start screen: pick a saved or recent person, or pick a Tree App. */
+    private fun showStart() {
+        if (started || isFinishing) return
+        // Reached from the menu ("Home"), the Tree App stays loaded underneath: Back simply
+        // returns to it, and picking the same person and app shows it as it was.
+        val loaded = isTreeAppsUrl(Uri.parse(web.url ?: ""))
+        startDialog = PeopleDialog(
+            activity = this,
+            store = people,
+            currentId = currentId,
+            currentView = currentView,
+            appTitle = { viewTitle(it) },
+            onPick = { leaveStart(); show(it.id, it.view.ifBlank { currentView }) },
+            start = PeopleDialog.Start(
+                apps = views(),
+                onApp = { leaveStart(); show(currentId.ifBlank { people.me()?.id ?: "" }, it) },
+                onBack = { if (loaded) leaveStart() else finish() },
+                askToNotify = { askToNotify(it) },
+            ),
+            watchlist = watchlist,
+            apps = views(),
+        ).also {
+            it.show()
+            // Once a week the watchlist is fetched again, quietly, if it has been loaded before.
+            if (watchlist.fetchedAt != 0L && watchlist.isStale) it.loadWatchlist(watchlist, quiet = true)
+        }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        // Cookies (the WikiTree login among them) reach the disk only now and then by themselves.
+        CookieManager.getInstance().flush()
+    }
+
+    /** Android 13 and later ask the user before an app may post notifications. */
+    private fun askToNotify(answer: (Boolean) -> Unit) {
+        val permission = "android.permission.POST_NOTIFICATIONS"
+        if (android.os.Build.VERSION.SDK_INT < 33 || checkSelfPermission(permission) == android.content.pm.PackageManager.PERMISSION_GRANTED) {
+            answer(true)
+            return
+        }
+        notifyAnswer = answer
+        requestPermissions(arrayOf(permission), REQ_NOTIFY)
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode != REQ_NOTIFY) return
+        notifyAnswer?.invoke(grantResults.firstOrNull() == android.content.pm.PackageManager.PERMISSION_GRANTED)
+        notifyAnswer = null
+    }
+
+    /** "Home" in the menu: back to the start screen, leaving the Tree App as it is underneath. */
+    private fun showHome() {
+        started = false
+        applyOrientation()
+        showStart()
+    }
+
+    /** Something was chosen (or a link arrived): the start screen is done with. */
+    private fun leaveStart() {
+        started = true
+        startDialog?.dismiss()
+        startDialog = null
+        applyOrientation()
+    }
+
+    /**
+     * Open a Tree Apps link. Its person and app are remembered first, because the site may send
+     * the page to the login page and the return trip to the tree then uses them. If the Tree Apps
+     * page is already open, a link that only differs in its #hash switches in place.
+     */
+    private fun openLink(uri: Uri) {
+        // A profile link (/wiki/Windsor-1) from outside: show that person in the current Tree App.
+        profileId(uri)?.let {
+            currentId = it
+            save()
+            updateBar()
+            show(it, currentView)
+            return
+        }
+        readHash(uri)
+        pendingHash = uri.encodedFragment
+        val current = Uri.parse(web.url ?: "")
+        // The Tree Apps page switches person and app on a hash change, whatever its path shows.
+        if (isTreeAppsUrl(current) && uri.fragment != null) {
+            web.evaluateJavascript("location.hash = ${JSONObject.quote("#" + uri.encodedFragment)}", null)
+        } else if (uri.fragment != null && currentId.isNotBlank()) {
+            // Load it the way the shell's own start page is loaded (/apps/<ID>#name=...&view=...).
+            // A bare /apps/#... link loaded fresh showed the site's default app and person instead.
+            web.loadUrl(startUrl())
+        } else {
+            web.loadUrl(uri.toString())
+        }
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        web.saveState(outState)
+        outState.putBoolean(KEY_STARTED, started)
+    }
+
+    /** Where a touch that started on the green bar went down, or null. */
+    private var barDownX = 0f
+    private var barDownY: Float? = null
+
+    /**
+     * Swipe down on the green bar to show the app's controls, up to hide them (as on iOS).
+     * Once a touch on the bar turns into a vertical swipe, the bar buttons get a cancel, so a
+     * swipe that starts on the Person or app button doesn't also press it.
+     */
+    override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
+        val bar = findViewById<View>(R.id.bar)
+        when (ev.actionMasked) {
+            MotionEvent.ACTION_DOWN -> {
+                val at = IntArray(2).also { bar.getLocationOnScreen(it) }
+                barDownY = if (ev.rawY >= at[1] && ev.rawY < at[1] + bar.height) ev.rawY else null
+                barDownX = ev.rawX
+            }
+            MotionEvent.ACTION_MOVE, MotionEvent.ACTION_UP -> barDownY?.let { startY ->
+                val dy = ev.rawY - startY
+                val dx = ev.rawX - barDownX
+                val swipe = kotlin.math.abs(dy) > 12 * resources.displayMetrics.density &&
+                    kotlin.math.abs(dy) > kotlin.math.abs(dx)
+                if (swipe) {
+                    barDownY = null
+                    val cancel = MotionEvent.obtain(ev).apply { action = MotionEvent.ACTION_CANCEL }
+                    super.dispatchTouchEvent(cancel)
+                    cancel.recycle()
+                    if (hasControls) setControls(dy > 0)
+                    return true
+                }
+                if (ev.actionMasked == MotionEvent.ACTION_UP) barDownY = null
+            }
+            MotionEvent.ACTION_CANCEL -> barDownY = null
+        }
+        return super.dispatchTouchEvent(ev)
+    }
+
+    @Deprecated("Deprecated in Java")
+    override fun onBackPressed() {
+        if (web.canGoBack()) web.goBack() else super.onBackPressed()
+    }
+
+    // ---- WebView ---------------------------------------------------------------------------
+
+    @SuppressLint("SetJavaScriptEnabled")
+    private fun setUpWebView() {
+        with(web.settings) {
+            javaScriptEnabled = true
+            domStorageEnabled = true
+            loadWithOverviewMode = false
+            useWideViewPort = true
+            builtInZoomControls = true
+            displayZoomControls = false
+            setSupportZoom(true)
+            mediaPlaybackRequiresUserGesture = true
+        }
+        // Tan (dark in the phone's dark theme) until the page draws, not a white flash.
+        web.setBackgroundColor(getColor(R.color.wt_tan))
+        CookieManager.getInstance().setAcceptCookie(true)
+        CookieManager.getInstance().setAcceptThirdPartyCookies(web, true)
+
+        // Inject the hiding CSS before the page draws, so the site bars never flash on screen.
+        // Older WebViews fall back to injecting when the page finishes loading.
+        if (WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)) {
+            WebViewCompat.addDocumentStartJavaScript(web, shellJs, setOf(SITE_ORIGIN))
+        }
+        tellPageNight()
+
+        web.webViewClient = object : WebViewClient() {
+            override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
+                val uri = request.url
+                if (uri.scheme != "http" && uri.scheme != "https") {
+                    openExternally(uri) // mailto:, tel:, etc.
+                    return true
+                }
+                val host = uri.host ?: return false
+                val onWikiTree = host == "wikitree.com" || host.endsWith(".wikitree.com")
+                // Tree Apps pages always stay in the app.
+                if (isTreeAppsUrl(uri)) return false
+                // Redirects stay too: the Apps login goes to api.wikitree.com and back, and may
+                // pass through the WikiTree site login page on the way.
+                if (onWikiTree && request.isRedirect) return false
+                // So does anything followed from a page that isn't a Tree App (i.e. mid-login).
+                val from = Uri.parse(view.url ?: "")
+                if (onWikiTree && !isTreeAppsUrl(from)) return false
+                // Everything else (profile links, sources, help pages) opens in a browser sheet
+                // over the tree, so closing it returns to the tree exactly as it was.
+                openInSheet(uri)
+                return true
+            }
+
+            override fun onPageStarted(view: WebView, url: String, favicon: Bitmap?) {
+                progress.visibility = View.VISIBLE
+                // The "No connection" screen stays up until a load succeeds, so a Retry that
+                // fails again doesn't flash the WebView's error page.
+                loadFailed = false
+            }
+
+            override fun onPageFinished(view: WebView, url: String) {
+                progress.visibility = View.GONE
+                // This is the WebView's error page finishing: leave it hidden behind the
+                // "No connection" screen and run none of the shell's page work on it.
+                if (loadFailed) return
+                setOffline(false)
+                view.evaluateJavascript(nightJs(), null)
+                val uri = Uri.parse(url)
+                if (shouldReturnToTree(uri)) {
+                    // After logging in, the site lands on its own pages (e.g. the Navigation Home
+                    // Page). Go back to the tree; the Tree Apps page then completes the Apps login.
+                    if (!returning) {
+                        returning = true
+                        view.loadUrl(startUrl())
+                        return
+                    }
+                } else if (isTreeAppsUrl(uri)) {
+                    returning = false
+                    // A link that arrived while the page was still starting up (the Apps login
+                    // can reload it) may have been overwritten by the site's default person and
+                    // app, so apply it again now; setting the same hash again does nothing.
+                    pendingHash?.let {
+                        pendingHash = null
+                        view.evaluateJavascript("location.hash = ${JSONObject.quote("#$it")}", null)
+                    }
+                }
+                if (uri.host == SITE_HOST) {
+                    view.evaluateJavascript(shellJs, null)
+                    view.evaluateJavascript("window.__wtShellSetBars && __wtShellSetBars($showBars)", null)
+                    applyControls()
+                }
+                refreshState()
+                refreshSoon()
+            }
+
+            override fun doUpdateVisitedHistory(view: WebView, url: String, isReload: Boolean) {
+                // Fires for hash changes too, which is how the Tree Apps switch person/app.
+                readHash(Uri.parse(url))
+            }
+
+            override fun onReceivedError(view: WebView, request: WebResourceRequest, error: WebResourceError) {
+                if (request.isForMainFrame) {
+                    progress.visibility = View.GONE
+                    loadFailed = true
+                    failedUrl = request.url.toString()
+                    setOffline(true)
+                }
+            }
+        }
+
+        web.webChromeClient = object : WebChromeClient() {
+            // Some apps (CC7, One Name Trees) can load a saved file.
+            override fun onShowFileChooser(
+                webView: WebView,
+                callback: ValueCallback<Array<Uri>>,
+                params: FileChooserParams,
+            ): Boolean {
+                fileCallback?.onReceiveValue(null)
+                fileCallback = callback
+                return try {
+                    startActivityForResult(params.createIntent(), REQ_FILE)
+                    true
+                } catch (e: ActivityNotFoundException) {
+                    fileCallback = null
+                    false
+                }
+            }
+        }
+    }
+
+    private fun setOffline(show: Boolean) {
+        offline.visibility = if (show) View.VISIBLE else View.GONE
+        // Keep the WebView's own error page from being read out behind the panel.
+        web.importantForAccessibility =
+            if (show) View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS else View.IMPORTANT_FOR_ACCESSIBILITY_AUTO
+    }
+
+    /** Retry on the "No connection" screen: load again the page that failed, where the user was. */
+    private fun retryLoad() {
+        val url = failedUrl?.takeIf { it.startsWith("http") }
+            ?: web.url?.takeIf { it.startsWith("http") }
+            ?: startUrl()
+        web.loadUrl(url)
+    }
+
+    @Deprecated("Deprecated in Java")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        if (requestCode == REQ_FILE) {
+            fileCallback?.onReceiveValue(WebChromeClient.FileChooserParams.parseResult(resultCode, data))
+            fileCallback = null
+        } else {
+            super.onActivityResult(requestCode, resultCode, data)
+        }
+    }
+
+    // ---- State from the page -----------------------------------------------------------------
+
+    private fun readHash(uri: Uri) {
+        if (uri.host != SITE_HOST || uri.path?.startsWith("/apps") != true) return
+        val frag = uri.fragment ?: return
+        val params = frag.split("&").mapNotNull {
+            val i = it.indexOf('=')
+            if (i > 0) it.substring(0, i) to Uri.decode(it.substring(i + 1)) else null
+        }.toMap()
+        params["name"]?.takeIf { it.isNotBlank() }?.let { currentId = it }
+        params["view"]?.takeIf { it.isNotBlank() }?.let { currentView = it }
+        save()
+        updateBar()
+    }
+
+    private fun refreshState() {
+        web.evaluateJavascript("window.__wtShellState ? __wtShellState() : null") { raw ->
+            if (raw == null || raw == "null") return@evaluateJavascript
+            try {
+                // evaluateJavascript returns the string JSON-encoded, so decode twice.
+                val json = JSONObject(JSONObject("{\"v\":$raw}").getString("v"))
+                json.optString("id").takeIf { it.isNotBlank() }?.let { currentId = it }
+                json.optString("view").takeIf { it.isNotBlank() }?.let { currentView = it }
+                loggedIn = json.optBoolean("loggedIn")
+                val had = hasControls
+                hasControls = json.optBoolean("hasControls")
+                if (hasControls && !had && !showControls) hintControls()
+                val arr = json.optJSONArray("views")
+                if (arr != null && arr.length() > 0) {
+                    pageViews = (0 until arr.length()).map {
+                        val p = arr.getJSONArray(it)
+                        p.getString(0) to p.getString(1)
+                    }
+                }
+                save()
+                updateBar()
+            } catch (_: Exception) {
+            }
+        }
+    }
+
+    private fun save() {
+        prefs.edit().putString(KEY_ID, currentId).putString(KEY_VIEW, currentView).apply()
+        if (currentId.isNotBlank() && currentView.isNotBlank() && people.visit(currentId, currentView)) {
+            updateShortcuts()
+        }
+    }
+
+    private fun updateBar() {
+        btnApp.text = viewTitle(currentView) ?: getString(R.string.choose_app)
+        btnPerson.text = currentId.ifBlank { getString(R.string.change_person) }
+        if (controlsFor != currentView) {
+            // A different Tree App: use its own remembered choice (hidden unless shown before).
+            controlsFor = currentView
+            showControls = prefs.getBoolean("controls_$currentView", false)
+            hasControls = false
+            applyControls()
+            refreshSoon()
+        }
+        btnControls.alpha = if (hasControls) 1f else 0.35f
+        btnControls.setTextColor(getColor(if (showControls) R.color.wt_gold else R.color.on_green))
+        applyOrientation()
+    }
+
+    private fun setControls(show: Boolean) {
+        showControls = show
+        prefs.edit().putBoolean("controls_$currentView", show).apply()
+        applyControls()
+        updateBar()
+    }
+
+    private fun applyControls() {
+        web.evaluateJavascript("window.__wtShellSetControls && __wtShellSetControls($showControls)", null)
+    }
+
+    /** The apps build their controls a moment after the page or app changes, so look again then. */
+    private fun refreshSoon() {
+        web.postDelayed({ refreshState() }, 1500)
+        web.postDelayed({ refreshState() }, 4000)
+    }
+
+    /** Explain the hidden controls the first few times they are hidden. */
+    private fun hintControls() {
+        val shown = prefs.getInt("controlsHintCount", 0)
+        if (shown >= 3) return
+        prefs.edit().putInt("controlsHintCount", shown + 1).apply()
+        Toast.makeText(this, R.string.controls_hint, Toast.LENGTH_LONG).show()
+    }
+
+    private fun applyOrientation() {
+        val isPhone = resources.configuration.smallestScreenWidthDp < 600
+        // The start screen is not a wide chart, whatever the last app was.
+        val lock = started && isPhone && prefs.getBoolean(KEY_AUTO_ROTATE, true) && currentView in landscapeViews
+        val wanted = if (lock) ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+        else ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+        if (requestedOrientation != wanted) requestedOrientation = wanted
+    }
+
+    private fun views(): List<Pair<String, String>> = pageViews.ifEmpty { knownViews }
+
+    private fun viewTitle(key: String): String? = views().firstOrNull { it.first == key }?.second
+
+    // ---- Bar actions -----------------------------------------------------------------------
+
+    private fun pickApp() {
+        val list = views()
+        val titles = list.map { it.second }.toTypedArray()
+        val checked = list.indexOfFirst { it.first == currentView }
+        AlertDialog.Builder(this)
+            .setTitle(R.string.choose_app)
+            .setSingleChoiceItems(titles, checked) { d, which ->
+                d.dismiss()
+                show(currentId, list[which].first)
+            }
+            .setNegativeButton(R.string.cancel, null)
+            .show()
+    }
+
+    private fun askPerson() {
+        val input = EditText(this).apply {
+            hint = getString(R.string.person_prompt)
+            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
+            setSingleLine()
+            setText(currentId)
+            selectAll()
+        }
+        val pad = (20 * resources.displayMetrics.density).toInt()
+        val box = FrameLayout(this).apply {
+            setPadding(pad, pad / 2, pad, 0)
+            addView(input)
+        }
+        val dialog = AlertDialog.Builder(this)
+            .setTitle(R.string.change_person)
+            .setView(box)
+            .setPositiveButton(R.string.go) { _, _ ->
+                val id = input.text.toString().trim()
+                if (id.isNotEmpty()) {
+                    leaveStart()
+                    show(id, currentView)
+                }
+            }
+            .setNegativeButton(R.string.cancel, null)
+            .create()
+        dialog.window?.setSoftInputMode(android.view.WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE)
+        dialog.show()
+    }
+
+    /** The People screen: saved and recent people, and a way to type a WikiTree ID. */
+    private var peopleDialog: PeopleDialog? = null
+
+    private fun showPeople() {
+        peopleDialog?.dismiss()
+        peopleDialog = PeopleDialog(
+            activity = this,
+            store = people,
+            currentId = currentId,
+            currentView = currentView,
+            appTitle = { viewTitle(it) },
+            onPick = { show(it.id, it.view.ifBlank { currentView }) },
+            watchlist = watchlist,
+            apps = views(),
+        ).also { it.show() }
+    }
+
+    // ---- Dark mode -------------------------------------------------------------------------
+
+    private fun isNight(config: Configuration = resources.configuration) =
+        config.uiMode and Configuration.UI_MODE_NIGHT_MASK == Configuration.UI_MODE_NIGHT_YES
+
+    private var night = false
+    private var nightScript: androidx.webkit.ScriptHandler? = null
+
+    private fun nightJs() = "window.__wtShellSetDark ? window.__wtShellSetDark(${night}) : (window.__wtShellNight = ${night});"
+
+    /**
+     * Tell the Tree Apps page whether the phone is in dark mode, before each page draws. The web
+     * view's own prefers-color-scheme stays as it was when the app started (the app handles
+     * uiMode changes itself, so the web page and the chart on it are not reloaded), so shell.js
+     * takes it from here instead.
+     */
+    private fun tellPageNight() {
+        night = isNight()
+        if (!WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)) return
+        nightScript?.remove()
+        nightScript = WebViewCompat.addDocumentStartJavaScript(web, nightJs(), setOf(SITE_ORIGIN))
+    }
+
+    /**
+     * The phone switched between light and dark while the app was open. The app handles uiMode
+     * itself (see the manifest) so the chart is not reloaded; the colours are put right here.
+     */
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        if (isNight(newConfig) == night) return
+        tellPageNight()
+        val tan = getColor(R.color.wt_tan)
+        window.setBackgroundDrawable(android.graphics.drawable.ColorDrawable(tan))
+        (web.parent as? View)?.setBackgroundColor(tan)
+        web.setBackgroundColor(tan)
+        web.evaluateJavascript(nightJs(), null)
+        // The start and People screens are drawn again in the new colours, once any profile sheet
+        // over them has closed, so the new screen does not cover the sheet.
+        WikiTreeSheet.whenClosed("redraw") {
+            if (startDialog != null) {
+                startDialog?.dismiss()
+                startDialog = null
+                showStart()
+            }
+            if (peopleDialog?.isShowing == true) showPeople()
+        }
+    }
+
+    /**
+     * Long-press shortcuts on the app icon: saved people first, then recent ones, each opening in
+     * the Tree App they were last shown in, plus one to type a new ID. They open as Tree Apps links.
+     */
+    private fun updateShortcuts() {
+        val manager = getSystemService(ShortcutManager::class.java) ?: return
+        val max = (manager.maxShortcutCountPerActivity - 1).coerceIn(0, 3)
+        val picks = (people.saved() + people.recent()).distinctBy { it.id.lowercase() }.take(max)
+        val list = picks.map { p ->
+            val v = p.view.ifBlank { defaultView }
+            val uri = Uri.parse("$APPS_URL${Uri.encode(p.id)}#name=${Uri.encode(p.id)}&view=${Uri.encode(v)}")
+            val label = p.name.ifBlank { p.id }
+            ShortcutInfo.Builder(this, "person_" + p.id.lowercase())
+                .setShortLabel(label.take(24))
+                .setLongLabel(listOfNotNull(label, viewTitle(v)).joinToString(" · ").take(48))
+                .setIcon(Icon.createWithResource(this, R.drawable.ic_shortcut_person))
+                .setIntent(Intent(Intent.ACTION_VIEW, uri, this, LinkActivity::class.java))
+                .build()
+        } + ShortcutInfo.Builder(this, "people")
+            .setShortLabel(getString(R.string.shortcut_new))
+            .setIcon(Icon.createWithResource(this, R.drawable.ic_shortcut_search))
+            .setIntent(Intent(ACTION_PEOPLE, null, this, LinkActivity::class.java))
+            .build()
+        try {
+            manager.dynamicShortcuts = list
+        } catch (_: Exception) {
+            // Rate-limited or not allowed on this launcher; the shortcuts are a convenience.
+        }
+    }
+
+    /** What is on screen as a picture, where the page is scrolled to, or null if that fails. */
+    private fun captureChart(): Bitmap? = try {
+        Bitmap.createBitmap(web.width, web.height, Bitmap.Config.ARGB_8888).also {
+            val canvas = Canvas(it)
+            canvas.translate(-web.scrollX.toFloat(), -web.scrollY.toFloat())
+            web.draw(canvas)
+        }
+    } catch (_: Exception) {
+        null
+    }
+
+    /** "Fan Chart: Beacall-6", for the share sheet and the printed page. */
+    private fun chartTitle() = listOfNotNull(viewTitle(currentView), currentId.ifBlank { null }).joinToString(": ")
+
+    /**
+     * Print the whole chart, with its title and a link back to the same chart. The system print
+     * dialog also has "Save as PDF", which saves to Files, Drive and so on.
+     */
+    private fun printChart() = captureWholeChart { bitmap ->
+        val title = "WikiTree ${chartTitle()}"
+        val manager = getSystemService(PRINT_SERVICE) as PrintManager
+        val attributes = PrintAttributes.Builder()
+            .setMediaSize(
+                if (bitmap.width > bitmap.height) PrintAttributes.MediaSize.ISO_A4.asLandscape()
+                else PrintAttributes.MediaSize.ISO_A4
+            )
+            .build()
+        manager.print(title, ChartPrintAdapter(this, bitmap, title, startUrl()), attributes)
+    }
+
+    /**
+     * The whole chart as a picture, without the app's controls (see ChartCapture), handed to
+     * [then]; a message instead if not even the screen could be had.
+     */
+    private fun captureWholeChart(then: (Bitmap) -> Unit) {
+        val screen = captureChart()
+        if (screen == null) {
+            Toast.makeText(this, R.string.share_failed, Toast.LENGTH_SHORT).show()
+            return
+        }
+        ChartCapture(web, screen, then).start()
+    }
+
+    /** A picture of the whole chart for the share sheet, with a link to the same chart. */
+    private fun shareChart() = captureWholeChart { bitmap ->
+        val uri = bitmap.let {
+            try {
+                val dir = File(cacheDir, "shared").apply { mkdirs() }
+                val file = File(dir, "wikitree-chart.png")
+                file.outputStream().use { out -> it.compress(Bitmap.CompressFormat.PNG, 100, out) }
+                FileProvider.getUriForFile(this, "$packageName.files", file)
+            } catch (_: Exception) {
+                null
+            }
+        }
+        if (uri == null) {
+            Toast.makeText(this, R.string.share_failed, Toast.LENGTH_SHORT).show()
+            return@captureWholeChart
+        }
+        val title = chartTitle()
+        val link = startUrl()
+        val send = Intent(Intent.ACTION_SEND).apply {
+            type = "image/png"
+            putExtra(Intent.EXTRA_STREAM, uri)
+            putExtra(Intent.EXTRA_SUBJECT, "WikiTree $title")
+            putExtra(Intent.EXTRA_TEXT, "$title\n$link")
+            clipData = ClipData.newRawUri(title, uri)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+        startActivity(Intent.createChooser(send, getString(R.string.share_title)))
+    }
+
+    /** Show [id] in Tree App [view], switching in place when the Tree Apps page is already open. */
+    private fun show(id: String, view: String) {
+        if (id.isBlank()) {
+            currentView = view
+            save()
+            updateBar()
+            askPerson()
+            return
+        }
+        val v = view.ifBlank { defaultView }
+        val hash = "#name=${Uri.encode(id)}&view=${Uri.encode(v)}"
+        // After a failed load the WebView holds only its error page, so a hash change can't work.
+        val onAppsPage = !loadFailed &&
+            Uri.parse(web.url ?: "").let { it.host == SITE_HOST && it.path?.startsWith("/apps") == true }
+        if (onAppsPage) {
+            // The Tree Apps page listens for hash changes and redraws without a reload. If it is
+            // still loading, the hash is applied again once it is up.
+            pendingHash = hash.removePrefix("#")
+            web.evaluateJavascript("location.hash = ${JSONObject.quote(hash)}", null)
+        } else {
+            // A fresh load: remember what was asked for, to apply again once the page is up.
+            pendingHash = hash.removePrefix("#")
+            web.loadUrl("$APPS_URL${Uri.encode(id)}$hash")
+        }
+    }
+
+    private fun showMenu(anchor: View) {
+        val menu = PopupMenu(this, anchor)
+        val m = menu.menu
+        if (currentId.isNotBlank()) m.add(0, 9, 0, R.string.menu_home)
+        m.add(0, 1, 0, if (loggedIn) R.string.menu_logout else R.string.menu_login)
+        m.add(0, 2, 1, R.string.menu_reload)
+        if (currentId.isNotBlank()) m.add(0, 3, 2, R.string.menu_profile)
+        if (currentId.isNotBlank()) m.add(0, 11, 2, R.string.menu_listen)
+        m.add(0, 7, 3, R.string.menu_share)
+        m.add(0, 10, 3, R.string.menu_print)
+        m.add(0, 8, 3, R.string.menu_people)
+        m.add(0, 4, 3, R.string.menu_browser)
+        m.add(0, 5, 4, if (showBars) R.string.menu_hide_bars else R.string.menu_show_bars)
+        if (resources.configuration.smallestScreenWidthDp < 600) {
+            m.add(0, 6, 5, R.string.menu_auto_landscape).setCheckable(true)
+                .setChecked(prefs.getBoolean(KEY_AUTO_ROTATE, true))
+        }
+        menu.setOnMenuItemClickListener {
+            when (it.itemId) {
+                1 -> if (loggedIn) {
+                    // The Tree Apps logout (which also forgets saved data), then the WikiTree
+                    // cookies go, so the site is logged out too; then the page loads afresh.
+                    web.evaluateJavascript("window.__wtShellLogout && __wtShellLogout()") {
+                        web.postDelayed({
+                            CookieManager.getInstance().removeAllCookies {
+                                CookieManager.getInstance().flush()
+                                web.loadUrl(startUrl())
+                            }
+                        }, 1000)
+                    }
+                    // The watchlist belongs to the member who is leaving, so it goes too.
+                    watchlist.clear()
+                    Birthdays.refresh(this)
+                } else {
+                    // The same native form as the start screen's button.
+                    WikiTreeLogin(this) { web.reload() }.show()
+                }
+                2 -> if (loadFailed) retryLoad() else web.reload()
+                3 -> openInSheet(Uri.parse("https://www.wikitree.com/wiki/${Uri.encode(currentId)}"))
+                11 -> WikiTreeSheet(this).show(Uri.parse("https://www.wikitree.com/wiki/${Uri.encode(currentId)}"), listen = true)
+                4 -> web.url?.let { u -> openExternally(Uri.parse(u)) }
+                7 -> shareChart()
+                10 -> printChart()
+                8 -> showPeople()
+                9 -> showHome()
+                6 -> {
+                    prefs.edit().putBoolean(KEY_AUTO_ROTATE, !prefs.getBoolean(KEY_AUTO_ROTATE, true)).apply()
+                    applyOrientation()
+                }
+                5 -> {
+                    showBars = !showBars
+                    web.evaluateJavascript("window.__wtShellSetBars && __wtShellSetBars($showBars)", null)
+                }
+            }
+            true
+        }
+        menu.show()
+    }
+
+    // ---- Helpers ---------------------------------------------------------------------------
+
+    private fun startUrl(): String =
+        if (currentId.isBlank()) APPS_URL
+        else "$APPS_URL${Uri.encode(currentId)}#name=${Uri.encode(currentId)}&view=${Uri.encode(currentView.ifBlank { defaultView })}"
+
+    /** The WikiTree ID in a profile link such as https://www.wikitree.com/wiki/Windsor-1, or null. */
+    private fun profileId(uri: Uri): String? {
+        if (uri.host != SITE_HOST) return null
+        val parts = uri.pathSegments
+        if (parts.size != 2 || parts[0] != "wiki") return null
+        return parts[1].takeIf { PROFILE_ID.matches(it) }
+    }
+
+    /** A link from another app that the shell opens itself: a Tree App, or a person's profile. */
+    private fun isShellLink(uri: Uri) = isTreeAppsUrl(uri) || profileId(uri) != null
+
+    private fun isTreeAppsUrl(uri: Uri) = uri.host == SITE_HOST && uri.path?.startsWith("/apps") == true
+
+    /** True for a WikiTree site page that is neither a Tree App nor part of logging in. */
+    private fun shouldReturnToTree(uri: Uri): Boolean {
+        if (uri.host != SITE_HOST || isTreeAppsUrl(uri)) return false
+        val text = uri.toString().lowercase()
+        return !text.contains("login") && !text.contains("password")
+    }
+
+    /**
+     * wikitree.com pages open in [WikiTreeSheet], with the member's WikiTree login; other sites in a
+     * Custom Tab.
+     */
+    private fun openInSheet(uri: Uri) {
+        val host = uri.host.orEmpty()
+        if (host == "wikitree.com" || host.endsWith(".wikitree.com")) {
+            WikiTreeSheet(this).show(uri)
+            return
+        }
+        try {
+            CustomTabsIntent.Builder()
+                .setShowTitle(true)
+                .setDefaultColorSchemeParams(
+                    CustomTabColorSchemeParams.Builder().setToolbarColor(getColor(R.color.wt_green)).build()
+                )
+                .build()
+                .launchUrl(this, uri)
+        } catch (_: ActivityNotFoundException) {
+            openExternally(uri)
+        }
+    }
+
+    private fun openExternally(uri: Uri) {
+        try {
+            startActivity(Intent(Intent.ACTION_VIEW, uri))
+        } catch (_: ActivityNotFoundException) {
+        }
+    }
+
+    /** Android 15 draws apps edge to edge; keep the bar and page clear of the status and nav bars. */
+    private fun applySystemBarInsets(root: View) {
+        root.setOnApplyWindowInsetsListener { v, insets ->
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                val bars = insets.getInsets(WindowInsets.Type.systemBars() or WindowInsets.Type.ime())
+                v.setPadding(bars.left, bars.top, bars.right, bars.bottom)
+            } else {
+                @Suppress("DEPRECATION")
+                v.setPadding(
+                    insets.systemWindowInsetLeft, insets.systemWindowInsetTop,
+                    insets.systemWindowInsetRight, insets.systemWindowInsetBottom,
+                )
+            }
+            insets
+        }
+    }
+
+    companion object {
+        private const val SITE_HOST = "www.wikitree.com"
+        private const val SITE_ORIGIN = "https://www.wikitree.com"
+        private const val APPS_URL = "https://www.wikitree.com/apps/"
+        private const val KEY_ID = "id"
+        private const val KEY_VIEW = "view"
+        private const val KEY_HANDLED_STAMP = "handledStamp"
+
+        /** When this process last opened a link at start-up (elapsedRealtime), or 0. */
+        private var lastLinkAt = 0L
+
+        /** "Windsor-1": no colon (that would be a Help:, Space: or Category: page), then -number. */
+        private val PROFILE_ID = Regex("[^:/]+-\\d+")
+        private const val KEY_STARTED = "started"
+        private const val KEY_AUTO_ROTATE = "autoRotate"
+        private const val REQ_FILE = 1
+        private const val REQ_NOTIFY = 2
+        /** The "Change person" home-screen shortcut opens the People screen. */
+        private const val ACTION_PEOPLE = LinkActivity.ACTION_PEOPLE
+
+    }
+}

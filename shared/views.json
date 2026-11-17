@@ -1,0 +1,153 @@
+{
+  "_comment": "Tree Apps offered by the shell before the page loads its own list. Keys are the #view= values from index.js in wikitree/wikitree-dynamic-tree. Views with landscape=true are wide charts: on phones the shell turns to landscape and locks there while they are open.",
+  "defaultView": "fanchart",
+  "views": [
+    {
+      "key": "ahnentafel",
+      "title": "Ahnentafel Ancestor List"
+    },
+    {
+      "key": "ale",
+      "title": "Ancestor Lines Explorer",
+      "landscape": true
+    },
+    {
+      "key": "webs",
+      "title": "Ancestor Webs",
+      "landscape": true
+    },
+    {
+      "key": "ancestorsCemeteries",
+      "title": "Ancestors Cemeteries"
+    },
+    {
+      "key": "cc7",
+      "title": "CC7 Views"
+    },
+    {
+      "key": "cctree",
+      "title": "Compact Couple Ancestors",
+      "landscape": true
+    },
+    {
+      "key": "ccdtree",
+      "title": "Compact Couple Descendants",
+      "landscape": true
+    },
+    {
+      "key": "ccwebs",
+      "title": "Connection Checkers Web",
+      "landscape": true
+    },
+    {
+      "key": "couples",
+      "title": "Couples Dynamic Tree",
+      "landscape": true
+    },
+    {
+      "key": "descendants",
+      "title": "Descendants"
+    },
+    {
+      "key": "wt-dynamic-tree",
+      "title": "Dynamic Tree",
+      "landscape": true
+    },
+    {
+      "key": "calendar",
+      "title": "Family Calendar"
+    },
+    {
+      "key": "familyGroupApp",
+      "title": "Family Group App"
+    },
+    {
+      "key": "familygroup",
+      "title": "Family Group View"
+    },
+    {
+      "key": "portraits",
+      "title": "Family Portraits"
+    },
+    {
+      "key": "timeline",
+      "title": "Family Timeline",
+      "landscape": true
+    },
+    {
+      "key": "fanchart",
+      "title": "Fan Chart",
+      "landscape": true
+    },
+    {
+      "key": "fandoku",
+      "title": "FanDoku game"
+    },
+    {
+      "key": "fractal",
+      "title": "Fractal Tree",
+      "landscape": true
+    },
+    {
+      "key": "genealogyReport",
+      "title": "Genealogy Report"
+    },
+    {
+      "key": "heritage",
+      "title": "Heritage Charts",
+      "landscape": true
+    },
+    {
+      "key": "lineageMatrix",
+      "title": "Lineage Matrix"
+    },
+    {
+      "key": "namecloud",
+      "title": "Name Cloud"
+    },
+    {
+      "key": "oneNameTrees",
+      "title": "One Name Trees"
+    },
+    {
+      "key": "printer-friendly",
+      "title": "Printer Friendly"
+    },
+    {
+      "key": "research",
+      "title": "Research"
+    },
+    {
+      "key": "slippyTree",
+      "title": "Slippy Tree",
+      "landscape": true
+    },
+    {
+      "key": "stats",
+      "title": "Statistics"
+    },
+    {
+      "key": "superbig",
+      "title": "Super Tree",
+      "landscape": true
+    },
+    {
+      "key": "surnames",
+      "title": "Surnames List"
+    },
+    {
+      "key": "timelineTree",
+      "title": "Timeline Tree",
+      "landscape": true
+    },
+    {
+      "key": "wtPlusMaps",
+      "title": "WT+ Maps"
+    },
+    {
+      "key": "xtree",
+      "title": "X Family Tree",
+      "landscape": true
+    }
+  ]
+}

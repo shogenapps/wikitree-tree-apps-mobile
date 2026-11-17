@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- "and 3 more" under the Anniversaries widget's rows. -->
+<TextView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/more_text"
+    android:layout_width="match_parent"
+    android:layout_height="22dp"
+    android:gravity="center_vertical"
+    android:paddingStart="28dp"
+    android:textColor="@color/muted_ink"
+    android:textSize="12sp" />

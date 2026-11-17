@@ -1,0 +1,14 @@
+<resources>
+    <!-- The phone's dark theme: the same as values/styles.xml on the dark Material theme. Web pages
+         see prefers-color-scheme: dark, which shell.js uses to darken the Tree Apps. -->
+    <style name="AppTheme" parent="android:Theme.Material.NoActionBar">
+        <item name="android:colorPrimary">@color/wt_green</item>
+        <item name="android:colorPrimaryDark">@color/wt_green</item>
+        <item name="android:colorAccent">@color/wt_accent</item>
+        <item name="android:statusBarColor">@color/wt_green</item>
+        <item name="android:windowBackground">@color/wt_tan</item>
+    </style>
+    <style name="AppDialog" parent="android:Theme.Material.NoActionBar">
+        <item name="android:colorAccent">@color/wt_accent</item>
+    </style>
+</resources>

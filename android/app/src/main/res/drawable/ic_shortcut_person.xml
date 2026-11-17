@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Home-screen shortcut icon: a person on the shell's green. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp" android:height="48dp"
+    android:viewportWidth="48" android:viewportHeight="48">
+    <path android:fillColor="#25422D" android:pathData="M24,0 A24,24 0 1,1 23.99,0 Z" />
+    <path android:fillColor="#F2C14E"
+        android:pathData="M24,13 A6,6 0 1,1 23.99,13 Z M13,35 C13,28 18,24.5 24,24.5 C30,24.5 35,28 35,35 Z" />
+</vector>

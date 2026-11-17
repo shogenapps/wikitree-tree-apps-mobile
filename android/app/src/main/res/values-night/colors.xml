@@ -1,0 +1,13 @@
+<resources>
+    <!-- The phone's dark theme. The green bar stays the same; the tan page goes dark and the
+         green text turns light enough to read on it. -->
+    <color name="wt_tan">#141714</color>
+    <color name="wt_accent">#8CC79B</color>
+    <color name="wt_button">#2F6B43</color>
+    <color name="text_primary">#E6E6E1</color>
+    <color name="text_secondary">#A6A8A2</color>
+    <color name="text_error">#F2B8B5</color>
+    <color name="notable">#F0A44E</color>
+    <color name="notable_tint">#2EF0A44E</color>
+    <color name="sheet_bg">#1F231F</color>
+</resources>

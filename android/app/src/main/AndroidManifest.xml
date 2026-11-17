@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <!-- The optional Anniversaries morning notification, and keeping it going after a restart. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+
+    <!-- Lets the app find the phone's text-to-speech engine, which reads biographies aloud. -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.TTS_SERVICE" />
+        </intent>
+    </queries>
+
+    <application
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:supportsRtl="true"
+        android:theme="@style/AppTheme">
+        <activity
+            android:name=".MainActivity"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden|uiMode"
+            android:exported="true"
+            android:launchMode="singleTask"
+            android:windowSoftInputMode="adjustResize">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <!-- Passes links and home-screen shortcuts on to MainActivity; it shows nothing itself. -->
+        <activity
+            android:name=".LinkActivity"
+            android:exported="true"
+            android:excludeFromRecents="true"
+            android:noHistory="true"
+            android:taskAffinity=""
+            android:theme="@android:style/Theme.NoDisplay">
+            <!-- Open Tree Apps links and profile links (/wiki/Windsor-1) from other apps here.
+                 Android only does this by itself once wikitree.com hosts /.well-known/assetlinks.json
+                 naming this app (see docs/wikitree-link-setup.md); until then the user can turn it on under
+                 the app's "Open by default" settings. The profile pattern needs Android 12. -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" android:host="www.wikitree.com" android:pathPrefix="/apps/" />
+                <!-- The matcher does not backtrack, so a hyphen in the last name needs its own pattern. -->
+                <data android:pathAdvancedPattern="/wiki/[^:/-]+-[0-9]+" />
+                <data android:pathAdvancedPattern="/wiki/[^:/-]+-[^:/-]+-[0-9]+" />
+                <data android:pathAdvancedPattern="/wiki/[^:/-]+-[^:/-]+-[^:/-]+-[0-9]+" />
+            </intent-filter>
+        </activity>
+        <!-- Anniversaries: the home-screen widget, and the daily alarms behind it and the
+             optional morning notification. -->
+        <receiver
+            android:name=".BirthdayWidget"
+            android:exported="true"
+            android:label="@string/born_title">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.TIME_SET" />
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/birthday_widget_info" />
+        </receiver>
+        <!-- Hands a captured chart image to the share sheet. -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.files"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+    </application>
+</manifest>

@@ -1,0 +1,26 @@
+<resources>
+    <!-- WikiTree green and tan -->
+    <color name="wt_green">#25422D</color>
+    <color name="wt_tan">#F7F6F0</color>
+    <color name="on_green">#FFFFFF</color>
+    <color name="wt_gold">#F2C14E</color>
+    <!-- Deaths in the Anniversaries list and widget. -->
+    <color name="death_fill">#DDDBD3</color>
+    <color name="death_ink">#4A4A4A</color>
+    <color name="muted_ink">#6B6B6B</color>
+    <!-- Colours that change with the phone's dark theme (values-night/colors.xml has the dark ones). -->
+    <!-- Green text, stars and links on the tan background. -->
+    <color name="wt_accent">#25422D</color>
+    <!-- Behind white text on a full-width button. -->
+    <color name="wt_button">#25422D</color>
+    <color name="text_primary">#1F1F1F</color>
+    <color name="text_secondary">#6B6B6B</color>
+    <color name="text_error">#B3261E</color>
+    <!-- Notable search matches: a warm orange, and a light tint of it behind the row. -->
+    <color name="notable">#A85500</color>
+    <color name="notable_tint">#17A85500</color>
+    <!-- Behind the WikiTree emblem in the launcher icon -->
+    <color name="icon_background">#FFFFFF</color>
+    <!-- The long-press sheet on the People and start screens. -->
+    <color name="sheet_bg">#FFFFFF</color>
+</resources>

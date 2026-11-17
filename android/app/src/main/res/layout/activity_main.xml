@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/wt_green"
+    android:orientation="vertical">
+
+    <!-- The slim bar that replaces the site header and the Tree App / ID form. -->
+    <LinearLayout
+        android:id="@+id/bar"
+        android:layout_width="match_parent"
+        android:layout_height="44dp"
+        android:background="@color/wt_green"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <Button
+            android:id="@+id/btn_app"
+            style="@style/BarButton"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:ellipsize="end"
+            android:gravity="start|center_vertical"
+            android:maxLines="1"
+            android:text="@string/choose_app" />
+
+        <Button
+            android:id="@+id/btn_controls"
+            style="@style/BarButton"
+            android:contentDescription="@string/controls"
+            android:text="⚙"
+            android:textSize="18sp" />
+
+        <Button
+            android:id="@+id/btn_person"
+            style="@style/BarButton"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:maxWidth="160dp"
+            android:text="@string/change_person" />
+
+        <Button
+            android:id="@+id/btn_menu"
+            style="@style/BarButton"
+            android:contentDescription="@string/menu"
+            android:text="⋮"
+            android:textSize="20sp" />
+    </LinearLayout>
+
+    <ProgressBar
+        android:id="@+id/progress"
+        style="@android:style/Widget.Material.ProgressBar.Horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="3dp"
+        android:indeterminate="true"
+        android:visibility="gone" />
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:background="@color/wt_tan">
+
+        <WebView
+            android:id="@+id/web"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+
+        <!-- Shown instead of the WebView's own error page when WikiTree can't be reached. -->
+        <LinearLayout
+            android:id="@+id/error"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@color/wt_tan"
+            android:clickable="true"
+            android:focusable="true"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:padding="32dp"
+            android:visibility="gone">
+
+            <ImageView
+                android:layout_width="64dp"
+                android:layout_height="64dp"
+                android:importantForAccessibility="no"
+                android:src="@drawable/ic_offline" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:text="@string/offline_title"
+                android:textColor="@color/text_primary"
+                android:textSize="20sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:gravity="center"
+                android:maxWidth="320dp"
+                android:text="@string/offline"
+                android:textColor="@color/text_secondary"
+                android:textSize="15sp" />
+
+            <Button
+                android:id="@+id/btn_retry"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
+                android:backgroundTint="@color/wt_button"
+                android:minWidth="160dp"
+                android:text="@string/retry"
+                android:textAllCaps="false"
+                android:textColor="@color/on_green"
+                android:textSize="16sp" />
+        </LinearLayout>
+    </FrameLayout>
+</LinearLayout>
