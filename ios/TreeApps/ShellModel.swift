@@ -297,11 +297,23 @@ final class ShellModel: NSObject, ObservableObject, WKNavigationDelegate, WKUIDe
     }
 
     /// The apps build their controls a moment after the page or app changes, so look again then.
+    /// Some take much longer (Ahnentafel for a big tree builds for 20 to 30 seconds), so until the
+    /// controls are found, keep looking every 3 seconds for three minutes.
     private func refreshSoon() {
+        refreshGen += 1
+        let gen = refreshGen
         for delay in [1.5, 4.0] {
             DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in self?.refreshState() }
         }
+        for delay in stride(from: 7.0, through: 180.0, by: 3.0) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in
+                guard let self, gen == self.refreshGen, !self.hasControls else { return }
+                self.refreshState()
+            }
+        }
     }
+
+    private var refreshGen = 0
 
     func toggleBars() {
         showBars.toggle()

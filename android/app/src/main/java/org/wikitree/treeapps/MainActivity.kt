@@ -593,10 +593,25 @@ class MainActivity : Activity() {
         web.evaluateJavascript("window.__wtShellSetControls && __wtShellSetControls($showControls)", null)
     }
 
-    /** The apps build their controls a moment after the page or app changes, so look again then. */
+    /** The apps build their controls a moment after the page or app changes, so look again then.
+     *  Some take much longer (Ahnentafel for a big tree builds for 20 to 30 seconds), so until the
+     *  controls are found, keep looking every 3 seconds for three minutes. */
     private fun refreshSoon() {
+        val gen = ++refreshGen
         web.postDelayed({ refreshState() }, 1500)
         web.postDelayed({ refreshState() }, 4000)
+        pollControls(gen, 7000)
+    }
+
+    private var refreshGen = 0
+
+    private fun pollControls(gen: Int, at: Long) {
+        if (at > 180_000) return
+        web.postDelayed({
+            if (gen != refreshGen || hasControls) return@postDelayed
+            refreshState()
+            pollControls(gen, at + 3000)
+        }, 3000)
     }
 
     /** Explain the hidden controls the first few times they are hidden. */
