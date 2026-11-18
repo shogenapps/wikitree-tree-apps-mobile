@@ -145,7 +145,10 @@ class WikiTreeSheet(private val activity: Activity) {
 
             override fun onPageFinished(view: WebView, url: String) {
                 progress.visibility = View.GONE
-                title.text = view.title?.takeIf { it.isNotBlank() && !it.startsWith("http") } ?: ""
+                // A profile shows the person's name in large type right under the bar, so the bar
+                // leaves it out there and keeps the room for its buttons.
+                title.text = if (Biography.profileId(url) != null) "" else
+                    view.title?.takeIf { it.isNotBlank() && !it.startsWith("http") } ?: ""
             }
         }
         root.addView(web, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f))
