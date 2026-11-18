@@ -246,11 +246,10 @@ any shell workaround.
   inside the app's container, and `refreshAncestorList()` rebuilds that container with
   `$(this.selector).html(...)`, which removes the options with it.
 - **Source:** `views/ahnentafel/ahnentafel.js` (`refreshAncestorList`, `renderOptions`).
-- **Seen:** Android tablet emulator, 2026-11-18. Shell workaround: on tablets the shell moves
-  the options into the header beside `#ahnentafelHeaderBox` (`ahnKeepOptions` in `shared/shell.js`).
-  Phones still lose them.
+- **Seen:** Android tablet emulator, 2026-11-18. Shell workaround: the shell moves the options
+  into the header beside `#ahnentafelHeaderBox` (`ahnKeepOptions` in `shared/shell.js`).
 - **Also:** the same rebuild deletes `#ahnentafelReportWrapper`, which is only created once, so
-  Report View stays blank after More Generations. Shell workaround (tablets): the wrapper is
+  Report View stays blank after More Generations. Shell workaround: the wrapper is
   moved to just after `#view-container`.
 
 ### Fractal Tree: "SecurityError: The operation is insecure" on opening

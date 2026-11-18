@@ -1310,10 +1310,10 @@
     // Ahnentafel puts its options just above the list, inside the app's container, and when
     // more generations load it rebuilds that container with .html(), which threw the options
     // away until the app was opened again (a Tree App bug, listed in docs/tree-app-issues.md).
-    // On tablets they are moved into the header beside the app's other buttons, out of the
-    // container's way; their event handlers move with them. Report View's box likewise.
+    // They are moved into the header beside the app's other buttons (phones and tablets), out
+    // of the container's way; their event handlers move with them. Report View's box likewise.
     function ahnKeepOptions() {
-        if (document.documentElement.getAttribute("data-wt-view") !== "ahnentafel" || matchMedia(PHONE_QUERY).matches) return;
+        if (document.documentElement.getAttribute("data-wt-view") !== "ahnentafel") return;
         var opts = document.getElementById("ahnentafelOptions");
         var box = document.getElementById("ahnentafelHeaderBox");
         if (opts && box && box.parentNode && opts.previousElementSibling !== box) box.parentNode.insertBefore(opts, box.nextSibling);
