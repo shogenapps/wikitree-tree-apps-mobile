@@ -201,8 +201,14 @@
     // ran off the right edge. Fit the container to the screen and wrap each button row as whole
     // buttons. The people table stays as wide as it is and scrolls sideways inside the view, as
     // before. Its two button rows are hidden with the other controls (see CONTROLS).
+    // Tablets too (when the controls are not in the right-hand column, see cc7Side): on an iPad
+    // in portrait the Improve count accuracy box was left after Excel with its label wrapped onto
+    // the next line, and the help "?" was cut off at the right edge.
+    // Also on tablets, the Bootstrap row's 12px overhang (dropped for every app on phones, see the
+    // top of this file) put the first + button of the Hierarchy view half off the left edge.
     CSS +=
-        " @media (max-width: 599px), (max-height: 599px) {" +
+        " html[data-wt-view=cc7] main#main > .row { margin-left: 0 !important; margin-right: 0 !important; }" +
+        " html[data-wt-view=cc7] main#main > .row > * { padding-left: 0 !important; padding-right: 0 !important; }" +
         " #cc7Container { min-width: 0 !important; }" +
         " #cc7Container > div:has(> #getPeopleButton), #cc7Container > #tableButtons" +
         " { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 6px; padding: 4px 6px; margin: 0 !important; }" +
@@ -216,8 +222,7 @@
         " #cc7Container > div:has(> #getPeopleButton) > #adminButtons { order: 2; }" +
         " #cc7Container > div:has(> #getPeopleButton) > #adminButtons { margin-left: auto !important; }" +
         " #cc7Container > #degreesTable { margin: 6px 8px !important; width: auto !important; max-width: calc(100% - 16px); }" +
-        " #cc7Container > #ancReport { margin: 0 8px 8px !important; }" +
-        " }";
+        " #cc7Container > #ancReport { margin: 0 8px 8px !important; }";
 
     // CC7 Views on phones: the counts table above the people list ends with a note ("True CC7
     // size for ... = [not available] ...") whose long words set a minimum width, so at a larger
@@ -1522,7 +1527,9 @@
     // and Super Tree's photos sit in a foreignObject), so there those pictures get no filter and
     // undarkSvgImages swaps in a copy with the colours already inverted instead.
     var SAFARI = /AppleWebKit/.test(navigator.userAgent) && !/Chrome|Android/.test(navigator.userAgent);
-    var UNDARK = "img:not([src*=\"Home_icon\"])" + (SAFARI ? ":not(svg img)" : "") +
+    // CC7's settings gear is a black picture too: left inverted, so it shows light on the dark page
+    // (inverted back it was black on black, and could not be seen).
+    var UNDARK = "img:not([src*=\"Home_icon\"]):not([src*=\"cc7/images/setting-icon\"])" + (SAFARI ? ":not(svg img)" : "") +
         ", video, canvas, picture, iframe, [style*=\"background-image\"]";
     function darkCss() {
         var root = "html.wt-dark" + LIGHT_VIEWS.map(function (v) { return ":not([data-wt-view=" + v + "])"; }).join("");
