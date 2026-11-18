@@ -624,10 +624,12 @@ class MainActivity : Activity() {
         Toast.makeText(this, R.string.controls_hint, Toast.LENGTH_LONG).show()
     }
 
-    private fun applyOrientation() {
+    /** Called again by [WikiTreeSheet] as a page opens or closes over the app. */
+    fun applyOrientation() {
         val isPhone = resources.configuration.smallestScreenWidthDp < 600
-        // The start screen is not a wide chart, whatever the last app was.
-        val lock = started && isPhone && prefs.getBoolean(KEY_AUTO_ROTATE, true) && currentView in landscapeViews
+        // The start screen is not a wide chart, whatever the last app was, and nor is a profile,
+        // another page or the People screen open over the chart: the lock is let go until it closes.
+        val lock = started && isPhone && !WikiTreeSheet.isShowing && peopleDialog?.isShowing != true && prefs.getBoolean(KEY_AUTO_ROTATE, true) && currentView in landscapeViews
         val wanted = if (lock) ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
         else ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
         if (requestedOrientation != wanted) requestedOrientation = wanted
@@ -696,7 +698,8 @@ class MainActivity : Activity() {
             onPick = { show(it.id, it.view.ifBlank { currentView }) },
             watchlist = watchlist,
             apps = views(),
-        ).also { it.show() }
+            onClosed = { applyOrientation() },
+        ).also { it.show(); applyOrientation() }
     }
 
     // ---- Dark mode -------------------------------------------------------------------------

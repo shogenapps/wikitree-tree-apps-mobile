@@ -51,6 +51,8 @@ class PeopleDialog(
     private val watchlist: WatchlistStore? = null,
     /** Every Tree App (key, title), for the long-press menu's "Open in" items. */
     private val apps: List<Pair<String, String>> = emptyList(),
+    /** Called once the screen has closed. */
+    private val onClosed: () -> Unit = {},
 ) {
     /** What the start screen adds. */
     class Start(
@@ -230,7 +232,10 @@ class PeopleDialog(
         store.onChange = onChange
         // Only this screen's own listener: when the screen is drawn again (dark mode switched),
         // the new one is already listening by the time this dismissal arrives.
-        dialog.setOnDismissListener { if (store.onChange === onChange) store.onChange = null }
+        dialog.setOnDismissListener {
+            if (store.onChange === onChange) store.onChange = null
+            onClosed()
+        }
         // Back on the start screen leaves the app; nothing has been loaded yet.
         if (start != null) dialog.setOnCancelListener { start.onBack() }
         refresh()

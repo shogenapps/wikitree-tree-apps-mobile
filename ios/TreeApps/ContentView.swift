@@ -95,6 +95,9 @@ struct ContentView: View {
                 onPick: { id, view in shell.show(id: id, view: view.isEmpty ? shell.viewKey : view) },
                 apps: shell.apps.map { ($0.key, $0.title) }
             )
+            // Not a wide chart: the landscape lock is let go while it is open (see [Rotation]).
+            .onAppear { Rotation.pageOpened() }
+            .onDisappear { Rotation.pageClosed() }
         }
         .sheet(isPresented: $showingLogin, onDismiss: { shell.reload() }) { LoginView() }
         .onAppear(perform: runQuickAction)
@@ -287,11 +290,16 @@ struct PageSheet: View {
     /// Read the profile's biography aloud as soon as it opens.
     var listen = false
     var body: some View {
-        if url.host?.hasSuffix("wikitree.com") == true {
-            WikiTreeSheet(url: url, listen: listen)
-        } else {
-            SafariSheet(url: url).ignoresSafeArea()
+        Group {
+            if url.host?.hasSuffix("wikitree.com") == true {
+                WikiTreeSheet(url: url, listen: listen)
+            } else {
+                SafariSheet(url: url).ignoresSafeArea()
+            }
         }
+        // A wide chart's landscape lock is let go while the page is open (see [Rotation]).
+        .onAppear { Rotation.pageOpened() }
+        .onDisappear { Rotation.pageClosed() }
     }
 }
 
