@@ -1304,7 +1304,7 @@
         " " + AHN + " #ahnentafelHeaderBox > * { margin: 0 !important; float: none !important; position: static !important; }" +
         " " + AHN + " > header > #ahnentafelOptions { display: flex !important; flex-direction: column; align-items: flex-start; gap: 10px; margin: 0 !important; padding: 0 !important; }" +
         " " + AHN + " > header > #ahnentafelOptions > * { margin: 0 !important; max-width: 100%; }" +
-        " " + AHN + " > header > #ahnentafelOptions select { max-width: 100%; }" +
+        " " + AHN + " > header > #ahnentafelOptions select { max-width: 100%; min-width: 0; flex: 0 1 auto; }" +
         " }";
 
     // Ahnentafel puts its options just above the list, inside the app's container, and when
