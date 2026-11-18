@@ -1286,7 +1286,7 @@
         " html[data-wt-view=ahnentafel] #ahnentafelAncestorList .generationContainer > :first-child { break-before: avoid; }" +
         // WebKit does not always keep a heading with what follows it, so a generation of up to
         // eight people (the first four) is kept whole in one column.
-        " html[data-wt-view=ahnentafel] #ahnentafelAncestorList > section:has(> .generationContainer:not(:has(> :nth-child(9)))) { break-inside: avoid; }" +
+        " html[data-wt-view=ahnentafel] #ahnentafelAncestorList > section:not(:has(> .generationContainer > :nth-child(9))) { break-inside: avoid; }" +
         // Each person's ↕ button was placed at the right edge of the whole list, on top of the
         // second column's text: it becomes the end of the person's own row, as on phones.
         " html[data-wt-view=ahnentafel] #ahnentafelAncestorList .descendantButton { position: static !important; flex: none; align-self: flex-start; margin: 0 0 0 6px !important; }" +

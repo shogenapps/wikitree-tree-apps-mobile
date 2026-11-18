@@ -239,6 +239,15 @@ any shell workaround.
 - **Source:** `views/familyGroupApp/`.
 - **Seen:** Android shell, 2026-11-14. Shell workaround: none. Not checked in a desktop browser.
 
+### Fractal Tree: "SecurityError: The operation is insecure" on opening
+- **Symptom:** opening Fractal Tree logs `SecurityError: The operation is insecure` at
+  `FractalView.js:1731`. The app draws an image from apps.wikitree.com onto a canvas and then
+  calls `toDataURL`, which the browser refuses for an image from another origin (a tainted
+  canvas). The tree still draws.
+- **Source:** `views/fractalTree/FractalView.js` (load the image with `crossOrigin = "anonymous"`
+  and serve it with CORS, or skip `toDataURL` for it).
+- **Seen:** iPad Simulator (iOS 26.5), 2026-11-18. Shell workaround: none needed.
+
 ## Touch and wording
 
 ### "Mouse wheel" in help text
