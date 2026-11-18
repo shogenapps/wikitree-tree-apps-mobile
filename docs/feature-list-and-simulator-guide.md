@@ -34,6 +34,7 @@ move to WikiTree, and for WikiTree to publish it in the App Store and Google Pla
 **Charts and profiles**
 - **Share this chart** (⋮ menu): a picture of the chart plus a link back to it.
 - **Print or save as PDF** (⋮ menu): a one-page PDF with the title, chart and link.
+- **Open this page in browser** (⋮ menu, or the bar on tablets): the same chart in the phone's default browser (Safari, Firefox, Chrome), so the WikiTree Browser Extension can be used on it. The browser has its own WikiTree login.
 - Profiles and other wikitree.com pages open in a sheet over the app, already logged in. Other
   sites open in a Safari sheet. Closing it returns you to the chart.
 - **Listen to biography:** reads a profile's biography aloud, with pause and stop.

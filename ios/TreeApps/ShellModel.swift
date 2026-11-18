@@ -332,6 +332,15 @@ final class ShellModel: NSObject, ObservableObject, WKNavigationDelegate, WKUIDe
         people.visit(personId, view: viewKey)
     }
 
+    /// The page on screen, in the default browser (Safari, Firefox and so on), where the WikiTree
+    /// Browser Extension can run; it can't inside the app. The Tree Apps page keeps the person and
+    /// the app in its address, so the browser opens the same chart. After a failed load the web
+    /// view may hold no WikiTree address, so the chart's own link is used instead.
+    func openInBrowser() {
+        let page = webView.url.flatMap { $0.host == Self.siteHost ? $0 : nil }
+        UIApplication.shared.open(page ?? startURL())
+    }
+
     private func startURL() -> URL {
         if personId.isEmpty { return URL(string: Self.appsURL)! }
         let v = viewKey.isEmpty ? defaultView : viewKey
