@@ -249,6 +249,9 @@ any shell workaround.
 - **Seen:** Android tablet emulator, 2026-11-18. Shell workaround: on tablets the shell moves
   the options into the header beside `#ahnentafelHeaderBox` (`ahnKeepOptions` in `shared/shell.js`).
   Phones still lose them.
+- **Also:** the same rebuild deletes `#ahnentafelReportWrapper`, which is only created once, so
+  Report View stays blank after More Generations. Shell workaround (tablets): the wrapper is
+  moved to just after `#view-container`.
 
 ### Fractal Tree: "SecurityError: The operation is insecure" on opening
 - **Symptom:** opening Fractal Tree logs `SecurityError: The operation is insecure` at

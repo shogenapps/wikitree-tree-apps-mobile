@@ -1298,24 +1298,31 @@
         " }" +
         " @media " + DOCK_WIDE + " {" +
         " " + AHN + " main#main { margin-right: " + DOCK_W + "px !important; }" +
-        " " + AHN + " > header { position: fixed !important; top: 0; bottom: 0; right: 0; width: " + DOCK_W + "px; z-index: 1000; overflow-y: auto;" +
+        " " + AHN + " > header { position: fixed !important; top: 0; bottom: 0; right: 0; width: " + DOCK_W + "px; z-index: 1000; overflow-y: auto; align-content: flex-start !important;" +
         " box-sizing: border-box; padding: 12px 14px 24px !important; background: #fff !important; border-left: 1px solid #c9cdbf !important; }" +
         " " + AHN + " #ahnentafelHeaderBox { display: flex !important; flex-wrap: wrap; align-items: center; gap: 6px; position: static !important; float: none !important; margin: 0 0 12px !important; width: auto !important; }" +
         " " + AHN + " #ahnentafelHeaderBox > * { margin: 0 !important; float: none !important; position: static !important; }" +
         " " + AHN + " > header > #ahnentafelOptions { display: flex !important; flex-direction: column; align-items: flex-start; gap: 10px; margin: 0 !important; padding: 0 !important; }" +
-        " " + AHN + " > header > #ahnentafelOptions > * { margin: 0 !important; }" +
+        " " + AHN + " > header > #ahnentafelOptions > * { margin: 0 !important; max-width: 100%; }" +
+        " " + AHN + " > header > #ahnentafelOptions select { max-width: 100%; }" +
         " }";
 
     // Ahnentafel puts its options just above the list, inside the app's container, and when
     // more generations load it rebuilds that container with .html(), which threw the options
     // away until the app was opened again (a Tree App bug, listed in docs/tree-app-issues.md).
     // On tablets they are moved into the header beside the app's other buttons, out of the
-    // container's way; their event handlers move with them.
+    // container's way; their event handlers move with them. Report View's box likewise.
     function ahnKeepOptions() {
         if (document.documentElement.getAttribute("data-wt-view") !== "ahnentafel" || matchMedia(PHONE_QUERY).matches) return;
         var opts = document.getElementById("ahnentafelOptions");
         var box = document.getElementById("ahnentafelHeaderBox");
         if (opts && box && box.parentNode && opts.previousElementSibling !== box) box.parentNode.insertBefore(opts, box.nextSibling);
+        // The box Report View draws into is thrown away by the same rebuild and never made
+        // again, so Report View stayed blank after More Generations: it goes just after the
+        // container instead.
+        var report = document.getElementById("ahnentafelReportWrapper");
+        var vc = document.getElementById("view-container");
+        if (report && vc && vc.parentNode && report.parentNode !== vc.parentNode) vc.parentNode.insertBefore(report, vc.nextSibling);
     }
 
     var dockEl, dockObserver, dockMode = "";
