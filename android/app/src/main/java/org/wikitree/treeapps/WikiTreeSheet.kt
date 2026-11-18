@@ -171,6 +171,7 @@ class WikiTreeSheet(private val activity: Activity) {
             android.webkit.CookieManager.getInstance().flush()
             onClose()
             showing -= dialog
+            (activity as? MainActivity)?.applyOrientation()
             if (showing.isEmpty()) {
                 val actions = afterClose.values.toList()
                 afterClose.clear()
@@ -181,6 +182,8 @@ class WikiTreeSheet(private val activity: Activity) {
         dialog.window?.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
         dialog.show()
         showing += dialog
+        // A wide chart's landscape lock is let go while a page is open over it.
+        (activity as? MainActivity)?.applyOrientation()
         web.loadUrl(uri.toString())
         if (listen) Biography.profileId(uri.toString())?.let { player.start(it) }
     }
@@ -196,6 +199,9 @@ class WikiTreeSheet(private val activity: Activity) {
 
         private val showing = mutableSetOf<Dialog>()
         private val afterClose = linkedMapOf<String, () -> Unit>()
+
+        /** A page sheet is open (over a Tree App, the start screen or the People screen). */
+        val isShowing get() = showing.isNotEmpty()
 
         /**
          * Run [action] now, or once every open sheet has closed if one is showing; a later action
