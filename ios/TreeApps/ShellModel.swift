@@ -131,6 +131,8 @@ final class ShellModel: NSObject, ObservableObject, WKNavigationDelegate, WKUIDe
         let text: [String: String] = [
             "shell_about_numbers": String(localized: "About these numbers"),
             "shell_about_xtree": String(localized: "About the X-chromosome tree"),
+            "shell_biocheck_on": String(localized: "Bio Check: on", comment: "CC7 Views: Bio Check is turned on or off in the app's settings"),
+            "shell_biocheck_off": String(localized: "Bio Check: off", comment: "CC7 Views: Bio Check is turned on or off in the app's settings"),
             "shell_age_now": String(localized: "just now"),
             "shell_age_minutes": String(localized: "\(n) min ago", comment: "A number of minutes"),
             "shell_age_hours": String(localized: "\(n) h ago", comment: "A number of hours"),

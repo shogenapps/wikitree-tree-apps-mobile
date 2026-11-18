@@ -1100,6 +1100,19 @@
         " html:not(#wt-cc7):not(#wt-cc7) .cc7Table .pop-up.wrap { width: auto !important; }" +
         " }";
 
+    // CC7 Views: its notice at the top ("Bio Check is ENABLED in settings. Loading 7 degrees may
+    // take a while ... Feel free to change it.") is bare text in #info-panel, so the controls
+    // rule (which hides the panel's children, see CONTROLS) could not hide it, and on a phone it
+    // took four lines above everything else. cc7Info() wraps it in a span, so it now hides and
+    // shows with the controls, and on phones it is one short line instead ("Bio Check: on").
+    // The full text still shows on tablets, and on phones when it says something else.
+    CSS +=
+        " .wt-cc7-info-short { display: none; }" +
+        " @media (max-width: 599px), (max-height: 599px) {" +
+        " #info-panel > .wt-cc7-info-short { display: inline-block; margin: 6px 8px 2px; padding: 2px 10px; border-radius: 10px; background: #eef3ea; color: #25422d; font-size: 12px; }" +
+        " #info-panel > .wt-cc7-info-short + .wt-cc7-info-full { display: none; }" +
+        " }";
+
     // Long notes. On phones each app's explanatory text (MORE[view].hide) is folded away behind
     // one short line ("About these numbers") placed after MORE[view].after or before
     // MORE[view].before; a tap shows the text again. addMore() adds the line. Warnings, errors,
@@ -1182,6 +1195,7 @@
         " #descendantsButtons, #helpEtc, #treeViewControls, #sharedControls, #reportControls," +
         " #couples-view-container > #ct-help-button," +
         " #cc7Container > div:has(> #getPeopleButton), #cc7Container > #tableButtons," +
+        " #cc7Container > #wt-cc7-side," +
         " #cctContainer > #controlBlock," +
         " #ccdContainer > #controlBlock," +
         " #ccwebs-view:has(.ccw-result) > .ccw-form," +
@@ -1238,6 +1252,7 @@
         updateDock();
         // FanDoku, Fractal Tree and Ancestor Webs: the controls take room from the top of the
         // view, so fit the chart again (as on turning) or its bottom row was cut off.
+        cc7Side();
         var view = document.documentElement.getAttribute("data-wt-view");
         if (boardFit && BOARDS[view]) fitBoard(view, true);
     };
@@ -1315,6 +1330,62 @@
         " " + AHN + " > header > #ahnentafelOptions > * { margin: 0 !important; max-width: 100%; }" +
         " " + AHN + " > header > #ahnentafelOptions select { max-width: 100%; min-width: 0; flex: 0 1 auto; }" +
         " }";
+
+    // CC7 Views on tablets: in a wide landscape window its controls (the Get buttons, degree,
+    // Save/Load/CSV/Excel, settings and help; the counts table and the ancestor summary; the
+    // Everyone/All filters and the view buttons) sit in a 320px column on the right, like
+    // Ahnentafel's and the docked settings, so the people table gets the rest of the screen and
+    // they stay in reach however far down it is scrolled. Shown and hidden with the shell's
+    // controls button (closed at start). cc7Side() moves them into the column (#wt-cc7-side,
+    // inside #cc7Container so the app's own click handlers still reach them) and back again.
+    // CC7's Settings box and its help open beside the column instead of inside it.
+    var C7 = "html.wt-cc7-side body";
+    var C7S = C7 + " #wt-cc7-side";
+    var C7ROW = C7S + " > .wt-cc7-get";
+    CSS +=
+        " #wt-cc7-side { display: none; }" +
+        " " + C7 + " main#main { margin-right: " + DOCK_W + "px !important; }" +
+        " " + C7 + " #info-panel > .wt-cc7-info-short, " + C7 + " #info-panel > .wt-cc7-info-full { display: none !important; }" +
+        " " + C7S + " { display: flex; flex-direction: column; gap: 14px; position: fixed; top: 0; bottom: 0; right: 0; width: " + DOCK_W + "px; z-index: 1000;" +
+        " box-sizing: border-box; padding: 14px 14px 28px; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch;" +
+        " background: #fff; border-left: 1px solid #c9cdbf; font-size: 14px; line-height: 1.35; text-align: left; }" +
+        " " + C7S + " > * { margin: 0 !important; max-width: 100%; box-sizing: border-box; }" +
+        " " + C7S + " > * + *:not(.wt-cc7-side-note) { border-top: 1px solid #e3e6dc; padding-top: 14px !important; }" +
+        " " + C7S + " .btn { margin: 0 !important; white-space: nowrap; }" +
+        " " + C7S + " select { min-height: 31px; border: 1px solid #c9cdbf; border-radius: 4px; background: #fff; padding: 0 4px; }" +
+        // The Bio Check line, as a small label at the top.
+        " " + C7S + " > .wt-cc7-side-note { align-self: flex-start; padding: 2px 10px; border-radius: 10px; background: #eef3ea; color: #25422d; font-size: 12px; }" +
+        // Get row: Get CCn and its degree, Get Degree n Only, then the file buttons two by two,
+        // Improve count accuracy, and settings/help at the top right.
+        " " + C7ROW + " { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 8px; position: relative; }" +
+        " " + C7ROW + " > #getPeopleButton { grid-column: 1; }" +
+        " " + C7ROW + " > #cc7Degree { grid-column: 2; }" +
+        " " + C7ROW + " > #getDegreeButton, " + C7ROW + " > #cancelLoad { grid-column: 1 / -1; }" +
+        " " + C7ROW + " > .wt-cc7-files { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }" +
+        " " + C7ROW + " > .wt-cc7-files > .btn { width: 100%; }" +
+        " " + C7ROW + " > .wt-cc7-extra { grid-column: 1 / -1; display: flex; align-items: center; gap: 8px; }" +
+        " " + C7ROW + " > .wt-cc7-extra > * { margin: 0 !important; }" +
+        " " + C7ROW + " > .wt-cc7-extra > #adminButtons { margin-left: auto !important; display: flex; align-items: center; gap: 10px; }" +
+        // Settings and help: beside the column, as tall as the screen allows.
+        " " + C7S + " #settingsDIV, " + C7S + " #explanation { position: fixed !important; top: 12px !important; bottom: auto !important; left: auto !important;" +
+        " right: " + (DOCK_W + 12) + "px !important; width: min(440px, calc(100vw - " + (DOCK_W + 24) + "px)) !important; max-height: calc(100vh - 24px); overflow-y: auto; box-sizing: border-box; }" +
+        // Counts and the ancestor summary.
+        " " + C7S + " > #degreesTable { display: table; width: 100% !important; font-size: 13px; }" +
+        " " + C7S + " > #degreesTable th, " + C7S + " > #degreesTable td { padding: 2px 4px !important; }" +
+        " " + C7S + " > #degreesTable td.trueSize { font-size: 12px; color: #555; overflow-wrap: anywhere; }" +
+        // The note about privacy settings beside the counts (wrapped by MORE.cc7.prepare) made the
+        // three rows 230px tall in the column; the "True CC7 size" line stays.
+        " " + C7S + " > #degreesTable td.trueSize > .wt-more-note { display: none; }" +
+        // With its text in the column, the empty info panel took a strip above the people list.
+        " " + C7 + " #info-panel:not(:has(> :not(.wt-cc7-info-short):not(.wt-cc7-info-full))) { display: none !important; }" +
+        " " + C7S + " > #ancReport { font-size: 12.5px; color: #555; border-top: 0 !important; padding-top: 0 !important; }" +
+        // Who to show, and the views as a two-column grid of equal buttons.
+        " " + C7S + " > #tableButtons { display: grid !important; grid-template-columns: 1fr 1fr; gap: 8px; align-items: center; }" +
+        " " + C7S + " > #tableButtons > .select2-container { grid-column: 1 / -1; width: 100% !important; }" +
+        " " + C7S + " > #tableButtons > #cc7Gender { grid-column: 1 / -1; width: 100%; }" +
+        " " + C7S + " > #tableButtons > .btn { width: 100%; }" +
+        " " + C7S + " > #tableButtons > #wideTableButton, " + C7S + " > #tableButtons > #clearTableFiltersButton { grid-column: 1 / -1; }" +
+        " " + C7S + " > #tableButtons > .viewButton.active { box-shadow: inset 0 0 0 2px #25422d; }";
 
     // Ahnentafel puts its options just above the list, inside the app's container, and when
     // more generations load it rebuilds that container with .html(), which threw the options
@@ -1775,6 +1846,118 @@
     window.addEventListener("hashchange", setViewAttr);
     // The "About ..." line for MORE (see above), once its place is on the page. Safe to run any number of times; the app may build or rebuild its page at any time,
     // including after its files load late.
+    // CC7 Views on tablets (see its CSS block): move its controls into a column on the right while
+    // the controls are shown in a wide landscape window, and back to where they were otherwise.
+    // The app adds, rebuilds and removes these parts as people load and views change, and puts
+    // other things next to them (the Stats view after #tableButtons, the Missing Links count
+    // before it), so this runs from the MutationObserver and puts anything else it finds in the
+    // column back into the page, just after it.
+    function cc7Side() {
+        var root = document.documentElement;
+        var box = document.getElementById("cc7Container");
+        var side = document.getElementById("wt-cc7-side");
+        var get = document.getElementById("getPeopleButton");
+        var want = !!box && !!get && root.getAttribute("data-wt-view") === "cc7" && root.classList.contains("wt-controls") &&
+            !capture && matchMedia(DOCK_WIDE).matches;
+        if (!want) {
+            if (side) {
+                cc7SideRow(false);
+                [].slice.call(side.children).forEach(function (el) {
+                    if (!el.classList.contains("wt-cc7-side-note")) side.parentNode.insertBefore(el, side);
+                });
+                side.remove();
+            }
+            if (root.classList.contains("wt-cc7-side")) {
+                root.classList.remove("wt-cc7-side");
+                setTimeout(function () { window.dispatchEvent(new Event("resize")); }, 50);
+            }
+            return;
+        }
+        if (!side || side.parentNode !== box) {
+            if (side) side.remove();
+            side = document.createElement("div");
+            side.id = "wt-cc7-side";
+            box.insertBefore(side, box.firstChild);
+        }
+        var parts = [get.parentNode, document.getElementById("degreesTable"), document.getElementById("ancReport"), document.getElementById("tableButtons")]
+            .filter(function (el) { return el && el !== box && box.contains(el); });
+        var info = document.querySelector("#info-panel > .wt-cc7-info-short") || document.querySelector("#info-panel > .wt-cc7-info-full");
+        var note = side.querySelector(":scope > .wt-cc7-side-note");
+        if (info && !note) {
+            note = document.createElement("div");
+            note.className = "wt-cc7-side-note";
+            side.insertBefore(note, side.firstChild);
+        }
+        if (note) {
+            if (!info) note.remove();
+            else if (note.textContent !== info.textContent) note.textContent = info.textContent;
+        }
+        var at = note && note.parentNode ? note.nextSibling : side.firstChild;
+        parts.forEach(function (el) {
+            if (el !== at) side.insertBefore(el, at);
+            at = el.nextSibling;
+        });
+        for (var el = side.lastElementChild; el; ) {
+            var prev = el.previousElementSibling;
+            if (el !== note && parts.indexOf(el) < 0) box.insertBefore(el, side.nextSibling);
+            el = prev;
+        }
+        cc7SideRow(true);
+        MORE.cc7.prepare();
+        if (!root.classList.contains("wt-cc7-side")) {
+            root.classList.add("wt-cc7-side");
+            setTimeout(function () { window.dispatchEvent(new Event("resize")); }, 50);
+        }
+    }
+    // The Get row's buttons in the column: the file buttons (Save, Load A File, CSV, Excel) and
+    // the Improve count accuracy box (with settings and help) each get a box of their own, so
+    // they can be laid out as two by two and one line; undone when the column goes.
+    var CC7_FILES = ["savePeople", "loadButton", "cc7csv", "cc7excel"];
+    function cc7SideRow(on) {
+        var get = document.getElementById("getPeopleButton");
+        var row = get && get.parentNode;
+        if (!row) return;
+        var files = row.querySelector(":scope > .wt-cc7-files");
+        var extra = row.querySelector(":scope > .wt-cc7-extra");
+        if (!on) {
+            [files, extra].forEach(function (wrap) {
+                if (!wrap) return;
+                while (wrap.firstChild) row.insertBefore(wrap.firstChild, wrap);
+                wrap.remove();
+            });
+            if (row.classList.contains("wt-cc7-get")) row.classList.remove("wt-cc7-get");
+            return;
+        }
+        if (!row.classList.contains("wt-cc7-get")) row.classList.add("wt-cc7-get");
+        if (!files) {
+            files = document.createElement("div");
+            files.className = "wt-cc7-files";
+            row.insertBefore(files, document.getElementById("getExtraDegrees") || null);
+        }
+        CC7_FILES.forEach(function (id) {
+            var b = document.getElementById(id);
+            if (b && b.parentNode === row) files.appendChild(b);
+        });
+        if (!extra) {
+            extra = document.createElement("div");
+            extra.className = "wt-cc7-extra";
+            row.insertBefore(extra, files.nextSibling);
+        }
+        ["getExtraDegrees", "adminButtons"].forEach(function (id) {
+            var el = document.getElementById(id);
+            if (el && el.parentNode === row) {
+                extra.appendChild(el);
+                // The box's label follows it.
+                if (id === "getExtraDegrees") {
+                    var label = row.querySelector(":scope > label[for=getExtraDegrees]");
+                    if (label) extra.appendChild(label);
+                }
+            }
+        });
+        var admin = document.getElementById("adminButtons");
+        if (admin && admin.parentNode === extra && admin !== extra.lastChild) extra.appendChild(admin);
+    }
+
     // CC7 Views on phones: its Settings box has no close mark of its own (the settings icon that
     // toggles it is under the box once it is a sheet, see CC7_POPS). The app closes a pop-up when
     // an x element inside it is tapped, so give the box one, styled like the other pop-ups' [ x ].
@@ -1787,6 +1970,36 @@
         x.style.fontWeight = "bold";
         x.style.cursor = "pointer";
         box.insertBefore(x, box.firstChild);
+    }
+
+    // CC7 Views' notice in #info-panel (see its CSS block): wrap the bare text the app puts there
+    // with setInfoPanel(), and add the short line before it. Runs from the MutationObserver, so
+    // each time the app replaces the text it is wrapped again before the page is drawn.
+    function cc7Info() {
+        // (The view attribute can lag the hash for a moment when CC7 opens.)
+        if (document.documentElement.getAttribute("data-wt-view") !== "cc7" && !/[#&]view=cc7(&|$)/.test(location.hash)) return;
+        var panel = document.getElementById("info-panel");
+        if (!panel) return;
+        var words = "";
+        [].slice.call(panel.childNodes).forEach(function (n) {
+            if (n.nodeType === 3 && n.nodeValue.trim()) {
+                words += n.nodeValue;
+                n.remove();
+            }
+        });
+        if (!words) return;
+        [].forEach.call(panel.querySelectorAll(":scope > .wt-cc7-info-short, :scope > .wt-cc7-info-full"), function (el) { el.remove(); });
+        var full = document.createElement("span");
+        full.className = "wt-cc7-info-full";
+        full.textContent = words.trim();
+        panel.insertBefore(full, panel.firstChild);
+        var on = /Bio Check is ENABLED/.test(words), off = /Bio Check is DISABLED/.test(words);
+        if (on || off) {
+            var shortLine = document.createElement("span");
+            shortLine.className = "wt-cc7-info-short";
+            shortLine.textContent = on ? text("shell_biocheck_on", "Bio Check: on") : text("shell_biocheck_off", "Bio Check: off");
+            panel.insertBefore(shortLine, full);
+        }
     }
 
     // Compact Couple Ancestors on phones: its Height Factor (the vertical spacing) defaults to 55,
@@ -2084,6 +2297,7 @@
         capture.scrolls.forEach(function (s) { s.el.scrollLeft = s.x; s.el.scrollTop = s.y; });
         capture.style.remove();
         capture = null;
+        cc7Side();
         return "";
     }
 
@@ -2103,6 +2317,10 @@
         }).join(", ") + " { display: none !important; }" +
             " ::-webkit-scrollbar { display: none !important; }";
         (document.head || document.documentElement).appendChild(style);
+        // CC7's column of controls (see cc7Side) goes back into the page first, where the rule
+        // above hides it.
+        capture = { style: style };
+        cc7Side();
         capture = { style: style, chart: captureChart(), scrolls: [], scrollers: [] };
         if (!capture.chart) {
             capture.scrollers = captureScrollers();
@@ -2116,12 +2334,15 @@
         queueMore();
         cctHeight();
         cc7SettingsClose();
+        cc7Info();
+        cc7Side();
         ahnKeepOptions();
         undarkSoon();
         if (!staleTimer) staleTimer = setTimeout(clearStale, 1000);
     }).observe(document.documentElement, { childList: true, subtree: true });
     window.addEventListener("resize", function () {
         if (capture) return;
+        cc7Side();
         var view = document.documentElement.getAttribute("data-wt-view");
         if (boardFit && BOARDS[view]) fitBoard(view, true);
     });

@@ -261,6 +261,20 @@ any shell workaround.
   and serve it with CORS, or skip `toDataURL` for it).
 - **Seen:** iPad Simulator (iOS 26.5), 2026-11-18. Shell workaround: none needed.
 
+### CC7 Views: long notice at the top, as bare text
+- **Symptom:** above everything else CC7 shows "Bio Check is ENABLED in settings. Loading 7
+  degrees may take a while, especially with Bio Check enabled (it can be 3 minutes or more) so
+  the default is set to 3. Feel free to change it." On a phone that is four lines before the
+  buttons, and it stays even when the app's controls are hidden, because it is a text node
+  directly in `#info-panel` rather than an element.
+- **Source:** `views/cc7/js/cc7.js`, `setInfoPanelMessage()` and `LONG_LOAD_WARNING`.
+- **Fix:** put the notice in its own element (for example `<p class="cc7-info">`), and shorten
+  it: whether Bio Check is on can be seen in Settings, and the load-time warning could go in the
+  help or beside the degrees selector.
+- **Shell workaround:** `cc7Info()` in `shared/shell.js` wraps the text in a span, so it hides
+  with the controls; on phones it shows one line, "Bio Check: on" or "off", in its place.
+- **Seen:** Ian (Beacall-6), 2026-11-18.
+
 ## Touch and wording
 
 ### "Mouse wheel" in help text

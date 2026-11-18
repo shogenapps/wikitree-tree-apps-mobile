@@ -128,6 +128,8 @@
     <string name="notable">Bekend</string>
     <string name="shell_about_numbers">Over deze getallen</string>
     <string name="shell_about_xtree">Over de X-chromosoomboom</string>
+    <string name="shell_biocheck_on">Bio Check: aan</string>
+    <string name="shell_biocheck_off">Bio Check: uit</string>
     <string name="shell_age_now">zojuist</string>
     <string name="shell_age_minutes" formatted="false">%s min geleden</string>
     <string name="shell_age_hours" formatted="false">%s u geleden</string>
