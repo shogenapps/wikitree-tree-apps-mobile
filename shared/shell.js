@@ -1208,6 +1208,7 @@
 
     // Controls start hidden so the app gets the whole screen; the shell's bar shows them again.
     function applyControls() {
+        document.documentElement.classList.toggle("wt-controls", !!window.__wtShellShowControls);
         var el = document.getElementById("wt-shell-controls");
         if (!window.__wtShellShowControls && !el) {
             el = document.createElement("style");
@@ -1276,23 +1277,46 @@
         " html.wt-dock-below body { padding-bottom: 40vh !important; }" +
         " html.wt-dock-below body main#main .col-lg-12 { max-height: 60vh; }";
 
-    // Ahnentafel on a landscape tablet: one list across a 1180px window gave lines far longer
-    // than the entries and a long scroll. The list flows into two columns instead, each
-    // generation's heading kept with its first entry and no entry split across columns.
+    // Ahnentafel on tablets: one list across a 1180px window gave lines far longer than the
+    // entries. Each generation's people are laid out two to a row instead (father beside
+    // mother), under the generation's heading, so the list still reads straight down and adding
+    // a generation adds it at the bottom. (Newspaper columns were tried first, but with more
+    // generations the reader had to scroll back up to the top of the second column.) Each
+    // person's ↕ button was placed at the right edge of the whole list: it ends the person's own
+    // row instead, as on phones.
+    // In a wide landscape window, Ahnentafel's controls (its header box: help, List/Report
+    // View, More Generations, Format, undo/redo; and its options: date format, date status,
+    // IDs, colours, Excel, GEDCOM) sit in a 320px column on the right, like the docked settings,
+    // so they stay in reach however far down the list is scrolled. They are shown and hidden
+    // with the shell's controls button as before.
+    var AHN = "html.wt-controls[data-wt-view=ahnentafel] body";
     CSS +=
-        " @media " + DOCK_WIDE + " {" +
-        " html[data-wt-view=ahnentafel] #ahnentafelAncestorList { column-count: 2; column-gap: 32px; column-rule: 1px solid #e3dfcf; }" +
-        " html[data-wt-view=ahnentafel] #ahnentafelAncestorList h2 { break-after: avoid; break-inside: avoid; }" +
-        " html[data-wt-view=ahnentafel] #ahnentafelAncestorList .generationContainer > :first-child { break-before: avoid; }" +
-        // WebKit does not always keep a heading with what follows it, so a generation of up to
-        // eight people (the first four) is kept whole in one column.
-        " html[data-wt-view=ahnentafel] #ahnentafelAncestorList > section:not(:has(> .generationContainer > :nth-child(9))) { break-inside: avoid; }" +
-        // Each person's ↕ button was placed at the right edge of the whole list, on top of the
-        // second column's text: it becomes the end of the person's own row, as on phones.
+        " @media (min-width: 600px) and (min-height: 600px) {" +
+        " html[data-wt-view=ahnentafel] #ahnentafelAncestorList .generationContainer { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 16px; }" +
         " html[data-wt-view=ahnentafel] #ahnentafelAncestorList .descendantButton { position: static !important; flex: none; align-self: flex-start; margin: 0 0 0 6px !important; }" +
-        " html[data-wt-view=ahnentafel] #ahnentafelAncestorList .ahnentafelPerson," +
-        " html[data-wt-view=ahnentafel] #ahnentafelAncestorList .ahnentafelPersonShort { break-inside: avoid; }" +
+        " }" +
+        " @media " + DOCK_WIDE + " {" +
+        " " + AHN + " main#main { margin-right: " + DOCK_W + "px !important; }" +
+        " " + AHN + " > header { position: fixed !important; top: 0; right: 0; width: " + DOCK_W + "px; z-index: 1000;" +
+        " box-sizing: border-box; padding: 12px 14px 8px !important; background: #fff !important; border-left: 1px solid #c9cdbf !important; }" +
+        " " + AHN + " #ahnentafelHeaderBox { display: flex !important; flex-wrap: wrap; align-items: center; gap: 6px; position: static !important; float: none !important; margin: 0 !important; width: auto !important; }" +
+        " " + AHN + " #ahnentafelHeaderBox > * { margin: 0 !important; float: none !important; position: static !important; }" +
+        " " + AHN + " #ahnentafelOptions { position: fixed !important; right: 0; bottom: 0; top: var(--wt-ahn-top, 96px); width: " + DOCK_W + "px; z-index: 1000;" +
+        " box-sizing: border-box; margin: 0 !important; padding: 8px 14px 24px !important; overflow-y: auto; background: #fff !important; border-left: 1px solid #c9cdbf !important;" +
+        " display: flex !important; flex-direction: column; align-items: flex-start; gap: 10px; }" +
+        " " + AHN + " #ahnentafelOptions > * { margin: 0 !important; }" +
         " }";
+
+    // The options column starts below the header box, whatever height its buttons wrap to.
+    function ahnTop() {
+        if (document.documentElement.getAttribute("data-wt-view") !== "ahnentafel") return;
+        var h = document.querySelector("body > header");
+        var top = h && getComputedStyle(h).position === "fixed" ? Math.ceil(h.getBoundingClientRect().bottom) : 0;
+        var v = top ? top + "px" : "";
+        if (document.documentElement.style.getPropertyValue("--wt-ahn-top") !== v) {
+            document.documentElement.style.setProperty("--wt-ahn-top", v);
+        }
+    }
 
     var dockEl, dockObserver, dockMode = "";
     function dockKey() { return "wtDock_" + (document.documentElement.getAttribute("data-wt-view") || ""); }
@@ -1378,7 +1402,7 @@
         el.addEventListener("touchcancel", end);
     }
 
-    setInterval(updateDock, 500);
+    setInterval(function () { updateDock(); ahnTop(); }, 500);
     [PHONE_QUERY, DOCK_WIDE].forEach(function (q) {
         var m = matchMedia(q);
         if (m.addEventListener) m.addEventListener("change", updateDock);
