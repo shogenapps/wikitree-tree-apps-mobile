@@ -181,6 +181,10 @@
         " #dynamic-tree-container > svg, #couples-view-container > svg," +
         " html[data-wt-view=fandoku] #view-container > svg, html[data-wt-view=fractal] #view-container > svg," +
         " html[data-wt-view=webs] #view-container > svg { display: block; width: 100%; height: 100%; }" +
+        // Super Tree drew at the width the window had when it started, so it did not shrink
+        // beside a docked settings panel, and its fit (a viewBox) was placed against the right
+        // edge. Sized to its box, the SVG scales the fitted tree to the room there is, centred.
+        " html[data-wt-view=superbig] #view-container > #superbigChartSVG { display: block; width: 100% !important; height: 100% !important; }" +
         " }";
     var PHONE_QUERY = "(max-width: 599px), (max-height: 599px)";
 
@@ -1278,7 +1282,14 @@
     CSS +=
         " @media " + DOCK_WIDE + " {" +
         " html[data-wt-view=ahnentafel] #ahnentafelAncestorList { column-count: 2; column-gap: 32px; column-rule: 1px solid #e3dfcf; }" +
-        " html[data-wt-view=ahnentafel] #ahnentafelAncestorList h2 { break-after: avoid; }" +
+        " html[data-wt-view=ahnentafel] #ahnentafelAncestorList h2 { break-after: avoid; break-inside: avoid; }" +
+        " html[data-wt-view=ahnentafel] #ahnentafelAncestorList .generationContainer > :first-child { break-before: avoid; }" +
+        // WebKit does not always keep a heading with what follows it, so a generation of up to
+        // eight people (the first four) is kept whole in one column.
+        " html[data-wt-view=ahnentafel] #ahnentafelAncestorList > section:has(> .generationContainer:not(:has(> :nth-child(9)))) { break-inside: avoid; }" +
+        // Each person's ↕ button was placed at the right edge of the whole list, on top of the
+        // second column's text: it becomes the end of the person's own row, as on phones.
+        " html[data-wt-view=ahnentafel] #ahnentafelAncestorList .descendantButton { position: static !important; flex: none; align-self: flex-start; margin: 0 0 0 6px !important; }" +
         " html[data-wt-view=ahnentafel] #ahnentafelAncestorList .ahnentafelPerson," +
         " html[data-wt-view=ahnentafel] #ahnentafelAncestorList .ahnentafelPersonShort { break-inside: avoid; }" +
         " }";
