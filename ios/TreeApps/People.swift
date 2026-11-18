@@ -96,19 +96,25 @@ final class PeopleStore: ObservableObject {
     /// from the Tree Apps login (WikiTreeAPI_userName) or the site's remember-me cookie, and a site
     /// session (wikitree_wtb__session) beside it. With no site session, profiles would show
     /// logged out, so nobody is shown and the start screen offers to log in.
-    func findMe() {
+    /// `afterLogin`: just after the login sheet closes. On a slow connection the Tree Apps part of
+    /// the login can still be finishing then, and the cookie with the member's ID arrives a few
+    /// seconds later; with a site session already there, keep looking for it for up to 20 seconds.
+    func findMe(afterLogin: Bool = false) {
         Task { @MainActor in
             var cookies: [HTTPCookie] = []
-            // Just after launch the cookie store can answer empty for a moment.
-            for _ in 0..<5 {
+            var site = false
+            var id = ""
+            for attempt in 0..<(afterLogin ? 20 : 5) {
                 cookies = await WKWebsiteDataStore.default().httpCookieStore.allCookies()
-                if !cookies.isEmpty { break }
+                let wikitree = cookies.filter { $0.domain.hasSuffix("wikitree.com") && !$0.value.isEmpty }
+                site = wikitree.contains { $0.name.hasSuffix("wtb__session") || $0.name.hasSuffix("wtb_UserName") }
+                id = (site ? wikitree.first { $0.name == "WikiTreeAPI_userName" || $0.name.hasSuffix("wtb_UserName") } : nil)?
+                    .value.removingPercentEncoding?.replacingOccurrences(of: " ", with: "_") ?? ""
+                // Just after launch the cookie store can answer empty for a moment.
+                let waiting = cookies.isEmpty || (afterLogin && site && id.isEmpty)
+                if !waiting || attempt == (afterLogin ? 19 : 4) { break }
                 try? await Task.sleep(nanoseconds: 1_000_000_000)
             }
-            let wikitree = cookies.filter { $0.domain.hasSuffix("wikitree.com") && !$0.value.isEmpty }
-            let site = wikitree.contains { $0.name.hasSuffix("wtb__session") || $0.name.hasSuffix("wtb_UserName") }
-            let id = (site ? wikitree.first { $0.name == "WikiTreeAPI_userName" || $0.name.hasSuffix("wtb_UserName") } : nil)?
-                .value.removingPercentEncoding?.replacingOccurrences(of: " ", with: "_") ?? ""
             meChecked = true
             guard id.range(of: #"^\S+-\d+$"#, options: .regularExpression) != nil else {
                 me = nil
@@ -523,7 +529,7 @@ struct PeopleView: View {
         }
         .tint(wtAccent)
         .sheet(item: $profile, onDismiss: { if start != nil { store.findMe() } }) { PageSheet(url: $0.url, listen: $0.listen) }
-        .sheet(isPresented: $loggingIn, onDismiss: { store.findMe() }) { LoginView() }
+        .sheet(isPresented: $loggingIn, onDismiss: { store.findMe(afterLogin: true) }) { LoginView() }
         .onChange(of: draft) { text in
             // Suggest people from the watchlist while typing, as wikitree.com does.
             let typed = text.trimmingCharacters(in: .whitespaces)
