@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Machine translation, not yet checked. Native-speaking WikiTree members: please review and
+     correct; see docs/translations.md. English source: values/strings.xml. -->
+<resources>
+    <string name="change_person">Persoon</string>
+    <string name="person_prompt">WikiTree-ID, bijv. Windsor-1</string>
+    <string name="go">Ga</string>
+    <string name="cancel">Annuleren</string>
+    <string name="menu">Meer</string>
+    <string name="menu_login">Inloggen bij WikiTree</string>
+    <string name="menu_logout">Uitloggen bij WikiTree</string>
+    <string name="menu_reload">Opnieuw laden</string>
+    <string name="menu_profile">Profiel openen</string>
+    <string name="menu_browser">Deze pagina openen in de browser</string>
+    <string name="menu_show_bars">WikiTree-paginabalken tonen</string>
+    <string name="menu_hide_bars">WikiTree-paginabalken verbergen</string>
+    <string name="menu_auto_landscape">Liggend voor brede grafieken</string>
+    <string name="controls">Bediening van deze app tonen of verbergen</string>
+    <string name="controls_hint">De bediening van deze app is verborgen. Tik op ⚙ of veeg omlaag over de groene balk om die te tonen.</string>
+    <string name="offline_title">Geen verbinding</string>
+    <string name="offline">Tree Apps kon WikiTree niet bereiken. Controleer je wifi of mobiele data en probeer het opnieuw.</string>
+    <string name="retry">Opnieuw proberen</string>
+    <string name="done">Gereed</string>
+    <string name="open_in_browser">Browser</string>
+    <string name="people_title">Personen</string>
+    <string name="logged_in_as">Ingelogd als</string>
+    <string name="log_in_again">Inloggen bij WikiTree</string>
+    <string name="login_title">Inloggen bij WikiTree</string>
+    <string name="login_email">E-mail</string>
+    <string name="login_password">Wachtwoord</string>
+    <string name="login_note">Je e-mail en wachtwoord gaan alleen naar WikiTree. De app bewaart ze niet.</string>
+    <string name="login_go">Inloggen</string>
+    <string name="login_busy">Bezig met inloggen…</string>
+    <string name="login_web">Webpagina</string>
+    <string name="login_refused">WikiTree heeft je niet ingelogd.</string>
+    <string name="login_no_page">De inlogpagina van WikiTree ging niet open. Probeer in plaats daarvan de webpagina.</string>
+    <string name="login_failed">Het inloggen is niet gelukt. Controleer de verbinding en probeer het opnieuw.</string>
+    <string name="open_profile_of">WikiTree-profiel van %1$s openen</string>
+    <string name="people_saved">Bewaard</string>
+    <string name="people_recent">Recent</string>
+    <string name="people_saved_empty">Tik op ☆ naast een persoon om die hier te bewaren.</string>
+    <string name="people_recent_empty">Personen die je bekijkt, verschijnen hier.</string>
+    <string name="save_person">%1$s bewaren</string>
+    <string name="unsave_person">%1$s niet meer bewaren</string>
+    <string name="remove_saved">Verwijderen uit Bewaard</string>
+    <string name="remove_recent">Verwijderen uit Recent</string>
+    <string name="clear_recent">Alle recente wissen</string>
+    <string name="menu_all_apps">Alle Tree Apps…</string>
+    <string name="person_menu_profile">WikiTree-profiel</string>
+    <string name="menu_save">Bewaren</string>
+    <string name="menu_unsave">Niet meer bewaren</string>
+    <string name="menu_share_link">Profiellink delen</string>
+    <string name="menu_copy_id">WikiTree-ID kopiëren</string>
+    <string name="menu_copied">%1$s gekopieerd</string>
+    <string name="menu_share_text">%1$s (%2$s) op WikiTree: %3$s</string>
+    <string name="menu_read_bio">Biografie voorlezen</string>
+    <string name="menu_listen">Naar biografie luisteren</string>
+    <string name="bio_listen">Luisteren</string>
+    <string name="bio_listen_long">De biografie voorlezen</string>
+    <string name="bio_fetching">Biografie ophalen…</string>
+    <string name="bio_reading">Biografie van %1$s wordt voorgelezen</string>
+    <string name="bio_paused">Gepauzeerd: %1$s</string>
+    <string name="bio_pause">Pauzeren</string>
+    <string name="bio_resume">Afspelen</string>
+    <string name="bio_stop">Stoppen</string>
+    <string name="bio_close">Sluiten</string>
+    <string name="bio_private">Deze biografie is privé. Log in bij WikiTree om ernaar te luisteren als je op de Trusted List staat.</string>
+    <string name="bio_empty">Dit profiel heeft nog geen biografie om voor te lezen.</string>
+    <string name="bio_failed">De biografie kon niet worden geladen. Controleer de verbinding en probeer het opnieuw.</string>
+    <string name="bio_no_voice">Deze telefoon heeft geen tekst-naar-spraakstem. Voeg er een toe via Instellingen, Tekst-naar-spraakuitvoer.</string>
+    <string name="menu_home">Start</string>
+    <string name="menu_people">Bewaarde en recente personen</string>
+    <string name="menu_share">Deze grafiek delen</string>
+    <string name="menu_print">Afdrukken of bewaren als pdf</string>
+    <string name="share_title">Grafiek delen</string>
+    <string name="share_failed">De grafiek kon niet worden vastgelegd.</string>
+    <string name="shortcut_new">Andere persoon</string>
+    <string name="find_hint">Naam of WikiTree-ID</string>
+    <string name="find_go">Zoeken</string>
+    <string name="find_matches">Resultaten</string>
+    <string name="find_searching">WikiTree doorzoeken…</string>
+    <string name="find_failed">Het zoeken is niet gelukt. Controleer de verbinding en probeer het opnieuw.</string>
+    <string name="find_none">Niemand gevonden voor ‘%1$s’. Probeer een voornaam en een achternaam.</string>
+    <string name="find_more">%1$d van %2$d getoond. Voeg een voornaam toe om te verfijnen.</string>
+    <string name="start_apps">Tree Apps voor %1$s</string>
+    <string name="born_title">Gedenkdagen</string>
+    <string name="born_header">Gedenkdagen, %1$s</string>
+    <string name="born_show_all">Alle %1$d tonen</string>
+    <string name="born_nobody">Niemand op je volglijst is op deze dag geboren of overleden.</string>
+    <string name="born_widget_nobody">Vandaag geen geboortes of overlijdens op je volglijst.</string>
+    <string name="born_more">en nog %1$d</string>
+    <string name="born_in">geb. %1$d</string>
+    <string name="died_in">ovl. %1$d</string>
+    <string name="born_short">Geboren %1$d</string>
+    <string name="died_short">Overleden %1$d</string>
+    <string name="born_badge">*</string>
+    <string name="died_badge">†</string>
+    <string name="born_label">Geboren</string>
+    <string name="died_label">Overleden</string>
+    <string name="count_today">%1$d vandaag</string>
+    <string name="years_chip">%1$d jr</string>
+    <plurals name="born_years_ago">
+        <item quantity="one">geb. %1$d · %2$d jaar geleden</item>
+        <item quantity="other">geb. %1$d · %2$d jaar geleden</item>
+    </plurals>
+    <plurals name="died_years_ago">
+        <item quantity="one">ovl. %1$d · %2$d jaar geleden</item>
+        <item quantity="other">ovl. %1$d · %2$d jaar geleden</item>
+    </plurals>
+    <plurals name="count_births">
+        <item quantity="one">%1$d geboorte</item>
+        <item quantity="other">%1$d geboortes</item>
+    </plurals>
+    <plurals name="count_deaths">
+        <item quantity="one">%1$d overlijden</item>
+        <item quantity="other">%1$d overlijdens</item>
+    </plurals>
+    <string name="watchlist_status">Volglijst: %1$s personen, bijgewerkt %2$s. Tik om te vernieuwen.</string>
+    <string name="watchlist_none">Tik om je volglijst te laden.</string>
+    <string name="watchlist_loading">Je volglijst wordt geladen. Dit kan een minuut of twee duren…</string>
+    <string name="watchlist_failed">De volglijst is niet geladen. Controleer de verbinding en tik om het opnieuw te proberen.</string>
+    <string name="watchlist_logged_out">Niet ingelogd bij WikiTree. Open een Tree App, log in en tik dan om het opnieuw te proberen.</string>
+    <string name="watchlist_suggestions">Uit je volglijst</string>
+    <string name="notify_on">Dagelijkse melding van gedenkdagen: aan. Tik om uit te zetten.</string>
+    <string name="notify_off">Dagelijkse melding van gedenkdagen: uit. Tik om aan te zetten.</string>
+    <string name="widget_description">Personen op je WikiTree-volglijst die op deze dag zijn geboren of overleden.</string>
+    <string name="widget_no_watchlist">Open WikiTree Tree Apps en laad je volglijst.</string>
+    <string name="notable">Bekend</string>
+    <string name="shell_about_numbers">Over deze getallen</string>
+    <string name="shell_about_xtree">Over de X-chromosoomboom</string>
+    <string name="shell_age_now">zojuist</string>
+    <string name="shell_age_minutes" formatted="false">%s min geleden</string>
+    <string name="shell_age_hours" formatted="false">%s u geleden</string>
+    <string name="shell_saved_note" formatted="false">Bewaarde gegevens van %s. Tik om bij te werken</string>
+    <string name="shell_saved_chip" formatted="false">Bewaard %s</string>
+    <string name="shell_updating">Bijwerken…</string>
+</resources>

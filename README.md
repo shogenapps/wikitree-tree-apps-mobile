@@ -23,6 +23,13 @@ so fixes there appear in the app without a new release.
 
 Each Tree App's own settings and controls are left exactly as they are on the website.
 
+## Languages
+
+The app's own words are in English, German, Dutch, French, Swedish, Spanish and Italian, following
+the phone's language. The translations are machine-made and waiting for review by native-speaking
+WikiTree members. See [docs/translations.md](docs/translations.md) for how to check them, add a
+language or add a new string.
+
 ## Trying the Android app
 
 Every push to `main` builds an APK with GitHub Actions and attaches it to the

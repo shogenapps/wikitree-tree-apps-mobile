@@ -6,6 +6,15 @@
     if (window.__wtShell) return;
     window.__wtShell = true;
 
+    // The few words the shell itself puts on the page, in the phone's language. The app sets
+    // window.__wtShellText from its own translations (Android strings.xml, iOS Localizable.xcstrings,
+    // keys shell_*) before this file runs; the English here is used when it doesn't.
+    var TEXT = window.__wtShellText || {};
+    var text = function (key, english, arg) {
+        var s = TEXT[key] || english;
+        return arg === undefined ? s : s.replace("%s", arg);
+    };
+
     var CSS =
         "#offcanvasNavbar, #searchBar, .tabs--wrapper, #subfooter, .bg--tan, body > footer" +
         " { display: none !important; }" +
@@ -1104,7 +1113,7 @@
         cc7: {
             after: "#degreesTable",
             hide: "#degreesTable td.trueSize > .wt-more-note, #ancReport",
-            label: "About these numbers",
+            label: text("shell_about_numbers", "About these numbers"),
             // The note shares its cell with the size line, as bare text after a <br>: wrap it.
             prepare: function () {
                 var td = document.querySelector("#degreesTable td.trueSize");
@@ -1124,7 +1133,7 @@
         xtree: {
             before: "#XTreeAncestorList",
             hide: "#XTreeAncestorList:not(:has(button))",
-            label: "About the X-chromosome tree",
+            label: text("shell_about_xtree", "About the X-chromosome tree"),
         },
     };
     CSS += " .wt-more { display: none; }" + " @media (max-width: 599px), (max-height: 599px) {" +
@@ -1693,18 +1702,21 @@
         // Not for answers saved since this page was opened: those are as fresh as the page.
         if (savedNote || !document.body || t > performance.timeOrigin) return;
         var mins = Math.round((Date.now() - t) / 60000);
-        var age = mins < 1 ? "just now" : mins < 60 ? mins + " min ago" : Math.round(mins / 60) + " h ago";
+        var age = mins < 1 ? text("shell_age_now", "just now")
+            : mins < 60 ? text("shell_age_minutes", "%s min ago", mins)
+            : text("shell_age_hours", "%s h ago", Math.round(mins / 60));
         var note = null;
         savedNote = document.createElement("button");
         savedNote.type = "button";
         savedNote.id = "wt-shell-saved-note";
-        savedNote.textContent = "Saved data from " + age + ". Tap to update";
+        savedNote.textContent = text("shell_saved_note", "Saved data from %s. Tap to update", age);
         savedNote.style.cssText = "position:fixed;left:50%;bottom:calc(12px + env(safe-area-inset-bottom));" +
             "transform:translateX(-50%);z-index:2147483000;padding:8px 14px;border:0;border-radius:18px;" +
             "background:rgba(37,66,45,.92);color:#fff;font:13px/1.2 -apple-system,Roboto,sans-serif;" +
             "white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,.3);";
         savedNote.addEventListener("click", function () {
-            savedNote.textContent = "Updating…";
+            savedNote.textContent = text("shell_updating", "Updating…");
+            savedNote.dataset.updating = "1";
             savedClear().then(function () { location.reload(); });
         });
         document.body.appendChild(savedNote);
@@ -1712,8 +1724,8 @@
         // stays clear that the list is saved data and one tap still updates it.
         note = savedNote;
         setTimeout(function () {
-            if (note.textContent.indexOf("Saved") !== 0) return;
-            note.textContent = "\u21bb Saved " + age;
+            if (note.dataset.updating) return;
+            note.textContent = "\u21bb " + text("shell_saved_chip", "Saved %s", age);
             note.style.left = "auto";
             note.style.right = "8px";
             note.style.transform = "none";

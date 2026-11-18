@@ -50,7 +50,7 @@ struct Notable: Codable, Equatable {
             .sorted { ($0.contains(",") ? 1 : 0, $0) < ($1.contains(",") ? 1 : 0, $1) }
             .map { $0.replacingOccurrences(of: ",", with: "") }
         let tag = !theme.isEmpty ? theme.joined(separator: " · ")
-            : named.isEmpty ? "Notable" : named.prefix(2).joined(separator: ", ")
+            : named.isEmpty ? String(localized: "Notable") : named.prefix(2).joined(separator: ", ")
         return Notable(tag: tag, about: about, rank: notability != nil || !categories.isEmpty ? 2 : 1)
     }
 
@@ -201,7 +201,7 @@ final class PeopleStore: ObservableObject {
                 userInfo: ["id": p.id as NSString, "view": p.view as NSString])
         }
         items.append(UIApplicationShortcutItem(
-            type: QuickAction.people, localizedTitle: "Change person", localizedSubtitle: nil,
+            type: QuickAction.people, localizedTitle: String(localized: "Change person"), localizedSubtitle: nil,
             icon: UIApplicationShortcutIcon(systemImageName: "magnifyingglass"), userInfo: nil))
         UIApplication.shared.shortcutItems = items
     }
@@ -417,7 +417,7 @@ struct PeopleView: View {
                         Button {
                             store.toggleSaved(currentId, view: currentView)
                         } label: {
-                            Label(store.isSaved(currentId) ? "Unsave \(currentId)" : "Save \(currentId)",
+                            Label(store.isSaved(currentId) ? String(localized: "Unsave \(currentId)") : String(localized: "Save \(currentId)"),
                                   systemImage: store.isSaved(currentId) ? "star.fill" : "star")
                                 .foregroundStyle(wtAccent)
                         }
@@ -427,7 +427,7 @@ struct PeopleView: View {
                     Section {
                         if openMe { row(me, match: true) }
                     } header: {
-                        heading("Logged in as", open: $openMe)
+                        heading(String(localized: "Logged in as"), open: $openMe)
                     }
                 } else if start != nil, store.meChecked {
                     // The site ends a login now and then; logging in again is one tap away, and
@@ -473,7 +473,7 @@ struct PeopleView: View {
                             .onDelete { store.removeSaved(at: $0) }
                     }
                 } header: {
-                    heading("Saved", count: store.saved.count, open: $openSaved)
+                    heading(String(localized: "Saved"), count: store.saved.count, open: $openSaved)
                 }
                 // A saved person is already listed under Saved, so they are not repeated here.
                 let recent = store.recent.filter { !store.isSaved($0.id) }
@@ -487,7 +487,7 @@ struct PeopleView: View {
                     }
                 } header: {
                     HStack {
-                        heading("Recent", count: recent.count, open: $openRecent)
+                        heading(String(localized: "Recent"), count: recent.count, open: $openRecent)
                         Spacer()
                         if fold(openRecent), !store.recent.isEmpty {
                             Button("Clear") { store.clearRecent() }.font(.footnote)
@@ -511,11 +511,11 @@ struct PeopleView: View {
                             .buttonStyle(.plain)
                         }
                     } header: {
-                        heading("Tree Apps for \(appsFor)", open: $openApps)
+                        heading(String(localized: "Tree Apps for \(appsFor)"), open: $openApps)
                     }
                 }
             }
-            .navigationTitle(start == nil ? "People" : "WikiTree Tree Apps")
+            .navigationTitle(start == nil ? String(localized: "People") : String(localized: "WikiTree Tree Apps"))
             .navigationBarTitleDisplayMode(.inline)
             // The start screen has the shell's green bar at the top, so the clock stays readable.
             .toolbarBackground(wtGreen, for: .navigationBar)
@@ -565,7 +565,7 @@ struct PeopleView: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .accessibilityValue(open.wrappedValue ? "Open" : "Folded")
+            .accessibilityValue(open.wrappedValue ? String(localized: "Open") : String(localized: "Folded"))
         }
     }
 
@@ -592,27 +592,27 @@ struct PeopleView: View {
                     .font(.footnote)
                     .disabled(watchlist.loading)
                 if watchlist.isLoaded {
-                    Button(watchlist.notify ? "Daily anniversaries notification: on. Tap to turn off."
-                           : "Daily anniversaries notification: off. Tap to turn on.") {
+                    Button(watchlist.notify ? String(localized: "Daily anniversaries notification: on. Tap to turn off.")
+                           : String(localized: "Daily anniversaries notification: off. Tap to turn on.")) {
                         watchlist.setNotify(!watchlist.notify)
                     }
                     .font(.footnote)
                 }
             }
         } header: {
-            heading("Anniversaries, \(WatchlistFile.dayLabel(Date()))",
+            heading(String(localized: "Anniversaries, \(WatchlistFile.dayLabel(Date()))"),
                     count: watchlist.isLoaded ? watchlist.today.count : nil, open: $openBorn)
         }
     }
 
     private var watchlistStatus: String {
-        if watchlist.loading { return "Loading your watchlist. A long list takes a minute or two…" }
+        if watchlist.loading { return String(localized: "Loading your watchlist. A long list takes a minute or two…") }
         if let note = watchlist.note { return note }
         guard let at = watchlist.fetchedAt else {
-            return "Tap to load your WikiTree watchlist, for anniversaries and name suggestions."
+            return String(localized: "Tap to load your WikiTree watchlist, for anniversaries and name suggestions.")
         }
         let count = NumberFormatter.localizedString(from: NSNumber(value: watchlist.people.count), number: .decimal)
-        return "Watchlist: \(count) people, updated \(at.formatted(date: .abbreviated, time: .omitted)). Tap to refresh."
+        return String(localized: "Watchlist: \(count) people, updated \(at.formatted(date: .abbreviated, time: .omitted)). Tap to refresh.")
     }
 
     /// Notable search matches: a warm orange that reads on white and on the tinted row (a lighter
@@ -634,7 +634,7 @@ struct PeopleView: View {
                     Circle().fill(kind == .death ? Color(red: 0xDD / 255, green: 0xDB / 255, blue: 0xD3 / 255)
                                   : Color(red: 0x25 / 255, green: 0x42 / 255, blue: 0x2D / 255))
                     if let kind {
-                        Text(kind == .birth ? "b." : "d.")
+                        Text(kind == .birth ? String(localized: "b.") : String(localized: "d."))
                             .font(.system(size: 13, weight: .bold, design: .rounded))
                             .foregroundStyle(kind == .birth ? Color(red: 0xF2 / 255, green: 0xC1 / 255, blue: 0x4E / 255)
                                              : Color(red: 0x4A / 255, green: 0x4A / 255, blue: 0x4A / 255))
@@ -688,7 +688,7 @@ struct PeopleView: View {
                     .padding(.leading, 12)
             }
             .buttonStyle(.borderless)
-            .accessibilityLabel(store.isSaved(p.id) ? "Unsave \(p.id)" : "Save \(p.id)")
+            .accessibilityLabel(store.isSaved(p.id) ? String(localized: "Unsave \(p.id)") : String(localized: "Save \(p.id)"))
         }
         // Long-press: a card about the person, then what can be done with them.
         .contextMenu {
@@ -741,11 +741,11 @@ struct PeopleView: View {
             Button {
                 store.toggleSaved(p.id, view: match ? currentView : p.view)
             } label: {
-                Label(store.isSaved(p.id) ? "Unsave" : "Save", systemImage: store.isSaved(p.id) ? "star.slash" : "star")
+                Label(store.isSaved(p.id) ? String(localized: "Unsave") : String(localized: "Save"), systemImage: store.isSaved(p.id) ? "star.slash" : "star")
             }
             if let url = Self.profileURL(p.id) {
                 ShareLink(item: url, subject: Text(p.name.isEmpty ? p.id : p.name),
-                          message: Text(p.name.isEmpty ? p.id : "\(p.name) (\(p.id)) on WikiTree")) {
+                          message: Text(p.name.isEmpty ? p.id : String(localized: "\(p.name) (\(p.id)) on WikiTree"))) {
                     Label("Share profile link", systemImage: "square.and.arrow.up")
                 }
             }
@@ -805,16 +805,16 @@ struct PeopleView: View {
         let run = searchRun
         suggestions = []
         matches = []
-        searchNote = "Searching WikiTree…"
+        searchNote = String(localized: "Searching WikiTree…")
         store.search(text) { found, total in
             guard run == searchRun else { return }
             matches = found ?? []
             if found == nil {
-                searchNote = "The search did not work. Check the connection and try again."
+                searchNote = String(localized: "The search did not work. Check the connection and try again.")
             } else if matches.isEmpty {
-                searchNote = "Nobody found for “\(text)”. Try a first name and a last name."
+                searchNote = String(localized: "Nobody found for “\(text)”. Try a first name and a last name.")
             } else if total > matches.count {
-                searchNote = "Showing \(matches.count) of \(total). Add a first name to narrow it down."
+                searchNote = String(localized: "Showing \(matches.count) of \(total). Add a first name to narrow it down.")
             } else {
                 searchNote = nil
             }
@@ -856,7 +856,7 @@ struct LoginView: View {
                 Section {
                     Button(action: go) {
                         HStack {
-                            Text(login.busy ? "Logging in…" : "Log in").fontWeight(.semibold)
+                            Text(login.busy ? String(localized: "Logging in…") : String(localized: "Log in")).fontWeight(.semibold)
                             Spacer()
                             if login.busy { ProgressView() }
                         }
@@ -933,7 +933,7 @@ struct LoginView: View {
                 let inApps = await self.cookie("WikiTreeAPI_userName")
                 let inSite = await self.cookie("_UserName")
                 let ok = inApps || inSite || self.step >= 2
-                self.finish(ok, ok ? nil : "WikiTree did not answer. Check the connection and try again.")
+                self.finish(ok, ok ? nil : String(localized: "WikiTree did not answer. Check the connection and try again."))
             }
         }
     }
@@ -974,7 +974,7 @@ struct LoginView: View {
         // Once the site has taken the login, a hitch in the Tree Apps part still leaves the
         // member logged in; the Tree Apps page logs them in there when it next opens.
         if step >= 2 { finish(true, nil) } else {
-            finish(false, "The login did not go through. Check the connection and try again.")
+            finish(false, String(localized: "The login did not go through. Check the connection and try again."))
         }
     }
 
@@ -992,7 +992,7 @@ struct LoginView: View {
             } else {
                 // Not the login form yet (a firewall check reloads the page by itself).
                 tries += 1
-                if tries >= 3 { finish(false, "The WikiTree login page did not open. Try the WikiTree page below.") }
+                if tries >= 3 { finish(false, String(localized: "The WikiTree login page did not open. Try the WikiTree page below.")) }
             }
             return
         }

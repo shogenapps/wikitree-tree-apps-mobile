@@ -100,8 +100,8 @@ final class WatchlistStore: ObservableObject {
             } catch {
                 if !quiet {
                     note = (error as? Failure) == .loggedOut
-                        ? "Log in to WikiTree in a Tree App first, then tap here to load your watchlist."
-                        : "The watchlist could not be loaded. Check the connection and tap to try again."
+                        ? String(localized: "Log in to WikiTree in a Tree App first, then tap here to load your watchlist.")
+                        : String(localized: "The watchlist could not be loaded. Check the connection and tap to try again.")
                 }
             }
             loading = false
@@ -220,7 +220,7 @@ final class WatchlistStore: ObservableObject {
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert]) { granted, _ in
             Task { @MainActor in
                 self.store(granted)
-                if !granted { self.note = "Notifications are switched off for Tree Apps in the Settings app." }
+                if !granted { self.note = String(localized: "Notifications are switched off for Tree Apps in the Settings app.") }
             }
         }
     }
@@ -247,10 +247,10 @@ final class WatchlistStore: ObservableObject {
             let list = WatchlistFile.anniversaries(on: day, among: people)
             guard !list.isEmpty else { continue }
             let content = UNMutableNotificationContent()
-            content.title = "Anniversaries: \(WatchlistFile.summary(list))"
-            let names = list.prefix(3).map { "\($0.person.name) (\($0.kind == .birth ? "b." : "d.") \($0.year))" }
+            content.title = String(localized: "Anniversaries: \(WatchlistFile.summary(list))")
+            let names = list.prefix(3).map { "\($0.person.name) (\($0.kind == .birth ? String(localized: "b.") : String(localized: "d.")) \(String($0.year)))" }
                 .joined(separator: ", ")
-            content.body = list.count > 3 ? "\(names) and \(list.count - 3) more" : names
+            content.body = list.count > 3 ? String(localized: "\(names) and \(list.count - 3) more") : names
             center.add(UNNotificationRequest(
                 identifier: "birthdays-\(at.year ?? 0)-\(at.month ?? 0)-\(at.day ?? 0)", content: content,
                 trigger: UNCalendarNotificationTrigger(dateMatching: at, repeats: false)))

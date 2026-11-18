@@ -65,7 +65,7 @@ data class Notable(val tag: String, val about: String, val rank: Int) {
                 .map { it.replace(",", "") }
             val tag = when {
                 theme.isNotEmpty() -> theme.joinToString(" · ")
-                named.isEmpty() -> "Notable"
+                named.isEmpty() -> "" // shown as R.string.notable
                 else -> named.take(2).joinToString(", ")
             }
             return Notable(tag, about, if (notability != null || categories.isNotEmpty()) 2 else 1)
