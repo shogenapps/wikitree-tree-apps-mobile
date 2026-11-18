@@ -128,6 +128,8 @@
     <string name="notable">Notable</string>
     <string name="shell_about_numbers">Acerca de estas cifras</string>
     <string name="shell_about_xtree">Acerca del árbol del cromosoma X</string>
+    <string name="shell_biocheck_on">Bio Check: activado</string>
+    <string name="shell_biocheck_off">Bio Check: desactivado</string>
     <string name="shell_age_now">ahora mismo</string>
     <string name="shell_age_minutes" formatted="false">hace %s min</string>
     <string name="shell_age_hours" formatted="false">hace %s h</string>

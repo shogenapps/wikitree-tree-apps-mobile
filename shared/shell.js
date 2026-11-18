@@ -1100,6 +1100,19 @@
         " html:not(#wt-cc7):not(#wt-cc7) .cc7Table .pop-up.wrap { width: auto !important; }" +
         " }";
 
+    // CC7 Views: its notice at the top ("Bio Check is ENABLED in settings. Loading 7 degrees may
+    // take a while ... Feel free to change it.") is bare text in #info-panel, so the controls
+    // rule (which hides the panel's children, see CONTROLS) could not hide it, and on a phone it
+    // took four lines above everything else. cc7Info() wraps it in a span, so it now hides and
+    // shows with the controls, and on phones it is one short line instead ("Bio Check: on").
+    // The full text still shows on tablets, and on phones when it says something else.
+    CSS +=
+        " .wt-cc7-info-short { display: none; }" +
+        " @media (max-width: 599px), (max-height: 599px) {" +
+        " #info-panel > .wt-cc7-info-short { display: block; padding: 4px 8px; font-size: 13px; }" +
+        " #info-panel > .wt-cc7-info-short + .wt-cc7-info-full { display: none; }" +
+        " }";
+
     // Long notes. On phones each app's explanatory text (MORE[view].hide) is folded away behind
     // one short line ("About these numbers") placed after MORE[view].after or before
     // MORE[view].before; a tap shows the text again. addMore() adds the line. Warnings, errors,
@@ -1789,6 +1802,36 @@
         box.insertBefore(x, box.firstChild);
     }
 
+    // CC7 Views' notice in #info-panel (see its CSS block): wrap the bare text the app puts there
+    // with setInfoPanel(), and add the short line before it. Runs from the MutationObserver, so
+    // each time the app replaces the text it is wrapped again before the page is drawn.
+    function cc7Info() {
+        // (The view attribute can lag the hash for a moment when CC7 opens.)
+        if (document.documentElement.getAttribute("data-wt-view") !== "cc7" && !/[#&]view=cc7(&|$)/.test(location.hash)) return;
+        var panel = document.getElementById("info-panel");
+        if (!panel) return;
+        var words = "";
+        [].slice.call(panel.childNodes).forEach(function (n) {
+            if (n.nodeType === 3 && n.nodeValue.trim()) {
+                words += n.nodeValue;
+                n.remove();
+            }
+        });
+        if (!words) return;
+        [].forEach.call(panel.querySelectorAll(":scope > .wt-cc7-info-short, :scope > .wt-cc7-info-full"), function (el) { el.remove(); });
+        var full = document.createElement("span");
+        full.className = "wt-cc7-info-full";
+        full.textContent = words.trim();
+        panel.insertBefore(full, panel.firstChild);
+        var on = /Bio Check is ENABLED/.test(words), off = /Bio Check is DISABLED/.test(words);
+        if (on || off) {
+            var shortLine = document.createElement("span");
+            shortLine.className = "wt-cc7-info-short";
+            shortLine.textContent = on ? text("shell_biocheck_on", "Bio Check: on") : text("shell_biocheck_off", "Bio Check: off");
+            panel.insertBefore(shortLine, full);
+        }
+    }
+
     // Compact Couple Ancestors on phones: its Height Factor (the vertical spacing) defaults to 55,
     // which packs the couples too tightly on a phone; 70 reads better (suggested by its author).
     // The app keeps its options in a cookie that it writes on every draw, so 55 there usually just
@@ -2116,6 +2159,7 @@
         queueMore();
         cctHeight();
         cc7SettingsClose();
+        cc7Info();
         ahnKeepOptions();
         undarkSoon();
         if (!staleTimer) staleTimer = setTimeout(clearStale, 1000);

@@ -82,6 +82,8 @@ class MainActivity : Activity() {
         mapOf(
             "shell_about_numbers" to R.string.shell_about_numbers,
             "shell_about_xtree" to R.string.shell_about_xtree,
+            "shell_biocheck_on" to R.string.shell_biocheck_on,
+            "shell_biocheck_off" to R.string.shell_biocheck_off,
             "shell_age_now" to R.string.shell_age_now,
             "shell_age_minutes" to R.string.shell_age_minutes,
             "shell_age_hours" to R.string.shell_age_hours,

@@ -135,6 +135,8 @@
          shell.js. %s stands for a number or an age such as "5 min ago". -->
     <string name="shell_about_numbers">About these numbers</string>
     <string name="shell_about_xtree">About the X-chromosome tree</string>
+    <string name="shell_biocheck_on">Bio Check: on</string>
+    <string name="shell_biocheck_off">Bio Check: off</string>
     <string name="shell_age_now">just now</string>
     <string name="shell_age_minutes" formatted="false">%s min ago</string>
     <string name="shell_age_hours" formatted="false">%s h ago</string>

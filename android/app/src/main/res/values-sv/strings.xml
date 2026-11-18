@@ -128,6 +128,8 @@
     <string name="notable">Känd</string>
     <string name="shell_about_numbers">Om de här siffrorna</string>
     <string name="shell_about_xtree">Om X-kromosomträdet</string>
+    <string name="shell_biocheck_on">Bio Check: på</string>
+    <string name="shell_biocheck_off">Bio Check: av</string>
     <string name="shell_age_now">nyss</string>
     <string name="shell_age_minutes" formatted="false">för %s min sedan</string>
     <string name="shell_age_hours" formatted="false">för %s tim sedan</string>
