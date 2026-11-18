@@ -134,4 +134,11 @@
     <string name="shell_saved_note" formatted="false">Bewaarde gegevens van %s. Tik om bij te werken</string>
     <string name="shell_saved_chip" formatted="false">Bewaard %s</string>
     <string name="shell_updating">Bijwerken…</string>
+
+    <!-- WikiTree Browser Extension menu in the page sheet. The tool names stay in English, as WBE shows them. -->
+    <string name="wbe_button_long">Menu van de WikiTree Browser Extension</string>
+    <string name="wbe_settings">Instellingen van de extensie</string>
+    <string name="wbe_turn_off">Browser Extension uitzetten</string>
+    <string name="wbe_turn_on">Browser Extension aanzetten</string>
+    <string name="wbe_not_ready">De pagina wordt nog geladen. Probeer het zo opnieuw.</string>
 </resources>

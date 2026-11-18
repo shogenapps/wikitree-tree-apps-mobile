@@ -3,9 +3,9 @@ name: Android test build
 on:
   push:
     branches: [main]
-    paths: ["android/**", "shared/**", ".github/workflows/android.yml"]
+    paths: ["android/**", "shared/**", "scripts/**", ".github/workflows/android.yml"]
   pull_request:
-    paths: ["android/**", "shared/**", ".github/workflows/android.yml"]
+    paths: ["android/**", "shared/**", "scripts/**", ".github/workflows/android.yml"]
   workflow_dispatch:
 
 permissions:
@@ -50,3 +50,19 @@ jobs:
               --notes "Latest test build of the Tree Apps shell for Android. Download the APK on your phone and install it."
           gh release upload android-test wikitree-tree-apps.apk --clobber
           gh release edit android-test --notes "Latest test build of the Tree Apps shell for Android (build ${{ github.run_number }}, commit ${GITHUB_SHA::7}). Download the APK on your phone and install it."
+
+      # A pull request from this repo replaces the APK on the "android-preview" pre-release, so a
+      # change can be tried on a phone before it's merged. (Main's build stays on "android-test".)
+      - name: Publish preview release
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+        working-directory: .
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          gh release view android-preview >/dev/null 2>&1 || \
+            gh release create android-preview --prerelease --target "$HEAD" --title "Android preview build" \
+              --notes "Test build of a pull request that isn't merged yet."
+          gh release upload android-preview wikitree-tree-apps.apk --clobber
+          gh release edit android-preview --prerelease --notes "Test build of pull request #$PR (build ${{ github.run_number }}, commit ${HEAD::7}), not merged yet. Download the APK on your phone and install it. It installs over the main test build."

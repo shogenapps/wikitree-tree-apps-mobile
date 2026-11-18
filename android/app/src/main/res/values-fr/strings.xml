@@ -134,4 +134,11 @@
     <string name="shell_saved_note" formatted="false">Données enregistrées %s. Touchez pour actualiser</string>
     <string name="shell_saved_chip" formatted="false">Enregistré %s</string>
     <string name="shell_updating">Actualisation…</string>
+
+    <!-- WikiTree Browser Extension menu in the page sheet. The tool names stay in English, as WBE shows them. -->
+    <string name="wbe_button_long">Menu de la WikiTree Browser Extension</string>
+    <string name="wbe_settings">Réglages de l’extension</string>
+    <string name="wbe_turn_off">Désactiver la Browser Extension</string>
+    <string name="wbe_turn_on">Activer la Browser Extension</string>
+    <string name="wbe_not_ready">La page est encore en cours de chargement. Réessayez dans un instant.</string>
 </resources>

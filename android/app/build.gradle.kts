@@ -65,3 +65,15 @@ dependencies {
 
 // The page-hiding script and the Tree App list live in ../shared so an iOS app can use the same files.
 android.sourceSets.getByName("main").assets.srcDirs("../../shared")
+
+// The WikiTree Browser Extension's webview build, from the WBE release named in shared/wbe.lock,
+// unpacked into shared/wbe/ (so into the assets above, under wbe/). See docs/wbe.md.
+val fetchWbe by tasks.registering(Exec::class) {
+    val root = rootProject.projectDir.parentFile
+    workingDir = root
+    commandLine("bash", "scripts/fetch-wbe.sh")
+    inputs.file(File(root, "shared/wbe.lock"))
+    inputs.property("wbeZip", System.getenv("WBE_ZIP") ?: "")
+    outputs.file(File(root, "shared/wbe/.source"))
+}
+tasks.named("preBuild") { dependsOn(fetchWbe) }
