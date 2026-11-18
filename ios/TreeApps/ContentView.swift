@@ -299,12 +299,22 @@ struct PageSheet: View {
 /// they are in the Tree Apps (a Safari sheet keeps a login of its own). Links leaving
 /// wikitree.com open in Safari. On a profile, a speaker button reads the biography aloud, with a
 /// bar at the bottom to pause or stop; closing the sheet stops it.
+///
+/// The WikiTree Browser Extension runs on the pages here (see [Wbe]), with a WBE menu for its
+/// settings, the tools its right-click menu offers on a computer, and a switch to turn it off.
 private struct WikiTreeSheet: View {
     let url: URL
     var listen = false
     @Environment(\.dismiss) private var dismiss
     @StateObject private var page = WikiTreePage()
     @StateObject private var reader = BioReader()
+    @State private var settingsChangesBefore = 0
+
+    /// A profile shows the person's name in large type right under the bar, so the bar leaves it
+    /// out there.
+    private var title: String {
+        Biography.profileId(page.url ?? url) != nil ? "" : page.title
+    }
 
     var body: some View {
         NavigationStack {
@@ -314,7 +324,7 @@ private struct WikiTreeSheet: View {
                     if page.loading { ProgressView().progressViewStyle(.linear).tint(wtGold) }
                 }
                 .safeAreaInset(edge: .bottom, spacing: 0) { BioPlayerBar(reader: reader) }
-                .navigationTitle(page.title)
+                .navigationTitle(title)
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbarBackground(wtGreen, for: .navigationBar)
                 .toolbarBackground(.visible, for: .navigationBar)
@@ -329,12 +339,25 @@ private struct WikiTreeSheet: View {
                         Button { page.webView.goBack() } label: { Image(systemName: "chevron.backward") }
                             .disabled(!page.canGoBack)
                             .accessibilityLabel("Back")
-                        Button { UIApplication.shared.open(page.webView.url ?? url) } label: { Image(systemName: "safari") }
-                            .accessibilityLabel("Open in Safari")
+                        if !Wbe.isWbePage(page.url ?? url) {
+                            Button { UIApplication.shared.open(page.webView.url ?? url) } label: { Image(systemName: "safari") }
+                                .accessibilityLabel("Open in Safari")
+                        }
+                        if Wbe.shared.isAvailable && !Wbe.isWbePage(page.url ?? url) {
+                            wbeMenu
+                        }
                     }
                 }
         }
         .tint(.white)
+        // WBE's settings in a sheet of their own; if anything changed there, this page reloads so
+        // the change shows.
+        .sheet(isPresented: $page.showingWbeSettings, onDismiss: {
+            if Wbe.shared.settingsChanges != settingsChangesBefore { page.webView.reload() }
+        }) {
+            WikiTreeSheet(url: Wbe.optionsURL)
+                .onAppear { settingsChangesBefore = Wbe.shared.settingsChanges }
+        }
         .onAppear {
             if page.webView.url == nil {
                 page.webView.load(URLRequest(url: url))
@@ -345,11 +368,37 @@ private struct WikiTreeSheet: View {
         // Leaving the app stops the reading for good, rather than pausing it until the app returns.
         .onReceive(NotificationCenter.default.publisher(for: UIApplication.didEnterBackgroundNotification)) { _ in reader.stop() }
     }
+
+    /// WBE's menu: settings, the right-click tools of the features running on this page, and the
+    /// on/off switch.
+    private var wbeMenu: some View {
+        Menu {
+            if page.wbeOn {
+                Button("Extension settings") { page.showingWbeSettings = true }
+                ForEach(Wbe.tools.filter { page.wbeRunning.contains($0.feature) }, id: \.self) { tool in
+                    Button(tool.title) { Wbe.shared.sendToPage(page.webView, message: ["action": tool.action]) }
+                }
+                Button("Turn off the Browser Extension") { page.setWbe(on: false) }
+            } else {
+                Button("Turn on the Browser Extension") { page.setWbe(on: true) }
+            }
+            if !Wbe.shared.version.isEmpty {
+                Text("WikiTree Browser Extension \(Wbe.shared.version)")
+            }
+        } label: {
+            Text("WBE").font(.subheadline.weight(.semibold))
+        }
+        .accessibilityLabel("WikiTree Browser Extension menu")
+    }
 }
 
 private final class WikiTreePage: NSObject, ObservableObject, WKNavigationDelegate, WKUIDelegate {
     let webView: WKWebView
     @Published var title = ""
+    @Published var showingWbeSettings = false
+    @Published var wbeOn = Wbe.shared.isEnabled
+    /// WBE features running on the page, to list only their tools in the WBE menu.
+    @Published var wbeRunning: Set<String> = []
     @Published var canGoBack = false
     @Published var loading = false
     @Published var url: URL?
@@ -359,8 +408,24 @@ private final class WikiTreePage: NSObject, ObservableObject, WKNavigationDelega
         // The default data store is the one the Tree Apps web view uses: same cookies, same login.
         let config = WKWebViewConfiguration()
         config.websiteDataStore = .default()
+        Wbe.shared.configure(config)
         webView = WKWebView(frame: .zero, configuration: config)
         super.init()
+        #if DEBUG
+        // Lets Safari's Develop menu show the page's console (WBE's messages among them).
+        if #available(iOS 16.4, *) { webView.isInspectable = true }
+        #endif
+        Wbe.shared.register(webView, actions: Wbe.Actions(
+            openOptions: { [weak self] in self?.showingWbeSettings = true },
+            openUrl: { [weak self] url in
+                // A link WBE would open in a new tab: wikitree.com here, other sites in Safari.
+                if url.scheme == "https", url.host?.hasSuffix("wikitree.com") == true {
+                    self?.webView.load(URLRequest(url: url))
+                } else {
+                    UIApplication.shared.open(url)
+                }
+            }
+        ))
         webView.navigationDelegate = self
         webView.uiDelegate = self
         webView.allowsBackForwardNavigationGestures = true
@@ -380,12 +445,37 @@ private final class WikiTreePage: NSObject, ObservableObject, WKNavigationDelega
         ]
     }
 
+    /// Turns WBE on or off for this and later pages, and reloads this one.
+    func setWbe(on: Bool) {
+        Wbe.shared.isEnabled = on
+        let controller = webView.configuration.userContentController
+        if on { Wbe.shared.attach(controller) } else { Wbe.shared.detach(controller) }
+        wbeOn = on
+        wbeRunning = []
+        webView.reload()
+    }
+
+    /// WBE starts its features after the page loads, some only after reading its settings, so look
+    /// again a little later too.
+    func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+        guard wbeOn else { return }
+        let ids = Array(Set(Wbe.tools.map(\.feature)))
+        for delay in [0.0, 1.5, 4.0] {
+            DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in
+                guard let self else { return }
+                Wbe.shared.runningFeatures(self.webView, ids: ids) { running in
+                    DispatchQueue.main.async { self.wbeRunning = running }
+                }
+            }
+        }
+    }
+
     func webView(_ webView: WKWebView, decidePolicyFor action: WKNavigationAction,
                  decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
         guard let url = action.request.url else { return decisionHandler(.allow) }
         let web = url.scheme == "http" || url.scheme == "https"
         // Tapped links to other sites, and mailto: and the like, go to the system.
-        if !web && url.scheme != "about" && url.scheme != "blob" && url.scheme != "data"
+        if !web && url.scheme != "about" && url.scheme != "blob" && url.scheme != "data" && url.scheme != Wbe.scheme
             || web && action.navigationType == .linkActivated && url.host?.hasSuffix("wikitree.com") != true {
             UIApplication.shared.open(url)
             return decisionHandler(.cancel)

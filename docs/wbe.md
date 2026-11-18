@@ -16,7 +16,9 @@ browser extension APIs.
 `shared/wbe.lock` names the release, the asset and its SHA-256. At build time
 `scripts/fetch-wbe.sh` downloads it, checks the SHA-256 and unpacks it into `shared/wbe/`, which
 is not committed. The Android build runs it before every build (Gradle task `fetchWbe`), and
-skips the download when `shared/wbe/` already holds that build.
+so does the iPhone build (the "Fetch WikiTree Browser Extension" build phase, which then copies
+`shared/wbe/` into the app as `wbe/`). Both skip the download when `shared/wbe/` already holds
+that build.
 
 WBE's `stable`, `preview` and `test/development` releases are replaced every time their workflow
 runs, so the asset in the lock file disappears at the next WBE release. The build then fails with
@@ -65,11 +67,24 @@ To try a WBE build from your own machine without a release:
 Needs a WebView with document-start scripts and web message listeners (any current Android System
 WebView). Without them, or when the app was built without WBE, the WBE button is hidden.
 
+## How it runs (iPhone)
+
+`ios/TreeApps/Wbe.swift` does the same jobs, with one difference: iOS can't answer
+`https://www.wikitree.com/__wbe/`, so WBE's files are served on the app's own `wbe-app:` scheme
+(`WKURLSchemeHandler`) and `__wbeHost.base` is `wbe-app://app/`. The bundles themselves are
+injected as `WKUserScript`s, which the site's Content Security Policy doesn't apply to; WBE's
+images, CSS and page scripts are loaded from `wbe-app://app/`, so they rely on the site's policy
+allowing that scheme.
+
+- Host calls come over a `WKScriptMessageHandlerWithReply` named `wbeNative`, in the page's world,
+  accepted only from `https://www.wikitree.com` and `wbe-app:` frames.
+- Settings live in `Application Support/wbe/sync.json` and `local.json`.
+- The page sheet has a **WBE** menu with the same items as on Android, reloads the page after the
+  settings sheet changed something, and leaves the person's name out of the bar on a profile.
+
 ## Not in the app yet
 
 - WBE features that need its background script: Genie, Duplicates, the Gold Standard inspector and
   the AI features. WBE's webview build turns them off (`disabledFeatures` in `webview.json`).
 - Backup and Restore from the WBE menu (downloads and file pickers need more work in a web view).
-- iPhone: `WKURLSchemeHandler` can't answer `https://www.wikitree.com/__wbe/`, so the iOS side needs
-  a different way to serve WBE's files.
 - Settings don't sync with WBE on a computer. They stay on the phone.
