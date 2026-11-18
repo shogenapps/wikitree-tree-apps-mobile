@@ -411,6 +411,10 @@ private final class WikiTreePage: NSObject, ObservableObject, WKNavigationDelega
         Wbe.shared.configure(config)
         webView = WKWebView(frame: .zero, configuration: config)
         super.init()
+        #if DEBUG
+        // Lets Safari's Develop menu show the page's console (WBE's messages among them).
+        if #available(iOS 16.4, *) { webView.isInspectable = true }
+        #endif
         Wbe.shared.register(webView, actions: Wbe.Actions(
             openOptions: { [weak self] in self?.showingWbeSettings = true },
             openUrl: { [weak self] url in
