@@ -17,7 +17,9 @@
     <string name="menu_auto_landscape">Querformat für breite Diagramme</string>
     <string name="controls">Steuerelemente dieser App ein- oder ausblenden</string>
     <string name="controls_hint">Die Steuerelemente dieser App sind ausgeblendet. Tippe auf ⚙ oder wische auf der grünen Leiste nach unten, um sie anzuzeigen.</string>
-    <string name="offline">WikiTree konnte nicht geladen werden. Prüfe die Verbindung und tippe auf Neu laden.</string>
+    <string name="offline_title">Keine Verbindung</string>
+    <string name="offline">Tree Apps konnte WikiTree nicht erreichen. Prüfe WLAN oder mobile Daten und versuche es dann erneut.</string>
+    <string name="retry">Erneut versuchen</string>
     <string name="done">Fertig</string>
     <string name="open_in_browser">Browser</string>
     <string name="people_title">Personen</string>

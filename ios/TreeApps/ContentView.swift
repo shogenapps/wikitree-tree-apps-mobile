@@ -116,7 +116,7 @@ struct ContentView: View {
         .onChange(of: shell.viewKey) { key in if shell.started { Rotation.apply(for: key) } }
     }
 
-    private func barIcon(_ symbol: String, _ label: String, action: @escaping () -> Void) -> some View {
+    private func barIcon(_ symbol: String, _ label: LocalizedStringKey, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Image(systemName: symbol)
                 .foregroundColor(.white)

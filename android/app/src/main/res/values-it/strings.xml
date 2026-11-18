@@ -17,7 +17,9 @@
     <string name="menu_auto_landscape">Orizzontale per i grafici larghi</string>
     <string name="controls">Mostra o nascondi i controlli di questa app</string>
     <string name="controls_hint">I controlli di questa app sono nascosti. Tocca ⚙ o scorri verso il basso sulla barra verde per mostrarli.</string>
-    <string name="offline">Impossibile caricare WikiTree. Controlla la connessione e tocca Ricarica.</string>
+    <string name="offline_title">Nessuna connessione</string>
+    <string name="offline">Tree Apps non è riuscita a raggiungere WikiTree. Controlla il Wi-Fi o i dati mobili, poi riprova.</string>
+    <string name="retry">Riprova</string>
     <string name="done">Fine</string>
     <string name="open_in_browser">Browser</string>
     <string name="people_title">Persone</string>

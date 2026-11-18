@@ -17,7 +17,9 @@
     <string name="menu_auto_landscape">Liggend voor brede grafieken</string>
     <string name="controls">Bediening van deze app tonen of verbergen</string>
     <string name="controls_hint">De bediening van deze app is verborgen. Tik op ⚙ of veeg omlaag over de groene balk om die te tonen.</string>
-    <string name="offline">WikiTree kon niet worden geladen. Controleer je verbinding en tik op Opnieuw laden.</string>
+    <string name="offline_title">Geen verbinding</string>
+    <string name="offline">Tree Apps kon WikiTree niet bereiken. Controleer je wifi of mobiele data en probeer het opnieuw.</string>
+    <string name="retry">Opnieuw proberen</string>
     <string name="done">Gereed</string>
     <string name="open_in_browser">Browser</string>
     <string name="people_title">Personen</string>

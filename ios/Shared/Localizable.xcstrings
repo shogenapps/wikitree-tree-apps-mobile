@@ -1191,46 +1191,6 @@
         }
       }
     },
-    "Couldn't load WikiTree. Check your connection.": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "WikiTree konnte nicht geladen werden. Prüfe die Verbindung."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "No se pudo cargar WikiTree. Comprueba la conexión."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "Impossible de charger WikiTree. Vérifiez votre connexion."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "Impossibile caricare WikiTree. Controlla la connessione."
-          }
-        },
-        "nl": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "WikiTree kon niet worden geladen. Controleer je verbinding."
-          }
-        },
-        "sv": {
-          "stringUnit": {
-            "state": "needs_review",
-            "value": "WikiTree kunde inte läsas in. Kontrollera anslutningen."
-          }
-        }
-      }
-    },
     "Daily anniversaries notification: off. Tap to turn on.": {
       "localizations": {
         "de": {
@@ -2351,6 +2311,46 @@
         }
       }
     },
+    "No connection": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Keine Verbindung"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Sin conexión"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Pas de connexion"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Nessuna connessione"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Geen verbinding"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Ingen anslutning"
+          }
+        }
+      }
+    },
     "Nobody found for “%@”. Try a first name and a last name.": {
       "localizations": {
         "de": {
@@ -2711,42 +2711,42 @@
         }
       }
     },
-    "Open this page in Safari": {
+    "Open this page in browser": {
       "localizations": {
         "de": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "Diese Seite in Safari öffnen"
+            "value": "Diese Seite im Browser öffnen"
           }
         },
         "es": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "Abrir esta página en Safari"
+            "value": "Abrir esta página en el navegador"
           }
         },
         "fr": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "Ouvrir cette page dans Safari"
+            "value": "Ouvrir cette page dans le navigateur"
           }
         },
         "it": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "Apri questa pagina in Safari"
+            "value": "Apri questa pagina nel browser"
           }
         },
         "nl": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "Deze pagina openen in Safari"
+            "value": "Deze pagina openen in de browser"
           }
         },
         "sv": {
           "stringUnit": {
             "state": "needs_review",
-            "value": "Öppna sidan i Safari"
+            "value": "Öppna sidan i webbläsaren"
           }
         }
       }
@@ -3307,6 +3307,46 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "Ta bort från Senaste"
+          }
+        }
+      }
+    },
+    "Retry": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Erneut versuchen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Reintentar"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Réessayer"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Riprova"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Opnieuw proberen"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Försök igen"
           }
         }
       }
@@ -4273,6 +4313,46 @@
     },
     "Tree App": {
       "shouldTranslate": false
+    },
+    "Tree Apps couldn't reach WikiTree. Check your Wi-Fi or mobile data, then try again.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Tree Apps konnte WikiTree nicht erreichen. Prüfe WLAN oder mobile Daten und versuche es dann erneut."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Tree Apps no pudo conectar con WikiTree. Comprueba la wifi o los datos móviles y vuelve a intentarlo."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Tree Apps n’a pas pu joindre WikiTree. Vérifiez le Wi-Fi ou les données mobiles, puis réessayez."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Tree Apps non è riuscita a raggiungere WikiTree. Controlla il Wi-Fi o i dati mobili, poi riprova."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Tree Apps kon WikiTree niet bereiken. Controleer je wifi of mobiele data en probeer het opnieuw."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Tree Apps nådde inte WikiTree. Kontrollera wifi eller mobildata och försök sedan igen."
+          }
+        }
+      }
     },
     "Tree Apps for %@": {
       "localizations": {

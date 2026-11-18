@@ -17,7 +17,9 @@
     <string name="menu_auto_landscape">Liggande för breda diagram</string>
     <string name="controls">Visa eller dölj appens kontroller</string>
     <string name="controls_hint">Appens kontroller är dolda. Tryck på ⚙ eller svep nedåt på det gröna fältet för att visa dem.</string>
-    <string name="offline">WikiTree kunde inte läsas in. Kontrollera anslutningen och tryck på Läs in igen.</string>
+    <string name="offline_title">Ingen anslutning</string>
+    <string name="offline">Tree Apps nådde inte WikiTree. Kontrollera wifi eller mobildata och försök sedan igen.</string>
+    <string name="retry">Försök igen</string>
     <string name="done">Klar</string>
     <string name="open_in_browser">Webbläsare</string>
     <string name="people_title">Personer</string>

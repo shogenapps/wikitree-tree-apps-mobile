@@ -17,7 +17,9 @@
     <string name="menu_auto_landscape">Paysage pour les graphiques larges</string>
     <string name="controls">Afficher ou masquer les commandes de cette app</string>
     <string name="controls_hint">Les commandes de cette app sont masquées. Touchez ⚙ ou balayez vers le bas sur la barre verte pour les afficher.</string>
-    <string name="offline">Impossible de charger WikiTree. Vérifiez votre connexion et touchez Recharger.</string>
+    <string name="offline_title">Pas de connexion</string>
+    <string name="offline">Tree Apps n’a pas pu joindre WikiTree. Vérifiez le Wi-Fi ou les données mobiles, puis réessayez.</string>
+    <string name="retry">Réessayer</string>
     <string name="done">OK</string>
     <string name="open_in_browser">Navigateur</string>
     <string name="people_title">Personnes</string>
