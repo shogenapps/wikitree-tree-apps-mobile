@@ -53,8 +53,14 @@ To try a WBE build from your own machine without a release:
 - **Changes.** When a page changes a setting, every other open WBE page gets a `storageChanged`
   event. The page that wrote it is left out, because it already fired its own `onChanged`.
 - **WBE button** in the sheet's bar: Extension settings; Notes, Clipboard, Wikitable Wizard and
-  Color Blind Simulator (the same messages WBE's right-click menu sends); and Turn off/Turn on.
-  WBE is on unless the member turns it off.
+  Color Blind Simulator (the same messages WBE's right-click menu sends), listed only when their
+  feature is running on the page (WBE marks each running feature with `data-wbe-<id>` on `<html>`);
+  and Turn off/Turn on. WBE is on unless the member turns it off.
+- **After settings change**, closing the settings sheet reloads the page underneath, so the change
+  shows straight away.
+- **Settings page on a phone.** WBE's settings are laid out for a 780 px popup. The app adds a few
+  CSS rules on that page (options button on the feature's line, creator under the name). These
+  would be better in WBE's own `options.css` as a narrow-screen media query.
 
 Needs a WebView with document-start scripts and web message listeners (any current Android System
 WebView). Without them, or when the app was built without WBE, the WBE button is hidden.

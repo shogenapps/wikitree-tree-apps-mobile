@@ -160,6 +160,23 @@ object Wbe {
         return post(web, reply, JSONObject().put("type", "message").put("message", message))
     }
 
+    /**
+     * Which WBE features are running on the page in [web]: WBE marks each one it starts with a
+     * data-wbe-<feature id> attribute on <html>. Calls back with an empty set if there's no page.
+     */
+    fun runningFeatures(web: WebView, ids: List<String>, result: (Set<String>) -> Unit) {
+        val js = "(function(ids){var h=document.documentElement;return ids.filter(function(i){return h.hasAttribute('data-wbe-'+i);}).join(',');})(" +
+            JSONArray(ids).toString() + ")"
+        web.evaluateJavascript(js) { raw ->
+            val text = try {
+                JSONArray("[$raw]").optString(0)
+            } catch (_: Exception) {
+                ""
+            }
+            result(text.split(',').filter { it.isNotEmpty() }.toSet())
+        }
+    }
+
     // --- The page side ---
 
     private var script: String? = null
@@ -205,10 +222,18 @@ object Wbe {
     else if (m.kind === "event") { if (host.event) host.event(m.event); }
   };
   if (wbePage) {
-    // The settings page is laid out for a 780 px popup; let it fit a phone.
+    // The settings page is laid out for a 780 px popup; fit it to a phone: the options button
+    // sits on the feature's own line and the creator line goes under the name.
     var fit = function () {
       var s = document.createElement("style");
-      s.textContent = "html { min-width: 0 !important; } body { max-width: 100vw; overflow-x: hidden; }";
+      s.textContent = [
+        "html { min-width: 0 !important; }",
+        "body { max-width: 100vw; overflow-x: hidden; }",
+        ".section-header { display: flex; flex-wrap: wrap; align-items: center; column-gap: 8px; }",
+        ".feature-options-button { left: auto; top: auto; margin-left: auto; min-width: 0; padding: 5px 12px; font-size: 13px; }",
+        ".feature-author { position: static; text-align: left; padding: 0; margin: 0 0 2px 22px; }",
+        ".feature-author > div { display: inline; margin-right: 8px; }"
+      ].join("\n");
       (document.head || document.documentElement).appendChild(s);
     };
     if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", fit); else fit();
@@ -264,9 +289,17 @@ object Wbe {
         else -> throw IllegalArgumentException("Unknown storage area $a")
     }
 
+    /**
+     * Counts changes to WBE's settings (the sync area), so a page can tell whether the settings
+     * screen changed anything while it was open, and reload if so.
+     */
+    var settingsChanges = 0
+        private set
+
     /** Tells every other open WBE page about a settings change. */
     private fun changed(context: Context, from: WebView, area: String, changes: JSONObject) {
         if (changes.length() == 0) return
+        if (area == "sync") settingsChanges++
         val event = JSONObject().put("type", "storageChanged").put("area", area).put("changes", changes)
         for ((web, reply) in pages.toList()) {
             if (web !== from) post(web, reply, event)

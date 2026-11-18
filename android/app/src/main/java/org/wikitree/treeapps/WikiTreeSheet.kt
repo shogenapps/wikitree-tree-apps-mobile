@@ -88,7 +88,7 @@ class WikiTreeSheet(private val activity: Activity) {
             wbe = Wbe.attach(
                 activity, web,
                 openUrl = { openFromWbe(it) },
-                openOptions = { WikiTreeSheet(activity).show(Uri.parse(Wbe.OPTIONS_URL)) },
+                openOptions = { showWbeSettings(web) },
             )
         }
         val wbeButton = barButton(activity.getString(R.string.wbe_button)) {}
@@ -183,6 +183,14 @@ class WikiTreeSheet(private val activity: Activity) {
     }
 
     companion object {
+        /** WBE's right-click tools and the feature each belongs to (its id in WBE's options). */
+        private val WBE_TOOLS = listOf(
+            WbeTool(R.string.wbe_notes, "showNotes", "clipboardAndNotes"),
+            WbeTool(R.string.wbe_clipboard, "showClipboard", "clipboardAndNotes"),
+            WbeTool(R.string.wbe_wikitable, "launchWikitableWizard", "wikitableWizard"),
+            WbeTool(R.string.wbe_color_blind, "showColorBlindSimulator", "colorBlindSupport"),
+        )
+
         private val showing = mutableSetOf<Dialog>()
         private val afterClose = linkedMapOf<String, () -> Unit>()
 
@@ -196,21 +204,43 @@ class WikiTreeSheet(private val activity: Activity) {
         }
     }
 
-    /** WBE's menu: settings, the right-click tools, and the on/off switch. */
+    /**
+     * WBE's settings in a sheet of their own. If anything was changed there, [page] reloads when
+     * it closes, so the change takes effect on the page underneath.
+     */
+    private fun showWbeSettings(page: WebView) {
+        val before = Wbe.settingsChanges
+        WikiTreeSheet(activity).show(Uri.parse(Wbe.OPTIONS_URL)) {
+            if (Wbe.settingsChanges != before) try { page.reload() } catch (_: Exception) {}
+        }
+    }
+
+    /** WBE's menu: settings, the right-click tools of the features that are on, and the on/off switch. */
     private fun wbeMenu(anchor: View, web: WebView, on: Boolean, turnOn: () -> Unit, turnOff: () -> Unit) {
+        if (!on) {
+            buildWbeMenu(anchor, web, false, emptySet(), turnOn, turnOff)
+            return
+        }
+        Wbe.runningFeatures(web, WBE_TOOLS.map { it.feature }.distinct()) { running ->
+            buildWbeMenu(anchor, web, true, running, turnOn, turnOff)
+        }
+    }
+
+    private class WbeTool(val label: Int, val action: String, val feature: String)
+
+    private fun buildWbeMenu(
+        anchor: View, web: WebView, on: Boolean, running: Set<String>, turnOn: () -> Unit, turnOff: () -> Unit,
+    ) {
         val menu = PopupMenu(activity, anchor)
         val version = Wbe.version(activity)
         if (on) {
             menu.menu.add(activity.getString(R.string.wbe_settings)).setOnMenuItemClickListener {
-                WikiTreeSheet(activity).show(Uri.parse(Wbe.OPTIONS_URL)); true
+                showWbeSettings(web); true
             }
-            // The same messages the extension's right-click menu sends to the page.
-            for ((label, action) in listOf(
-                R.string.wbe_notes to "showNotes",
-                R.string.wbe_clipboard to "showClipboard",
-                R.string.wbe_wikitable to "launchWikitableWizard",
-                R.string.wbe_color_blind to "showColorBlindSimulator",
-            )) {
+            // The same messages the extension's right-click menu sends to the page, for the
+            // features that are turned on and running on this page.
+            for (tool in WBE_TOOLS.filter { it.feature in running }) {
+                val (label, action) = tool.label to tool.action
                 menu.menu.add(activity.getString(label)).setOnMenuItemClickListener {
                     if (!Wbe.sendToPage(web, JSONObject().put("action", action))) {
                         Toast.makeText(activity, R.string.wbe_not_ready, Toast.LENGTH_SHORT).show()
