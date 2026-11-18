@@ -579,7 +579,7 @@ class MainActivity : Activity() {
 
     /** The apps build their controls a moment after the page or app changes, so look again then.
      *  Some take much longer (Ahnentafel for a big tree builds for 20 to 30 seconds), so until the
-     *  controls are found, keep looking every 3 seconds for a minute and a half. */
+     *  controls are found, keep looking every 3 seconds for three minutes. */
     private fun refreshSoon() {
         val gen = ++refreshGen
         web.postDelayed({ refreshState() }, 1500)
@@ -590,7 +590,7 @@ class MainActivity : Activity() {
     private var refreshGen = 0
 
     private fun pollControls(gen: Int, at: Long) {
-        if (at > 90_000) return
+        if (at > 180_000) return
         web.postDelayed({
             if (gen != refreshGen || hasControls) return@postDelayed
             refreshState()
