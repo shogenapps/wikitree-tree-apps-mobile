@@ -223,10 +223,13 @@ class WikiTreeLogin(private val activity: Activity, private val onDone: () -> Un
             }
         }
         view.loadUrl("https://www.wikitree.com/index.php?title=Special:Userlogin")
-        // A login that hangs gives up after half a minute.
+        // A login that hangs gives up after a minute. WikiTree can be slow, and it may have
+        // logged the member in before its last page finished loading, so the cookies are
+        // checked before calling it a failure.
         main.postDelayed({
             if (!finished) android.util.Log.i(TAG, "gave up at step $step")
-            if (step >= 2) finish(true, null) else finish(false, activity.getString(R.string.login_failed))
-        }, 30_000)
+            val ok = step >= 2 || cookie("WikiTreeAPI_userName") || cookie("_UserName")
+            if (ok) finish(true, null) else finish(false, activity.getString(R.string.login_failed))
+        }, 60_000)
     }
 }

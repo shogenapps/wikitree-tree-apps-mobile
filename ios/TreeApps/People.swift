@@ -918,10 +918,17 @@ struct LoginView: View {
         step = 0
         tries = 0
         web.load(URLRequest(url: URL(string: "https://www.wikitree.com/index.php?title=Special:Userlogin")!))
-        // A login that hangs gives up after half a minute.
-        DispatchQueue.main.asyncAfter(deadline: .now() + 30) { [weak self] in
+        // A login that hangs gives up after a minute. WikiTree can be slow (pages taking 25s or
+        // more), and it may have logged the member in even though its last page has not finished
+        // loading, so the cookies are checked before calling it a failure.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 60) { [weak self] in
             guard let self, self.web === web, self.busy else { return }
-            self.finish(self.step >= 2, self.step >= 2 ? nil : "WikiTree did not answer. Check the connection and try again.")
+            Task { @MainActor in
+                let inApps = await self.cookie("WikiTreeAPI_userName")
+                let inSite = await self.cookie("_UserName")
+                let ok = inApps || inSite || self.step >= 2
+                self.finish(ok, ok ? nil : "WikiTree did not answer. Check the connection and try again.")
+            }
         }
     }
 
