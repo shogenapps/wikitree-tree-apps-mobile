@@ -142,6 +142,7 @@ class MainActivity : Activity() {
         findViewById<Button>(R.id.btn_menu).setOnClickListener { showMenu(it) }
         findViewById<View>(R.id.btn_share).setOnClickListener { shareChart() }
         findViewById<View>(R.id.btn_print).setOnClickListener { printChart() }
+        findViewById<View>(R.id.btn_browser).setOnClickListener { openInBrowser() }
         findViewById<View>(R.id.btn_saved).setOnClickListener { showPeople() }
         updateTabletBar(resources.configuration)
 
@@ -692,11 +693,11 @@ class MainActivity : Activity() {
      * The phone switched between light and dark while the app was open. The app handles uiMode
      * itself (see the manifest) so the chart is not reloaded; the colours are put right here.
      */
-    /** Share, Print and Saved people get their own bar buttons when the window is tablet-sized
+    /** Share, Print, Open in browser and Saved people get their own bar buttons when the window is tablet-sized
      *  (at least 600dp each way, so a split screen follows the window, not the device). */
     private fun updateTabletBar(config: Configuration) {
         val tablet = config.screenWidthDp >= 600 && config.screenHeightDp >= 600
-        for (id in intArrayOf(R.id.btn_share, R.id.btn_print, R.id.btn_saved)) {
+        for (id in intArrayOf(R.id.btn_share, R.id.btn_print, R.id.btn_browser, R.id.btn_saved)) {
             findViewById<View>(id).visibility = if (tablet) View.VISIBLE else View.GONE
         }
     }
@@ -861,8 +862,8 @@ class MainActivity : Activity() {
         if (currentId.isNotBlank()) m.add(0, 11, 2, R.string.menu_listen)
         m.add(0, 7, 3, R.string.menu_share)
         m.add(0, 10, 3, R.string.menu_print)
-        m.add(0, 8, 3, R.string.menu_people)
         m.add(0, 4, 3, R.string.menu_browser)
+        m.add(0, 8, 3, R.string.menu_people)
         m.add(0, 5, 4, if (showBars) R.string.menu_hide_bars else R.string.menu_show_bars)
         if (resources.configuration.smallestScreenWidthDp < 600) {
             m.add(0, 6, 5, R.string.menu_auto_landscape).setCheckable(true)
@@ -891,7 +892,7 @@ class MainActivity : Activity() {
                 2 -> if (loadFailed) retryLoad() else web.reload()
                 3 -> openInSheet(Uri.parse("https://www.wikitree.com/wiki/${Uri.encode(currentId)}"))
                 11 -> WikiTreeSheet(this).show(Uri.parse("https://www.wikitree.com/wiki/${Uri.encode(currentId)}"), listen = true)
-                4 -> web.url?.let { u -> openExternally(Uri.parse(u)) }
+                4 -> openInBrowser()
                 7 -> shareChart()
                 10 -> printChart()
                 8 -> showPeople()
@@ -957,6 +958,17 @@ class MainActivity : Activity() {
         } catch (_: ActivityNotFoundException) {
             openExternally(uri)
         }
+    }
+
+    /**
+     * The page on screen, in the phone's default browser (Firefox, Chrome and so on), where the
+     * WikiTree Browser Extension can run; it can't inside the app. The Tree Apps page keeps the
+     * person and the app in its address, so the browser opens the same chart. After a failed load
+     * the WebView holds no WikiTree address, so the chart's own link is used instead.
+     */
+    private fun openInBrowser() {
+        val page = web.url?.let(Uri::parse)?.takeIf { it.host == SITE_HOST }
+        openExternally(page ?: Uri.parse(startUrl()))
     }
 
     private fun openExternally(uri: Uri) {

@@ -157,11 +157,12 @@ struct ContentView: View {
                 .contentShape(Rectangle())
             }
 
-            // On an iPad the bar has room for Share, Print and Saved people, which phones keep in
-            // the ⋮ menu.
+            // On an iPad the bar has room for Share, Print, Open in browser and Saved people, which
+            // phones keep in the ⋮ menu.
             if widthClass == .regular && heightClass == .regular {
                 barIcon("square.and.arrow.up", "Share this chart") { shell.shareChart() }
                 barIcon("printer", "Print or save as PDF") { shell.printChart() }
+                barIcon("safari", "Open this page in browser") { shell.openInBrowser() }
                 barIcon("star", "Saved and recent people") { askPerson() }
             }
 
@@ -204,15 +205,15 @@ struct ContentView: View {
                 Button("Reload") { shell.reload() }
                 Button { shell.shareChart() } label: { Label("Share this chart", systemImage: "square.and.arrow.up") }
                 Button { shell.printChart() } label: { Label("Print or save as PDF", systemImage: "printer") }
+                Button { shell.openInBrowser() } label: {
+                    Label("Open this page in browser", systemImage: "safari")
+                }
                 Button { askPerson() } label: { Label("Saved and recent people", systemImage: "star") }
                 if !shell.personId.isEmpty {
                     Button("Open profile") { shell.openProfile() }
                     Button { shell.openProfile(listen: true) } label: {
                         Label("Listen to biography", systemImage: "speaker.wave.2")
                     }
-                }
-                if let url = shell.webView.url {
-                    Button("Open this page in Safari") { UIApplication.shared.open(url) }
                 }
                 Button(shell.showBars ? "Hide WikiTree page bars" : "Show WikiTree page bars") {
                     shell.toggleBars()
