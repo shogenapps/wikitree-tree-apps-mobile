@@ -239,6 +239,17 @@ any shell workaround.
 - **Source:** `views/familyGroupApp/`.
 - **Seen:** Android shell, 2026-11-14. Shell workaround: none. Not checked in a desktop browser.
 
+### Ahnentafel: options vanish after "More Generations"
+- **Symptom:** after tapping "1 More Generation", the options row (Date Format, Date Status,
+  WikiTree IDs, Gender colours, Excel, GEDCOM) disappears until the app is opened again.
+- **Cause:** `renderOptions()` inserts `#ahnentafelOptions` just before `#ahnentafelAncestorList`,
+  inside the app's container, and `refreshAncestorList()` rebuilds that container with
+  `$(this.selector).html(...)`, which removes the options with it.
+- **Source:** `views/ahnentafel/ahnentafel.js` (`refreshAncestorList`, `renderOptions`).
+- **Seen:** Android tablet emulator, 2026-11-18. Shell workaround: on tablets the shell moves
+  the options into the header beside `#ahnentafelHeaderBox` (`ahnKeepOptions` in `shared/shell.js`).
+  Phones still lose them.
+
 ### Fractal Tree: "SecurityError: The operation is insecure" on opening
 - **Symptom:** opening Fractal Tree logs `SecurityError: The operation is insecure` at
   `FractalView.js:1731`. The app draws an image from apps.wikitree.com onto a canvas and then

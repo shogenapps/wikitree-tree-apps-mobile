@@ -1294,28 +1294,28 @@
         " @media (min-width: 600px) and (min-height: 600px) {" +
         " html[data-wt-view=ahnentafel] #ahnentafelAncestorList .generationContainer { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 16px; }" +
         " html[data-wt-view=ahnentafel] #ahnentafelAncestorList .descendantButton { position: static !important; flex: none; align-self: flex-start; margin: 0 0 0 6px !important; }" +
+        " html[data-wt-view=ahnentafel] body > header > #ahnentafelOptions { padding: 4px 8px; }" +
         " }" +
         " @media " + DOCK_WIDE + " {" +
         " " + AHN + " main#main { margin-right: " + DOCK_W + "px !important; }" +
-        " " + AHN + " > header { position: fixed !important; top: 0; right: 0; width: " + DOCK_W + "px; z-index: 1000;" +
-        " box-sizing: border-box; padding: 12px 14px 8px !important; background: #fff !important; border-left: 1px solid #c9cdbf !important; }" +
-        " " + AHN + " #ahnentafelHeaderBox { display: flex !important; flex-wrap: wrap; align-items: center; gap: 6px; position: static !important; float: none !important; margin: 0 !important; width: auto !important; }" +
+        " " + AHN + " > header { position: fixed !important; top: 0; bottom: 0; right: 0; width: " + DOCK_W + "px; z-index: 1000; overflow-y: auto;" +
+        " box-sizing: border-box; padding: 12px 14px 24px !important; background: #fff !important; border-left: 1px solid #c9cdbf !important; }" +
+        " " + AHN + " #ahnentafelHeaderBox { display: flex !important; flex-wrap: wrap; align-items: center; gap: 6px; position: static !important; float: none !important; margin: 0 0 12px !important; width: auto !important; }" +
         " " + AHN + " #ahnentafelHeaderBox > * { margin: 0 !important; float: none !important; position: static !important; }" +
-        " " + AHN + " #ahnentafelOptions { position: fixed !important; right: 0; bottom: 0; top: var(--wt-ahn-top, 96px); width: " + DOCK_W + "px; z-index: 1000;" +
-        " box-sizing: border-box; margin: 0 !important; padding: 8px 14px 24px !important; overflow-y: auto; background: #fff !important; border-left: 1px solid #c9cdbf !important;" +
-        " display: flex !important; flex-direction: column; align-items: flex-start; gap: 10px; }" +
-        " " + AHN + " #ahnentafelOptions > * { margin: 0 !important; }" +
+        " " + AHN + " > header > #ahnentafelOptions { display: flex !important; flex-direction: column; align-items: flex-start; gap: 10px; margin: 0 !important; padding: 0 !important; }" +
+        " " + AHN + " > header > #ahnentafelOptions > * { margin: 0 !important; }" +
         " }";
 
-    // The options column starts below the header box, whatever height its buttons wrap to.
-    function ahnTop() {
-        if (document.documentElement.getAttribute("data-wt-view") !== "ahnentafel") return;
-        var h = document.querySelector("body > header");
-        var top = h && getComputedStyle(h).position === "fixed" ? Math.ceil(h.getBoundingClientRect().bottom) : 0;
-        var v = top ? top + "px" : "";
-        if (document.documentElement.style.getPropertyValue("--wt-ahn-top") !== v) {
-            document.documentElement.style.setProperty("--wt-ahn-top", v);
-        }
+    // Ahnentafel puts its options just above the list, inside the app's container, and when
+    // more generations load it rebuilds that container with .html(), which threw the options
+    // away until the app was opened again (a Tree App bug, listed in docs/tree-app-issues.md).
+    // On tablets they are moved into the header beside the app's other buttons, out of the
+    // container's way; their event handlers move with them.
+    function ahnKeepOptions() {
+        if (document.documentElement.getAttribute("data-wt-view") !== "ahnentafel" || matchMedia(PHONE_QUERY).matches) return;
+        var opts = document.getElementById("ahnentafelOptions");
+        var box = document.getElementById("ahnentafelHeaderBox");
+        if (opts && box && box.parentNode && opts.previousElementSibling !== box) box.parentNode.insertBefore(opts, box.nextSibling);
     }
 
     var dockEl, dockObserver, dockMode = "";
@@ -1402,7 +1402,7 @@
         el.addEventListener("touchcancel", end);
     }
 
-    setInterval(function () { updateDock(); ahnTop(); }, 500);
+    setInterval(function () { updateDock(); ahnKeepOptions(); }, 500);
     [PHONE_QUERY, DOCK_WIDE].forEach(function (q) {
         var m = matchMedia(q);
         if (m.addEventListener) m.addEventListener("change", updateDock);
@@ -2097,6 +2097,7 @@
         queueMore();
         cctHeight();
         cc7SettingsClose();
+        ahnKeepOptions();
         undarkSoon();
         if (!staleTimer) staleTimer = setTimeout(clearStale, 1000);
     }).observe(document.documentElement, { childList: true, subtree: true });
