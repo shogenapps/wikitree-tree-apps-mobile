@@ -141,4 +141,16 @@
     <string name="shell_saved_note" formatted="false">Saved data from %s. Tap to update</string>
     <string name="shell_saved_chip" formatted="false">Saved %s</string>
     <string name="shell_updating">Updating…</string>
+
+    <!-- WikiTree Browser Extension menu in the page sheet. The tool names stay in English, as WBE shows them. -->
+    <string name="wbe_button" translatable="false">WBE</string>
+    <string name="wbe_button_long">WikiTree Browser Extension menu</string>
+    <string name="wbe_settings">Extension settings</string>
+    <string name="wbe_turn_off">Turn off the Browser Extension</string>
+    <string name="wbe_turn_on">Turn on the Browser Extension</string>
+    <string name="wbe_not_ready">The page is still loading. Try again in a moment.</string>
+    <string name="wbe_notes" translatable="false">Notes</string>
+    <string name="wbe_clipboard" translatable="false">Clipboard</string>
+    <string name="wbe_wikitable" translatable="false">Wikitable Wizard</string>
+    <string name="wbe_color_blind" translatable="false">Color Blind Simulator</string>
 </resources>

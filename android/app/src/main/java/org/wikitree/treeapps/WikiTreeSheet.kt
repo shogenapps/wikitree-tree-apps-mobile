@@ -13,12 +13,16 @@ import android.view.KeyEvent
 import android.view.View
 import android.view.ViewGroup
 import android.webkit.WebResourceRequest
+import android.webkit.WebResourceResponse
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.ProgressBar
+import android.widget.PopupMenu
 import android.widget.TextView
+import android.widget.Toast
+import org.json.JSONObject
 
 /**
  * A wikitree.com page (a profile, a help page) full screen over the app, in a WebView. It shares
@@ -29,6 +33,9 @@ import android.widget.TextView
  * On a profile, a Listen button reads the biography aloud (see [Biography]), with a bar at the
  * bottom to pause or stop; [show] with listen set starts reading as soon as the sheet opens.
  * Closing the sheet stops the reading.
+ *
+ * The WikiTree Browser Extension runs on the pages here (see [Wbe]), with a WBE button for its
+ * settings, the tools its right-click menu offers on a computer, and a switch to turn it off.
  */
 class WikiTreeSheet(private val activity: Activity) {
     private val density = activity.resources.displayMetrics.density
@@ -72,9 +79,35 @@ class WikiTreeSheet(private val activity: Activity) {
             visibility = if (Biography.profileId(uri.toString()) != null) View.VISIBLE else View.GONE
         }
         bar.addView(listenButton)
-        bar.addView(barButton(activity.getString(R.string.open_in_browser)) {
+        val browserButton = barButton(activity.getString(R.string.open_in_browser)) {
             open(Uri.parse(web.url ?: uri.toString()))
-        })
+        }
+        bar.addView(browserButton)
+        var wbe: Wbe.Session? = null
+        fun addWbe() {
+            wbe = Wbe.attach(
+                activity, web,
+                openUrl = { openFromWbe(it) },
+                openOptions = { WikiTreeSheet(activity).show(Uri.parse(Wbe.OPTIONS_URL)) },
+            )
+        }
+        val wbeButton = barButton(activity.getString(R.string.wbe_button)) {}
+        wbeButton.setOnClickListener {
+            wbeMenu(wbeButton, web, on = wbe != null, turnOn = { addWbe(); web.reload() }, turnOff = {
+                wbe?.remove()
+                wbe = null
+                web.reload()
+            })
+        }
+        wbeButton.contentDescription = activity.getString(R.string.wbe_button_long)
+        bar.addView(wbeButton)
+        fun showButtonsFor(url: String) {
+            val ownPage = Wbe.isWbePage(url)
+            // WBE's own settings page lives inside the app, so there's no browser copy of it.
+            browserButton.visibility = if (ownPage) View.GONE else View.VISIBLE
+            wbeButton.visibility = if (ownPage || !Wbe.isAvailable(activity)) View.GONE else View.VISIBLE
+        }
+        showButtonsFor(uri.toString())
         bar.addView(barButton(activity.getString(R.string.done)) { dialog.dismiss() })
         root.addView(bar)
         val progress = ProgressBar(activity, null, android.R.attr.progressBarStyleHorizontal).apply {
@@ -85,6 +118,7 @@ class WikiTreeSheet(private val activity: Activity) {
 
         web.settings.javaScriptEnabled = true
         web.settings.domStorageEnabled = true
+        addWbe()
         web.webViewClient = object : WebViewClient() {
             override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
                 val host = request.url.host
@@ -97,12 +131,16 @@ class WikiTreeSheet(private val activity: Activity) {
                 return false
             }
 
+            override fun shouldInterceptRequest(view: WebView, request: WebResourceRequest): WebResourceResponse? =
+                Wbe.intercept(activity, request)
+
             override fun onPageStarted(view: WebView, url: String, favicon: android.graphics.Bitmap?) {
                 progress.visibility = View.VISIBLE
             }
 
             override fun doUpdateVisitedHistory(view: WebView, url: String, isReload: Boolean) {
                 listenButton.visibility = if (Biography.profileId(url) != null) View.VISIBLE else View.GONE
+                showButtonsFor(url)
             }
 
             override fun onPageFinished(view: WebView, url: String) {
@@ -123,6 +161,8 @@ class WikiTreeSheet(private val activity: Activity) {
         }
         dialog.setOnDismissListener {
             player.release()
+            wbe?.remove()
+            Wbe.detach(web)
             web.destroy()
             // Keep a login made here even if the app is closed straight away.
             android.webkit.CookieManager.getInstance().flush()
@@ -153,6 +193,52 @@ class WikiTreeSheet(private val activity: Activity) {
          */
         fun whenClosed(key: String, action: () -> Unit) {
             if (showing.isEmpty()) action() else afterClose[key] = action
+        }
+    }
+
+    /** WBE's menu: settings, the right-click tools, and the on/off switch. */
+    private fun wbeMenu(anchor: View, web: WebView, on: Boolean, turnOn: () -> Unit, turnOff: () -> Unit) {
+        val menu = PopupMenu(activity, anchor)
+        val version = Wbe.version(activity)
+        if (on) {
+            menu.menu.add(activity.getString(R.string.wbe_settings)).setOnMenuItemClickListener {
+                WikiTreeSheet(activity).show(Uri.parse(Wbe.OPTIONS_URL)); true
+            }
+            // The same messages the extension's right-click menu sends to the page.
+            for ((label, action) in listOf(
+                R.string.wbe_notes to "showNotes",
+                R.string.wbe_clipboard to "showClipboard",
+                R.string.wbe_wikitable to "launchWikitableWizard",
+                R.string.wbe_color_blind to "showColorBlindSimulator",
+            )) {
+                menu.menu.add(activity.getString(label)).setOnMenuItemClickListener {
+                    if (!Wbe.sendToPage(web, JSONObject().put("action", action))) {
+                        Toast.makeText(activity, R.string.wbe_not_ready, Toast.LENGTH_SHORT).show()
+                    }
+                    true
+                }
+            }
+            menu.menu.add(activity.getString(R.string.wbe_turn_off)).setOnMenuItemClickListener {
+                Wbe.setEnabled(activity, false); turnOff(); true
+            }
+        } else {
+            menu.menu.add(activity.getString(R.string.wbe_turn_on)).setOnMenuItemClickListener {
+                Wbe.setEnabled(activity, true); turnOn(); true
+            }
+        }
+        if (version.isNotEmpty()) {
+            menu.menu.add("WikiTree Browser Extension $version").isEnabled = false
+        }
+        menu.show()
+    }
+
+    /** A link WBE opens in a new tab on a computer: wikitree.com in another sheet, the rest outside. */
+    private fun openFromWbe(uri: Uri) {
+        val host = uri.host.orEmpty()
+        if (uri.scheme == "https" && (host == "wikitree.com" || host.endsWith(".wikitree.com"))) {
+            WikiTreeSheet(activity).show(uri)
+        } else {
+            open(uri)
         }
     }
 

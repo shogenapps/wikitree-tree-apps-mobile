@@ -134,4 +134,11 @@
     <string name="shell_saved_note" formatted="false">Sparade data från %s. Tryck för att uppdatera</string>
     <string name="shell_saved_chip" formatted="false">Sparat %s</string>
     <string name="shell_updating">Uppdaterar…</string>
+
+    <!-- WikiTree Browser Extension menu in the page sheet. The tool names stay in English, as WBE shows them. -->
+    <string name="wbe_button_long">Meny för WikiTree Browser Extension</string>
+    <string name="wbe_settings">Tilläggets inställningar</string>
+    <string name="wbe_turn_off">Stäng av Browser Extension</string>
+    <string name="wbe_turn_on">Slå på Browser Extension</string>
+    <string name="wbe_not_ready">Sidan laddas fortfarande. Försök igen om en stund.</string>
 </resources>

@@ -3,9 +3,9 @@ name: Android test build
 on:
   push:
     branches: [main]
-    paths: ["android/**", "shared/**", ".github/workflows/android.yml"]
+    paths: ["android/**", "shared/**", "scripts/**", ".github/workflows/android.yml"]
   pull_request:
-    paths: ["android/**", "shared/**", ".github/workflows/android.yml"]
+    paths: ["android/**", "shared/**", "scripts/**", ".github/workflows/android.yml"]
   workflow_dispatch:
 
 permissions:
