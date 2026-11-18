@@ -96,19 +96,25 @@ final class PeopleStore: ObservableObject {
     /// from the Tree Apps login (WikiTreeAPI_userName) or the site's remember-me cookie, and a site
     /// session (wikitree_wtb__session) beside it. With no site session, profiles would show
     /// logged out, so nobody is shown and the start screen offers to log in.
-    func findMe() {
+    /// `afterLogin`: just after the login sheet closes. On a slow connection the Tree Apps part of
+    /// the login can still be finishing then, and the cookie with the member's ID arrives a few
+    /// seconds later; with a site session already there, keep looking for it for up to 20 seconds.
+    func findMe(afterLogin: Bool = false) {
         Task { @MainActor in
             var cookies: [HTTPCookie] = []
-            // Just after launch the cookie store can answer empty for a moment.
-            for _ in 0..<5 {
+            var site = false
+            var id = ""
+            for attempt in 0..<(afterLogin ? 20 : 5) {
                 cookies = await WKWebsiteDataStore.default().httpCookieStore.allCookies()
-                if !cookies.isEmpty { break }
+                let wikitree = cookies.filter { $0.domain.hasSuffix("wikitree.com") && !$0.value.isEmpty }
+                site = wikitree.contains { $0.name.hasSuffix("wtb__session") || $0.name.hasSuffix("wtb_UserName") }
+                id = (site ? wikitree.first { $0.name == "WikiTreeAPI_userName" || $0.name.hasSuffix("wtb_UserName") } : nil)?
+                    .value.removingPercentEncoding?.replacingOccurrences(of: " ", with: "_") ?? ""
+                // Just after launch the cookie store can answer empty for a moment.
+                let waiting = cookies.isEmpty || (afterLogin && site && id.isEmpty)
+                if !waiting || attempt == (afterLogin ? 19 : 4) { break }
                 try? await Task.sleep(nanoseconds: 1_000_000_000)
             }
-            let wikitree = cookies.filter { $0.domain.hasSuffix("wikitree.com") && !$0.value.isEmpty }
-            let site = wikitree.contains { $0.name.hasSuffix("wtb__session") || $0.name.hasSuffix("wtb_UserName") }
-            let id = (site ? wikitree.first { $0.name == "WikiTreeAPI_userName" || $0.name.hasSuffix("wtb_UserName") } : nil)?
-                .value.removingPercentEncoding?.replacingOccurrences(of: " ", with: "_") ?? ""
             meChecked = true
             guard id.range(of: #"^\S+-\d+$"#, options: .regularExpression) != nil else {
                 me = nil
@@ -523,7 +529,7 @@ struct PeopleView: View {
         }
         .tint(wtAccent)
         .sheet(item: $profile, onDismiss: { if start != nil { store.findMe() } }) { PageSheet(url: $0.url, listen: $0.listen) }
-        .sheet(isPresented: $loggingIn, onDismiss: { store.findMe() }) { LoginView() }
+        .sheet(isPresented: $loggingIn, onDismiss: { store.findMe(afterLogin: true) }) { LoginView() }
         .onChange(of: draft) { text in
             // Suggest people from the watchlist while typing, as wikitree.com does.
             let typed = text.trimmingCharacters(in: .whitespaces)
@@ -918,10 +924,17 @@ struct LoginView: View {
         step = 0
         tries = 0
         web.load(URLRequest(url: URL(string: "https://www.wikitree.com/index.php?title=Special:Userlogin")!))
-        // A login that hangs gives up after half a minute.
-        DispatchQueue.main.asyncAfter(deadline: .now() + 30) { [weak self] in
+        // A login that hangs gives up after a minute. WikiTree can be slow (pages taking 25s or
+        // more), and it may have logged the member in even though its last page has not finished
+        // loading, so the cookies are checked before calling it a failure.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 60) { [weak self] in
             guard let self, self.web === web, self.busy else { return }
-            self.finish(self.step >= 2, self.step >= 2 ? nil : "WikiTree did not answer. Check the connection and try again.")
+            Task { @MainActor in
+                let inApps = await self.cookie("WikiTreeAPI_userName")
+                let inSite = await self.cookie("_UserName")
+                let ok = inApps || inSite || self.step >= 2
+                self.finish(ok, ok ? nil : "WikiTree did not answer. Check the connection and try again.")
+            }
         }
     }
 

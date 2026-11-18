@@ -39,6 +39,9 @@ struct ContentView: View {
     @State private var showingLogin = false
     @State private var autoRotate = Rotation.auto
     @State private var showHint = false
+    // Regular both ways: an iPad window at least about two thirds wide (split view follows it).
+    @Environment(\.horizontalSizeClass) private var widthClass
+    @Environment(\.verticalSizeClass) private var heightClass
 
     var body: some View {
         VStack(spacing: 0) {
@@ -113,6 +116,17 @@ struct ContentView: View {
         .onChange(of: shell.viewKey) { key in if shell.started { Rotation.apply(for: key) } }
     }
 
+    private func barIcon(_ symbol: String, _ label: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: symbol)
+                .foregroundColor(.white)
+                .padding(.horizontal, 10)
+                .frame(maxHeight: .infinity)
+                .contentShape(Rectangle())
+        }
+        .accessibilityLabel(label)
+    }
+
     /// The slim bar that replaces the site header and the Tree App / ID form.
     private var bar: some View {
         HStack(spacing: 0) {
@@ -141,6 +155,14 @@ struct ContentView: View {
                 .padding(.horizontal, 12)
                 .frame(maxHeight: .infinity)
                 .contentShape(Rectangle())
+            }
+
+            // On an iPad the bar has room for Share, Print and Saved people, which phones keep in
+            // the ⋮ menu.
+            if widthClass == .regular && heightClass == .regular {
+                barIcon("square.and.arrow.up", "Share this chart") { shell.shareChart() }
+                barIcon("printer", "Print or save as PDF") { shell.printChart() }
+                barIcon("star", "Saved and recent people") { askPerson() }
             }
 
             Button {

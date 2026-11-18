@@ -165,6 +165,27 @@
         " html[data-wt-view=couples] #couples-view-container { height: 100%; overflow: hidden; }" +
         " #dynamic-tree-container > svg, #couples-view-container > svg { display: block; width: 100%; height: 100%; }" +
         " }";
+    // Tablets: charts fill the window. On a tablet the shell used to leave the apps' desktop
+    // layout alone, so Super Tree, Dynamic Tree, Couples, FanDoku, Fractal Tree and Ancestor
+    // Webs drew on a 1000px-tall board and the page scrolled past empty space. They now fill
+    // the window below the app's toolbar, as on phones, so that a docked settings panel (see
+    // DOCK) can take its room from the chart rather than from the page below it.
+    CSS +=
+        " @media (min-width: 600px) and (min-height: 600px) {" +
+        ["wt-dynamic-tree", "couples", "superbig", "fandoku", "fractal", "webs"].map(function (v) {
+            return " html[data-wt-view=" + v + "] main#main .col-lg-12 { display: flex !important; flex-direction: column; height: 100vh; }" +
+                " html[data-wt-view=" + v + "] #view-container { flex: 1 1 0; min-height: 0 !important; height: auto !important; overflow: hidden !important; }";
+        }).join("") +
+        " html[data-wt-view=wt-dynamic-tree] #dynamic-tree-container," +
+        " html[data-wt-view=couples] #couples-view-container { height: 100%; overflow: hidden; }" +
+        " #dynamic-tree-container > svg, #couples-view-container > svg," +
+        " html[data-wt-view=fandoku] #view-container > svg, html[data-wt-view=fractal] #view-container > svg," +
+        " html[data-wt-view=webs] #view-container > svg { display: block; width: 100%; height: 100%; }" +
+        // Super Tree drew at the width the window had when it started, so it did not shrink
+        // beside a docked settings panel, and its fit (a viewBox) was placed against the right
+        // edge. Sized to its box, the SVG scales the fitted tree to the room there is, centred.
+        " html[data-wt-view=superbig] #view-container > #superbigChartSVG { display: block; width: 100% !important; height: 100% !important; }" +
+        " }";
     var PHONE_QUERY = "(max-width: 599px), (max-height: 599px)";
 
     // CC7 Views on phones: cc7.css gives #cc7Container a min-width of 650px, so its button rows
@@ -598,7 +619,8 @@
         if (view === "superbig") superLoading();
         if (view === "webs") websLoading();
         if (view === "webs" && Math.min(screen.width, screen.height) < 600) websRefit();
-        if (BOARDS[view] && Math.min(screen.width, screen.height) < 600) fitBoard(view);
+        // Tablets too: their boards fill the window as well (see "Tablets: charts fill the window").
+        if (BOARDS[view]) fitBoard(view);
         if (view === "xtree" && Math.min(screen.width, screen.height) < 600) fitXTree();
         if (view === "timeline" && Math.min(screen.width, screen.height) < 600) fitTimeline();
         // Uses the screen, not PHONE_QUERY: at document start the page has no viewport yet.
@@ -1186,6 +1208,7 @@
 
     // Controls start hidden so the app gets the whole screen; the shell's bar shows them again.
     function applyControls() {
+        document.documentElement.classList.toggle("wt-controls", !!window.__wtShellShowControls);
         var el = document.getElementById("wt-shell-controls");
         if (!window.__wtShellShowControls && !el) {
             el = document.createElement("style");
@@ -1203,6 +1226,7 @@
     window.__wtShellSetControls = function (show) {
         window.__wtShellShowControls = !!show;
         applyControls();
+        updateDock();
         // FanDoku, Fractal Tree and Ancestor Webs: the controls take room from the top of the
         // view, so fit the chart again (as on turning) or its bottom row was cut off.
         var view = document.documentElement.getAttribute("data-wt-view");
@@ -1218,6 +1242,179 @@
         }
         return false;
     }
+
+    // Tablets (iPad, Android tablets, and any window at least 600 by 600, so split view and
+    // Android multi-window follow the window, not the device): the settings box that Fan Chart,
+    // FanDoku, Fractal Tree, Super Tree, Ancestor Webs and X Family Tree share (#settingsDIV,
+    // opened with the app's gear) floated over the chart. It is docked instead: a 320px column
+    // down the right side when the window is at least 900 wide and wider than tall, otherwise a
+    // panel along the bottom, 40% of the height. The page shrinks to the room that is left, so
+    // the chart re-fits beside or above it rather than hiding behind it. The box starts closed,
+    // as the app has it; whether it was left open is remembered for each app and it opens again
+    // next time. A swipe on the panel towards its edge (right for the column, down for the
+    // bottom panel) closes it, as do the app's own close button and the shell's controls button.
+    var DOCK_WIDE = "(min-width: 900px) and (min-height: 600px) and (min-aspect-ratio: 1/1)";
+    var DOCK = "#info-panel > #settingsDIV";
+    var DOCK_W = 320;
+    CSS +=
+        " html.wt-dock-side body " + DOCK + ", html.wt-dock-below body " + DOCK +
+        " { position: fixed !important; margin: 0 !important; box-sizing: border-box; overflow-x: hidden; overflow-y: auto;" +
+        " overscroll-behavior: contain; -webkit-overflow-scrolling: touch; border: 0 !important; border-radius: 0 !important;" +
+        " box-shadow: none !important; padding: 16px 14px 24px !important; z-index: 1000 !important; max-width: none !important; max-height: none !important; }" +
+        " html.wt-dock-side body " + DOCK + " { top: 0 !important; bottom: 0 !important; right: 0 !important; left: auto !important;" +
+        " width: " + DOCK_W + "px !important; height: auto !important; border-left: 1px solid #c9cdbf !important; }" +
+        " html.wt-dock-below body " + DOCK + " { left: 0 !important; right: 0 !important; bottom: 0 !important; top: auto !important;" +
+        " width: auto !important; height: 40vh !important; border-top: 1px solid #c9cdbf !important; }" +
+        // Its contents were laid out for a floating box: keep them inside the panel.
+        " html.wt-dock-side body " + DOCK + " *, html.wt-dock-below body " + DOCK + " * { max-width: 100%; box-sizing: border-box; }" +
+        " html.wt-dock-side body " + DOCK + " ul, html.wt-dock-below body " + DOCK + " ul { padding-left: 0; }" +
+        " html.wt-dock-side body " + DOCK + " ul.profile-tabs, html.wt-dock-below body " + DOCK + " ul.profile-tabs { display: flex; flex-wrap: wrap; gap: 4px; }" +
+        // While a panel is being swiped away it follows the finger (see dockSwipe).
+        " html body " + DOCK + ".wt-dock-settle { transition: transform 0.2s ease-out; }" +
+        // The page gives the panel its room. Charts that fill the screen (100vh columns, see the
+        // per-app rules) get the height that is left above a bottom panel.
+        " html.wt-dock-side body main#main { margin-right: " + DOCK_W + "px !important; }" +
+        " html.wt-dock-below body { padding-bottom: 40vh !important; }" +
+        " html.wt-dock-below body main#main .col-lg-12 { max-height: 60vh; }";
+
+    // Ahnentafel on tablets: one list across a 1180px window gave lines far longer than the
+    // entries. Each generation's people are laid out two to a row instead (father beside
+    // mother), under the generation's heading, so the list still reads straight down and adding
+    // a generation adds it at the bottom. (Newspaper columns were tried first, but with more
+    // generations the reader had to scroll back up to the top of the second column.) Each
+    // person's ↕ button was placed at the right edge of the whole list: it ends the person's own
+    // row instead, as on phones.
+    // In a wide landscape window, Ahnentafel's controls (its header box: help, List/Report
+    // View, More Generations, Format, undo/redo; and its options: date format, date status,
+    // IDs, colours, Excel, GEDCOM) sit in a 320px column on the right, like the docked settings,
+    // so they stay in reach however far down the list is scrolled. They are shown and hidden
+    // with the shell's controls button as before.
+    var AHN = "html.wt-controls[data-wt-view=ahnentafel] body";
+    CSS +=
+        " @media (min-width: 600px) and (min-height: 600px) {" +
+        " html[data-wt-view=ahnentafel] #ahnentafelAncestorList .generationContainer { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 16px; }" +
+        " html[data-wt-view=ahnentafel] #ahnentafelAncestorList .descendantButton { position: static !important; flex: none; align-self: flex-start; margin: 0 0 0 6px !important; }" +
+        " html[data-wt-view=ahnentafel] body > header > #ahnentafelOptions { padding: 4px 8px; }" +
+        " }" +
+        " @media " + DOCK_WIDE + " {" +
+        " " + AHN + " main#main { margin-right: " + DOCK_W + "px !important; }" +
+        " " + AHN + " > header { position: fixed !important; top: 0; bottom: 0; right: 0; width: " + DOCK_W + "px; z-index: 1000; overflow-y: auto; align-content: flex-start !important;" +
+        " box-sizing: border-box; padding: 12px 14px 24px !important; background: #fff !important; border-left: 1px solid #c9cdbf !important; }" +
+        " " + AHN + " #ahnentafelHeaderBox { display: flex !important; flex-wrap: wrap; align-items: center; gap: 6px; position: static !important; float: none !important; margin: 0 0 12px !important; width: auto !important; }" +
+        " " + AHN + " #ahnentafelHeaderBox > * { margin: 0 !important; float: none !important; position: static !important; }" +
+        " " + AHN + " > header > #ahnentafelOptions { display: flex !important; flex-direction: column; align-items: flex-start; gap: 10px; margin: 0 !important; padding: 0 !important; }" +
+        " " + AHN + " > header > #ahnentafelOptions > * { margin: 0 !important; max-width: 100%; }" +
+        " " + AHN + " > header > #ahnentafelOptions select { max-width: 100%; min-width: 0; flex: 0 1 auto; }" +
+        " }";
+
+    // Ahnentafel puts its options just above the list, inside the app's container, and when
+    // more generations load it rebuilds that container with .html(), which threw the options
+    // away until the app was opened again (a Tree App bug, listed in docs/tree-app-issues.md).
+    // They are moved into the header beside the app's other buttons (phones and tablets), out
+    // of the container's way; their event handlers move with them. Report View's box likewise.
+    function ahnKeepOptions() {
+        if (document.documentElement.getAttribute("data-wt-view") !== "ahnentafel") return;
+        var opts = document.getElementById("ahnentafelOptions");
+        var box = document.getElementById("ahnentafelHeaderBox");
+        if (opts && box && box.parentNode && opts.previousElementSibling !== box) box.parentNode.insertBefore(opts, box.nextSibling);
+        // The box Report View draws into is thrown away by the same rebuild and never made
+        // again, so Report View stayed blank after More Generations: it goes just after the
+        // container instead.
+        var report = document.getElementById("ahnentafelReportWrapper");
+        var vc = document.getElementById("view-container");
+        if (report && vc && vc.parentNode && report.parentNode !== vc.parentNode) vc.parentNode.insertBefore(report, vc.nextSibling);
+    }
+
+    var dockEl, dockObserver, dockMode = "";
+    function dockKey() { return "wtDock_" + (document.documentElement.getAttribute("data-wt-view") || ""); }
+    function dockRemember(open) { try { localStorage.setItem(dockKey(), open ? "1" : "0"); } catch (e) {} }
+    function dockRemembered() { try { return localStorage.getItem(dockKey()) === "1"; } catch (e) { return false; } }
+
+    function updateDock() {
+        var el = document.querySelector(DOCK);
+        if (el !== dockEl) {
+            if (dockObserver) dockObserver.disconnect();
+            dockEl = el;
+            if (el) {
+                // The app opens and closes the box by setting style.display: that is the
+                // member's choice (the gear, its close button, Escape), so it is remembered.
+                var was = el.style.display;
+                dockObserver = new MutationObserver(function () {
+                    var now = el.style.display;
+                    if (now !== was) {
+                        was = now;
+                        if (!matchMedia(PHONE_QUERY).matches) dockRemember(now !== "none");
+                    }
+                    updateDock();
+                });
+                dockObserver.observe(el, { attributes: true, attributeFilter: ["style"] });
+                el.addEventListener("touchstart", dockSwipe, { passive: true });
+                if (!matchMedia(PHONE_QUERY).matches && el.style.display === "none" && dockRemembered()) el.style.display = "block";
+            }
+        }
+        var open = !!el && !matchMedia(PHONE_QUERY).matches && getComputedStyle(el).display !== "none";
+        var mode = open ? (matchMedia(DOCK_WIDE).matches ? "side" : "below") : "";
+        if (mode === dockMode) return;
+        var root = document.documentElement;
+        root.classList.toggle("wt-dock-side", mode === "side");
+        root.classList.toggle("wt-dock-below", mode === "below");
+        dockMode = mode;
+        // The charts that size themselves (Super Tree, the webs, FanDoku, Fractal Tree) are
+        // told the page changed size, as on turning; Fan Chart's SVG follows by itself.
+        setTimeout(function () { window.dispatchEvent(new Event("resize")); }, 50);
+    }
+
+    // Swipe the docked panel towards its edge to close it. Only a clear swipe in that direction
+    // counts: taps, the panel's own scrolling and its drop-down menus are left alone.
+    function dockSwipe(e) {
+        var el = dockEl, mode = dockMode;
+        if (!el || !mode || e.touches.length !== 1) return;
+        var t0 = e.touches[0], x0 = t0.clientX, y0 = t0.clientY, at = Date.now(), d = 0, dragging = false;
+        var atTop = el.scrollTop <= 0;
+        if (/^(INPUT|SELECT|TEXTAREA)$/.test(e.target.tagName)) return;
+        function move(ev) {
+            var t = ev.touches[0], dx = t.clientX - x0, dy = t.clientY - y0;
+            if (!dragging) {
+                if (mode === "side" && dx > 12 && dx > Math.abs(dy) * 1.5) dragging = true;
+                else if (mode === "below" && atTop && dy > 12 && dy > Math.abs(dx) * 1.5) dragging = true;
+                else if (Math.abs(dx) > 12 || Math.abs(dy) > 12) return end();
+                else return;
+                el.classList.remove("wt-dock-settle");
+            }
+            ev.preventDefault();
+            d = Math.max(0, mode === "side" ? dx : dy);
+            el.style.transform = mode === "side" ? "translateX(" + d + "px)" : "translateY(" + d + "px)";
+        }
+        function end() {
+            el.removeEventListener("touchmove", move);
+            el.removeEventListener("touchend", end);
+            el.removeEventListener("touchcancel", end);
+            if (!dragging) return;
+            var size = mode === "side" ? el.offsetWidth : el.offsetHeight;
+            var fast = d > 40 && d / Math.max(1, Date.now() - at) > 0.5;
+            el.classList.add("wt-dock-settle");
+            if (d > size / 3 || fast) {
+                el.style.transform = mode === "side" ? "translateX(100%)" : "translateY(100%)";
+                setTimeout(function () {
+                    el.classList.remove("wt-dock-settle");
+                    el.style.transform = "";
+                    el.style.display = "none";
+                }, 200);
+            } else {
+                el.style.transform = "";
+            }
+        }
+        el.addEventListener("touchmove", move, { passive: false });
+        el.addEventListener("touchend", end);
+        el.addEventListener("touchcancel", end);
+    }
+
+    setInterval(function () { updateDock(); ahnKeepOptions(); }, 500);
+    [PHONE_QUERY, DOCK_WIDE].forEach(function (q) {
+        var m = matchMedia(q);
+        if (m.addEventListener) m.addEventListener("change", updateDock);
+        else if (m.addListener) m.addListener(updateDock);
+    });
 
     function apply() {
         var el = document.getElementById("wt-shell-css");
@@ -1907,6 +2104,7 @@
         queueMore();
         cctHeight();
         cc7SettingsClose();
+        ahnKeepOptions();
         undarkSoon();
         if (!staleTimer) staleTimer = setTimeout(clearStale, 1000);
     }).observe(document.documentElement, { childList: true, subtree: true });
