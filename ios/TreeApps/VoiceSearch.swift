@@ -106,6 +106,17 @@ struct NameSearch: Equatable {
                 afterEvent = false
                 continue
             }
+            // A bare "b" or "d" (or "B.") is "born" or "died" only before a year ("b 1850");
+            // otherwise it is more likely part of a name the phone heard in pieces ("Thomas B Cole").
+            if bare == "b" || bare == "d" {
+                let next = i + 1 < tokens.count ? tokens[i + 1] : nil
+                if next.map({ Self.year($0) == nil && !Self.aboutWords.contains(Self.trimmed(Substring($0)).lowercased()) }) ?? true {
+                    var initial = Self.trimmed(Substring(raw))
+                    if initial.hasSuffix(".") { initial.removeLast() }
+                    names.append(initial)
+                    continue
+                }
+            }
             if Self.bornWords.contains(word) || Self.bornWords.contains(bare) {
                 pending = .born; place = nil; afterEvent = true; continue
             }
@@ -224,34 +235,40 @@ struct NameSounds {
     func knows(_ word: String) -> Bool { count[Self.fold(word)] != nil }
 
     /// The tree's spelling of a name that sounds like `word`, or nil if none is close.
-    func match(_ word: String) -> String? {
+    func match(_ word: String, joined: Bool = false) -> String? {
         let f = Self.fold(word)
         guard f.count >= 2 else { return nil }
         if let known = spelling[f] { return known }
         let key = Self.key(f)
         var candidates = byKey[key] ?? []
-        if candidates.isEmpty, key.count >= 3 {
+        // Words run together ("B Cole") must sound exactly like the name; a single word may be a
+        // sound or so off.
+        if candidates.isEmpty, key.count >= 3, !joined {
             candidates = byKey.filter { Self.distance($0.key, key) == 1 }.flatMap(\.value)
         }
-        let limit = max(2, f.count / 3)
+        let limit = joined ? max(4, f.count * 2 / 3) : max(2, f.count / 3)
         let best = candidates.map { ($0, Self.distance($0, f)) }
             .filter { $0.1 <= limit }
             .min { a, b in a.1 != b.1 ? a.1 < b.1 : (count[a.0] ?? 0) > (count[b.0] ?? 0) }
         return best.flatMap { spelling[$0.0] }
     }
 
-    /// Put the names in a search right. Two heard words that together make one name ("Bee Call")
-    /// are joined first.
+    /// Put the names in a search right. Two or three heard words that together sound like one
+    /// name ("B Cole", "Bee Call") are joined first, as long as the first of them is not a name already.
     func correct(_ search: NameSearch) -> NameSearch {
         guard !isEmpty else { return search }
         var out = search
         var words = search.names
         var i = 0
         while i + 1 < words.count {
-            if !(knows(words[i]) && knows(words[i + 1])), let joined = match(words[i] + words[i + 1]),
-               Self.fold(joined).count >= 4 {
-                words[i] = joined
-                words.remove(at: i + 1)
+            if !knows(words[i]) {
+                for n in [3, 2] where i + n <= words.count {
+                    if let joined = match(words[i..<(i + n)].joined(), joined: true), Self.fold(joined).count >= 4 {
+                        words[i] = joined
+                        words.removeSubrange((i + 1)..<(i + n))
+                        break
+                    }
+                }
             }
             i += 1
         }

@@ -155,6 +155,13 @@ data class NameSearch(
                     afterEvent = false
                     continue
                 }
+                // A bare "b" or "d" (or "B.") is "born" or "died" only before a year ("b 1850"); otherwise
+                // it is more likely part of a name the phone heard in pieces ("Thomas B Cole").
+                val next = tokens.getOrNull(i + 1)
+                if ((bare == "b" || bare == "d") && (next == null || (year(next) == null && trimmed(next).lowercase() !in ABOUT))) {
+                    names += raw.trim { it in EDGE }.removeSuffix(".")
+                    continue
+                }
                 if (word in BORN || bare in BORN) { pending = Event.BORN; place = null; afterEvent = true; continue }
                 if (word in DIED || bare in DIED) { pending = Event.DIED; place = null; afterEvent = true; continue }
                 if (word in ABOUT) { about = true; continue }
@@ -220,33 +227,42 @@ class NameSounds(names: List<String>) {
     fun knows(word: String) = count.containsKey(fold(word))
 
     /** The tree's spelling of a name that sounds like [word], or null if none is close. */
-    fun match(word: String): String? {
+    fun match(word: String, joined: Boolean = false): String? {
         val f = fold(word)
         if (f.length < 2) return null
         spelling[f]?.let { return it }
         val k = key(f)
         var candidates: List<String> = byKey[k].orEmpty()
-        if (candidates.isEmpty() && k.length >= 3) {
+        // Words run together ("B Cole") must sound exactly like the name; a single word may be a
+        // sound or so off.
+        if (candidates.isEmpty() && k.length >= 3 && !joined) {
             candidates = byKey.filterKeys { distance(it, k) == 1 }.values.flatten()
         }
-        val limit = maxOf(2, f.length / 3)
+        val limit = if (joined) maxOf(4, f.length * 2 / 3) else maxOf(2, f.length / 3)
         return candidates.map { it to distance(it, f) }
             .filter { it.second <= limit }
             .minWithOrNull(compareBy({ it.second }, { -(count[it.first] ?: 0) }))
             ?.let { spelling[it.first] }
     }
 
-    /** Put the names in a search right. Two heard words that together make one name ("Bee Call") are joined first. */
+    /**
+     * Put the names in a search right. Two or three heard words that together sound like one name
+     * ("B Cole", "Bee Call") are joined first, as long as the first of them is not a name already.
+     */
     fun correct(search: NameSearch): NameSearch {
         if (isEmpty) return search
         val words = search.names.toMutableList()
         var i = 0
         while (i + 1 < words.size) {
-            if (!(knows(words[i]) && knows(words[i + 1]))) {
-                val joined = match(words[i] + words[i + 1])
-                if (joined != null && fold(joined).length >= 4) {
-                    words[i] = joined
-                    words.removeAt(i + 1)
+            if (!knows(words[i])) {
+                for (n in 3 downTo 2) {
+                    if (i + n > words.size) continue
+                    val joined = match(words.subList(i, i + n).joinToString(""), joined = true)
+                    if (joined != null && fold(joined).length >= 4) {
+                        words[i] = joined
+                        repeat(n - 1) { words.removeAt(i + 1) }
+                        break
+                    }
                 }
             }
             i++
