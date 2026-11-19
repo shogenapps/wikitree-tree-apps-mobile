@@ -276,10 +276,19 @@ struct ContentView: View {
     }
 }
 
+/// The web view sits in a plain view that SwiftUI sizes, not handed to SwiftUI itself: SwiftUI
+/// would put its frame straight back when a whole-chart picture makes it taller (ChartCapture).
 private struct WebViewHolder: UIViewRepresentable {
     let webView: WKWebView
-    func makeUIView(context: Context) -> WKWebView { webView }
-    func updateUIView(_ uiView: WKWebView, context: Context) {}
+    func makeUIView(context: Context) -> UIView {
+        let holder = UIView()
+        webView.removeFromSuperview()
+        webView.frame = holder.bounds
+        webView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        holder.addSubview(webView)
+        return holder
+    }
+    func updateUIView(_ uiView: UIView, context: Context) {}
 }
 
 /// A page in a sheet over the app (a profile, a source, a help page); closing it returns to where

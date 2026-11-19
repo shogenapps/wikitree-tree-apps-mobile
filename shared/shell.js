@@ -2386,6 +2386,15 @@
             return "html.wt-shell-ready body " + sel.trim();
         }).join(", ") + " { display: none !important; }" +
             " ::-webkit-scrollbar { display: none !important; }";
+        // On a phone the row's 12px overhang stays dropped (see the top of this file) although
+        // the taller view no longer matches the phone media query: otherwise the page is 12px
+        // wider than the view at every size, the view keeps growing to fit it and the right edge
+        // is cut off (Family Timeline on iPhone).
+        if (innerWidth < 600 || innerHeight < 600) {
+            style.textContent +=
+                " main#main > .row { margin-left: 0 !important; margin-right: 0 !important; }" +
+                " main#main > .row > * { padding-left: 0 !important; padding-right: 0 !important; }";
+        }
         (document.head || document.documentElement).appendChild(style);
         // CC7's column of controls (see cc7Side) goes back into the page first, where the rule
         // above hides it.
