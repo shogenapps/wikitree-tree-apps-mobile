@@ -174,6 +174,51 @@ final class Wbe: NSObject, WKScriptMessageHandlerWithReply, WKURLSchemeHandler {
           );
         }
       };
+      if (site) {
+        // iOS treats wbe-app: as insecure on an https page: WebKit loads WBE's images from it but
+        // blocks its scripts and fetches (mixed content). So WBE's script and data files (Genie's
+        // wbe-genie.js, the edit-page helpers, WikiTree+ templates) come over the host instead:
+        // a <script> gets the file as its text, and fetch() gets a Response made from it.
+        var base = host.base;
+        var file = function (url) {
+          return native.postMessage(JSON.stringify({ method: "file", args: { path: url.slice(base.length) } }))
+            .then(function (text) { return JSON.parse(text); });
+        };
+        var srcProp = Object.getOwnPropertyDescriptor(HTMLScriptElement.prototype, "src");
+        Object.defineProperty(HTMLScriptElement.prototype, "src", {
+          configurable: true, enumerable: srcProp.enumerable,
+          get: function () { return this.__wbeSrc || srcProp.get.call(this); },
+          set: function (value) {
+            var url = String(value);
+            if (url.indexOf(base) !== 0) return srcProp.set.call(this, value);
+            var el = this;
+            el.__wbeSrc = url;
+            var fire = function (type) { el.dispatchEvent(new Event(type)); };
+            file(url).then(function (text) {
+              // An empty script runs when it gets its text, with document.currentScript set to it,
+              // as WBE's page helpers expect. The load event follows once it has run.
+              el.text = text + "\\n//# sourceURL=" + url;
+              var tries = 0;
+              (function done() {
+                if (el.isConnected || ++tries > 100) return setTimeout(function () { fire("load"); }, 0);
+                setTimeout(done, 50);
+              })();
+            }, function (error) {
+              console.error("WBE couldn't load " + url, error);
+              setTimeout(function () { fire("error"); }, 0);
+            });
+          }
+        });
+        var pageFetch = window.fetch;
+        window.fetch = function (input, init) {
+          var url = typeof input === "string" ? input : input && input.url;
+          if (typeof url !== "string" || url.indexOf(base) !== 0) return pageFetch.apply(this, arguments);
+          return file(url).then(function (text) {
+            var type = /[.]json$/.test(url.split("?")[0]) ? "application/json" : "text/plain";
+            return new Response(text, { status: 200, headers: { "Content-Type": type } });
+          }, function (error) { throw new TypeError("WBE couldn't load " + url + ": " + error); });
+        };
+      }
       if (wbePage) {
         // The settings page is laid out for a 780 px popup; fit it to a phone: the options button
         // sits on the feature's own line and the creator line goes under the name.
@@ -230,6 +275,9 @@ final class Wbe: NSObject, WKScriptMessageHandlerWithReply, WKURLSchemeHandler {
             case "net.fetch":
                 // (answered later: it may ask the member first, and the request takes a while)
                 aiFetch(args, from: message.webView, reply: replyHandler)
+            case "file":
+                // A WBE script or data file for the page (see hostJS: iOS won't load them from wbe-app:).
+                replyHandler(Wbe.json(try textFile(args["path"] as? String ?? "")), nil)
             case "openUrl":
                 if let webView = message.webView, let text = args["url"] as? String, let url = URL(string: text) {
                     actions.object(forKey: webView)?.actions.openUrl(url)
@@ -442,6 +490,23 @@ final class Wbe: NSObject, WKScriptMessageHandlerWithReply, WKURLSchemeHandler {
     }
 
     // MARK: Files (wbe-app://app/...)
+
+    private struct FileError: Error, CustomStringConvertible {
+        let description: String
+    }
+
+    /// A text file from WBE's folder, for the "file" host call: scripts and data only, never
+    /// anything outside the folder.
+    private func textFile(_ name: String) throws -> String {
+        let path = String(name.split(separator: "?").first ?? "").removingPercentEncoding ?? ""
+        guard let folder, !path.isEmpty, ["js", "json", "css"].contains((path as NSString).pathExtension.lowercased())
+        else { throw FileError(description: "Not a WBE script or data file: \(name)") }
+        let file = folder.appendingPathComponent(path).standardizedFileURL
+        guard file.path.hasPrefix(folder.standardizedFileURL.path + "/"),
+              let text = try? String(contentsOf: file, encoding: .utf8)
+        else { throw FileError(description: "WBE has no file \(path)") }
+        return text
+    }
 
     func webView(_ webView: WKWebView, start task: WKURLSchemeTask) {
         guard let url = task.request.url, let folder else { return task.didFailWithError(URLError(.fileDoesNotExist)) }
