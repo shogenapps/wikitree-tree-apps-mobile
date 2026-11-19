@@ -167,7 +167,8 @@ class PeopleDialog(
             override fun beforeTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) {}
             override fun onTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) {}
             override fun afterTextChanged(s: android.text.Editable?) {
-                val text = s?.toString()?.trim().orEmpty()
+                // Only the name counts here, not "born 1850 in Yorkshire" after it.
+                val text = NameSearch.parse(s?.toString().orEmpty()).name
                 val found = if (text.length < 2 || watchlist == null) emptyList() else watchlist.suggest(text)
                 if (found == suggestions && matches.isEmpty() && searchNote == null) return
                 suggestions = found
@@ -180,6 +181,27 @@ class PeopleDialog(
             }
         })
         find.addView(input, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+        // Voice search: what is heard goes in the box, for checking before Find. A long press
+        // chooses the language.
+        if (VoiceSearch.isAvailable(activity)) {
+            find.addView(ImageView(activity).apply {
+                setImageResource(R.drawable.ic_mic)
+                contentDescription = activity.getString(R.string.voice_search)
+                scaleType = ImageView.ScaleType.CENTER
+                isClickable = true
+                isFocusable = true
+                val ripple = TypedValue()
+                activity.theme.resolveAttribute(android.R.attr.selectableItemBackgroundBorderless, ripple, true)
+                setBackgroundResource(ripple.resourceId)
+                setOnClickListener { listen(input) }
+                setOnLongClickListener {
+                    VoiceSearch.chooseLanguage(activity) {
+                        Toast.makeText(activity, activity.getString(R.string.voice_language_set, VoiceSearch.languageTitle(activity)), Toast.LENGTH_SHORT).show()
+                    }
+                    true
+                }
+            }, LinearLayout.LayoutParams(dp(44), dp(48)))
+        }
         find.addView(actionButton(activity.getString(R.string.find_go)) { submit() })
         body.addView(find)
 
@@ -247,11 +269,41 @@ class PeopleDialog(
     fun dismiss() = dialog.dismiss()
     val isShowing get() = dialog.isShowing
 
+    /** Names in the member's own tree, which voice search is steered towards. */
+    private fun treeNames(): NameSounds {
+        val mine = store.saved() + store.recent() + listOfNotNull(store.me())
+        return NameSounds(watchlist?.all().orEmpty().map { it.name } + mine.map { it.name })
+    }
+
+    /** Listen for a name and put what was heard in the search box, for checking before Find. */
+    private fun listen(input: EditText) {
+        activity.getSystemService(InputMethodManager::class.java)?.hideSoftInputFromWindow(input.windowToken, 0)
+        val names = treeNames()
+        val started = VoiceSearch.listen(activity, names.hints()) { heard ->
+            val best = VoiceSearch.best(heard, names)
+            if (best == null || best.isEmpty) {
+                Toast.makeText(activity, activity.getString(R.string.voice_no_name, heard.first()), Toast.LENGTH_LONG).show()
+            } else {
+                input.setText(best.text(activity.resources.configuration.locales[0].language))
+                input.setSelection(input.text.length)
+            }
+        }
+        if (!started) Toast.makeText(activity, R.string.voice_unavailable, Toast.LENGTH_LONG).show()
+    }
+
     /** Open a typed WikiTree ID, or look a name up with the WikiTree API and list the matches. */
     private fun find(text: String) {
         if (ID_PATTERN.matches(text)) {
             dialog.dismiss()
             onPick(Person(text, "", "", currentView, 0))
+            return
+        }
+        if (NameSearch.parse(text).isEmpty) {
+            searchRun++
+            suggestions = emptyList()
+            matches = emptyList()
+            searchNote = activity.getString(R.string.find_no_name)
+            refresh()
             return
         }
         val run = ++searchRun
@@ -265,7 +317,7 @@ class PeopleDialog(
             matches = found.orEmpty().map { it.copy(view = currentView) }
             searchNote = when {
                 found == null -> activity.getString(R.string.find_failed)
-                found.isEmpty() -> activity.getString(R.string.find_none, text)
+                found.isEmpty() -> activity.getString(if (NameSearch.parse(text).hasMore) R.string.find_none_more else R.string.find_none, text)
                 total > found.size -> activity.getString(R.string.find_more, found.size, total)
                 else -> null
             }

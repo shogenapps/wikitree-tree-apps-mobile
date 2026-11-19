@@ -251,22 +251,22 @@ final class PeopleStore: ObservableObject {
     /// Matches fetched per search: notables among them are all shown, the rest only up to `searchLimit`.
     static let searchFetch = 50
 
-    /// Search WikiTree by name: the last word is the last name, anything before it the first
-    /// name. `done` gets the people (their dates include the birthplace) and the total number of
+    /// Search WikiTree by name, with birth and death years and places if given (see NameSearch):
+    /// the last word of the name is the last name, anything before it the first name. `done` gets the people (their dates include the birthplace) and the total number of
     /// matches, or nil if the search failed. Notable people among the first `searchFetch` matches
     /// come first, then up to `searchLimit` others, each in WikiTree's order. Categories and
     /// Templates come in the same call to tell notables apart.
     func search(_ text: String, done: @escaping ([Person]?, Int) -> Void) {
-        let words = text.split(whereSeparator: \.isWhitespace).map(String.init)
+        let query = NameSearch(text)
         var parts = URLComponents(string: "https://api.wikitree.com/api.php")!
         parts.queryItems = [
             URLQueryItem(name: "action", value: "searchPerson"),
             URLQueryItem(name: "appId", value: "TreeAppsMobile"),
             URLQueryItem(name: "fields", value: "Name,FirstName,RealName,LastNameAtBirth,LastNameCurrent,BirthDate,DeathDate,BirthLocation,Categories,Templates"),
             URLQueryItem(name: "limit", value: String(Self.searchFetch)),
-            URLQueryItem(name: "LastName", value: words.last ?? ""),
-            URLQueryItem(name: "FirstName", value: words.dropLast().joined(separator: " ")),
-        ]
+            URLQueryItem(name: "LastName", value: query.last),
+            URLQueryItem(name: "FirstName", value: query.first),
+        ] + query.queryItems
         guard let url = parts.url else { return done(nil, 0) }
         URLSession.shared.dataTask(with: url) { data, _, _ in
             var people: [Person]?
@@ -385,6 +385,7 @@ struct PeopleView: View {
     @State private var searchNote: String?
     @State private var searchRun = 0
     @State private var suggestions: [Relative] = []
+    @StateObject private var voice = VoiceListener()
     @State private var allBirthdays = false
     /// A profile on www.wikitree.com, shown in a sheet with the member's WikiTree login.
     @State private var profile: ShellModel.SheetURL?
@@ -408,10 +409,22 @@ struct PeopleView: View {
                             .autocorrectionDisabled()
                             .submitLabel(.search)
                             .onSubmit(go)
+                        VoiceButton(listener: voice, start: listen)
                         Button("Find", action: go)
                             .buttonStyle(.borderedProminent)
                             .tint(wtButton)
                             .disabled(draft.trimmingCharacters(in: .whitespaces).isEmpty)
+                    }
+                    if voice.listening {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(voice.heard.isEmpty ? String(localized: "Listening… say a name, such as “John Smith, born 1850 in Yorkshire”.") : voice.heard)
+                                .foregroundStyle(voice.heard.isEmpty ? .secondary : .primary)
+                            Text("\(VoiceLanguage.currentTitle). Touch and hold the microphone to change it.")
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
+                        }
+                    } else if let note = voice.note {
+                        Text(note).font(.footnote).foregroundStyle(.secondary)
                     }
                     if !currentId.isEmpty, start == nil {
                         Button {
@@ -533,7 +546,8 @@ struct PeopleView: View {
         .onChange(of: draft) { text in
             // Suggest people from the watchlist while typing, as wikitree.com does.
             let typed = text.trimmingCharacters(in: .whitespaces)
-            suggestions = typed.count >= 2 ? watchlist.suggest(typed) : []
+            let name = NameSearch(typed).name
+            suggestions = name.count >= 2 ? watchlist.suggest(name) : []
             searchRun += 1
             matches = []
             searchNote = nil
@@ -543,6 +557,7 @@ struct PeopleView: View {
             if start != nil, watchlist.isStale { watchlist.refresh(quiet: true) }
             if start != nil { store.findMe() }
         }
+        .onDisappear { voice.stop() }
     }
 
     /// The People screen (no `start`) has nothing to fold: every section is always open there.
@@ -791,6 +806,28 @@ struct PeopleView: View {
         .background(Color(.systemBackground))
     }
 
+    /// Names in the member's own tree, which voice search is steered towards.
+    private var treeNames: NameSounds {
+        let mine = store.saved + store.recent + [store.me].compactMap { $0 }
+        return NameSounds(names: watchlist.people.map(\.name) + mine.map(\.name))
+    }
+
+    /// Listen for a name and put what was heard in the search box, for checking before Find.
+    private func listen() {
+        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+        let names = treeNames
+        voice.start(hints: names.hints()) { heard in
+            // Of the recognizer's guesses, the one with most names from the tree; else its best.
+            let searches = heard.map { names.correct(NameSearch($0)) }
+            let best = searches.enumerated().max { a, b in
+                let sa = names.score(a.element), sb = names.score(b.element)
+                return sa != sb ? sa < sb : a.offset > b.offset
+            }?.element
+            if let best, !best.isEmpty { draft = best.text }
+            else { voice.note = String(localized: "No name was heard in “\(heard.first ?? "")”. Try again, or type it.") }
+        }
+    }
+
     /// Open a typed WikiTree ID ("Windsor-1"), or look a name up and list the matches.
     private func go() {
         let text = draft.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -803,6 +840,10 @@ struct PeopleView: View {
         UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
         searchRun += 1
         let run = searchRun
+        guard !NameSearch(text).isEmpty else {
+            searchNote = String(localized: "Add a name to search for, such as “John Smith, born 1850”.")
+            return
+        }
         suggestions = []
         matches = []
         searchNote = String(localized: "Searching WikiTree…")
@@ -812,7 +853,9 @@ struct PeopleView: View {
             if found == nil {
                 searchNote = String(localized: "The search did not work. Check the connection and try again.")
             } else if matches.isEmpty {
-                searchNote = String(localized: "Nobody found for “\(text)”. Try a first name and a last name.")
+                searchNote = NameSearch(text).hasMore
+                    ? String(localized: "Nobody found for “\(text)”. Try without the year or place.")
+                    : String(localized: "Nobody found for “\(text)”. Try a first name and a last name.")
             } else if total > matches.count {
                 searchNote = String(localized: "Showing \(matches.count) of \(total). Add a first name to narrow it down.")
             } else {

@@ -8,6 +8,11 @@
 	<!-- WT+ Maps shows a map from plus.wikitree.com in a frame. That server offers only TLS 1.2
 	     without forward secrecy, which App Transport Security refuses, so the frame stayed blank.
 	     Allow that one host without forward secrecy (it is still HTTPS with a valid certificate). -->
+	<!-- Voice search in the name search: the microphone, and the phone's speech recognition. -->
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Tree Apps listens when you tap the microphone in search, so you can say a name to look for.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>Tree Apps turns the name you say into text for the search box. Names from your watchlist help it spell them.</string>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSExceptionDomains</key>

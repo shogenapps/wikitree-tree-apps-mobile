@@ -80,6 +80,16 @@
     <string name="shortcut_new">Change person</string>
     <string name="find_hint">Name or WikiTree ID</string>
     <string name="find_go">Find</string>
+    <!-- Voice search in the name search. -->
+    <string name="voice_search">Search by voice. Touch and hold to choose the language.</string>
+    <string name="voice_prompt">Say a name, such as “John Smith, born 1850 in Yorkshire”</string>
+    <string name="voice_language_title">Voice search language</string>
+    <string name="voice_phone_language">%1$s (phone)</string>
+    <string name="voice_language_set">Voice search will listen for %1$s.</string>
+    <string name="voice_unavailable">This phone has no speech recognition for voice search.</string>
+    <string name="voice_no_name">No name was heard in “%1$s”. Try again, or type it.</string>
+    <string name="find_none_more">Nobody found for “%1$s”. Try without the year or place.</string>
+    <string name="find_no_name">Add a name to search for, such as “John Smith, born 1850”.</string>
     <string name="find_matches">Matches</string>
     <string name="find_searching">Searching WikiTree…</string>
     <string name="find_failed">The search did not work. Check the connection and try again.</string>

@@ -202,23 +202,24 @@ class PeopleStore(context: Context) {
     }
 
     /**
-     * Search WikiTree by name: the last word is the last name, anything before it the first name.
+     * Search WikiTree by name, with birth and death years and places if given (see [NameSearch]):
+     * the last word of the name is the last name, anything before it the first name.
      * [done] gets the people (their dates include the birthplace) and the total number of matches,
      * or null if the search failed. Notable people among the first [SEARCH_FETCH] matches come
      * first, then up to [SEARCH_LIMIT] others, each in WikiTree's order. Categories and Templates
      * come in the same call to tell notables apart.
      */
     fun search(text: String, done: (List<Person>?, Int) -> Unit) {
-        val words = text.trim().split(Regex("\\s+"))
-        val last = words.last()
-        val first = words.dropLast(1).joinToString(" ")
+        val query = NameSearch.parse(text)
+        val last = query.last
+        val first = query.first
         Thread {
             val result = try {
                 val json = get(
                     "https://api.wikitree.com/api.php?action=searchPerson&appId=TreeAppsMobile" +
                         "&fields=Name,FirstName,RealName,LastNameAtBirth,LastNameCurrent,BirthDate,DeathDate,BirthLocation,Categories,Templates" +
                         "&limit=$SEARCH_FETCH&LastName=" + URLEncoder.encode(last, "UTF-8") +
-                        "&FirstName=" + URLEncoder.encode(first, "UTF-8"),
+                        "&FirstName=" + URLEncoder.encode(first, "UTF-8") + query.queryString,
                 )?.let { JSONArray(it).optJSONObject(0) }
                 val found = json?.optJSONArray("matches")
                 if (json == null) null

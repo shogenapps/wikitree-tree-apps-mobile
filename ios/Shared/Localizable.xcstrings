@@ -41,6 +41,46 @@
         }
       }
     },
+    "%@ (phone)": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "%@ (Telefon)"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "%@ (teléfono)"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "%@ (téléphone)"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "%@ (telefono)"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "%@ (telefoon)"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "%@ (telefonen)"
+          }
+        }
+      }
+    },
     "%@ and %lld more": {
       "localizations": {
         "de": {
@@ -157,6 +197,46 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "för %@ min sedan"
+          }
+        }
+      }
+    },
+    "%@. Touch and hold the microphone to change it.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "%@. Halte das Mikrofon gedrückt, um sie zu ändern."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "%@. Mantén pulsado el micrófono para cambiarlo."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "%@. Maintenez le micro appuyé pour la changer."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "%@. Tieni premuto il microfono per cambiarla."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "%@. Houd de microfoon ingedrukt om dit te wijzigen."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "%@. Håll ned mikrofonen för att byta."
           }
         }
       }
@@ -707,6 +787,46 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "Om de här siffrorna"
+          }
+        }
+      }
+    },
+    "Add a name to search for, such as “John Smith, born 1850”.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Gib einen Namen zum Suchen an, etwa „Hans Müller, geboren 1850“."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Añade un nombre para buscar, por ejemplo «Juan García, nacido 1850»."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Ajoutez un nom à rechercher, par exemple « Jean Martin, né 1850 »."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Aggiungi un nome da cercare, per esempio «Giovanni Rossi, nato 1850»."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Voeg een naam toe om te zoeken, zoals ‘Jan de Vries, geboren 1850’."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Lägg till ett namn att söka efter, till exempel ”Johan Andersson, född 1850”."
           }
         }
       }
@@ -2033,6 +2153,46 @@
         }
       }
     },
+    "Listening… say a name, such as “John Smith, born 1850 in Yorkshire”.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Höre zu … sag einen Namen, etwa „Hans Müller, geboren 1850 in Bayern“."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Escuchando… di un nombre, por ejemplo «Juan García, nacido 1850 en Sevilla»."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "J’écoute… dites un nom, par exemple « Jean Martin, né 1850 à Lyon »."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "In ascolto… di’ un nome, per esempio «Giovanni Rossi, nato 1850 in Toscana»."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Luistert … zeg een naam, zoals ‘Jan de Vries, geboren 1850 in Utrecht’."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Lyssnar … säg ett namn, till exempel ”Johan Andersson, född 1850 i Uppsala”."
+          }
+        }
+      }
+    },
     "Loading your watchlist. A long list takes a minute or two…": {
       "localizations": {
         "de": {
@@ -2513,6 +2673,46 @@
         }
       }
     },
+    "No name was heard in “%@”. Try again, or type it.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "In „%@“ wurde kein Name erkannt. Versuche es noch einmal oder tippe ihn ein."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "No se oyó ningún nombre en «%@». Inténtalo de nuevo o escríbelo."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Aucun nom entendu dans « %@ ». Réessayez ou tapez-le."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Nessun nome sentito in «%@». Riprova o scrivilo."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Geen naam gehoord in ‘%@’. Probeer het opnieuw of typ hem."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Inget namn hördes i ”%@”. Försök igen eller skriv det."
+          }
+        }
+      }
+    },
     "Nobody found for “%@”. Try a first name and a last name.": {
       "localizations": {
         "de": {
@@ -2549,6 +2749,46 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "Ingen hittades för ”%@”. Prova med förnamn och efternamn."
+          }
+        }
+      }
+    },
+    "Nobody found for “%@”. Try without the year or place.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Niemand gefunden für „%@“. Versuche es ohne Jahr oder Ort."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "No se encontró a nadie para «%@». Prueba sin el año ni el lugar."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Personne trouvé pour « %@ ». Essayez sans l’année ni le lieu."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Nessuno trovato per «%@». Prova senza l’anno o il luogo."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Niemand gevonden voor ‘%@’. Probeer het zonder jaar of plaats."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Ingen hittades för ”%@”. Prova utan år eller plats."
           }
         }
       }
@@ -2629,6 +2869,46 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "Känd"
+          }
+        }
+      }
+    },
+    "Nothing was heard. Tap the microphone and say a name.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Es war nichts zu hören. Tippe auf das Mikrofon und sag einen Namen."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "No se oyó nada. Toca el micrófono y di un nombre."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Rien n’a été entendu. Touchez le micro et dites un nom."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Non si è sentito nulla. Tocca il microfono e di’ un nome."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Er werd niets gehoord. Tik op de microfoon en zeg een naam."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Inget hördes. Tryck på mikrofonen och säg ett namn."
           }
         }
       }
@@ -3193,6 +3473,46 @@
         }
       }
     },
+    "Phone's language": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Sprache des Telefons"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Idioma del teléfono"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Langue du téléphone"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Lingua del telefono"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Taal van de telefoon"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Telefonens språk"
+          }
+        }
+      }
+    },
     "Play": {
       "localizations": {
         "de": {
@@ -3753,6 +4073,46 @@
         }
       }
     },
+    "Search by voice": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Per Sprache suchen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Buscar por voz"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Rechercher à la voix"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Cerca con la voce"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Zoeken met je stem"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Sök med rösten"
+          }
+        }
+      }
+    },
     "Searching WikiTree…": {
       "localizations": {
         "de": {
@@ -4073,6 +4433,126 @@
         }
       }
     },
+    "Speech recognition is not available just now. Check the connection and try again.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Die Spracherkennung ist gerade nicht verfügbar. Prüfe die Verbindung und versuche es noch einmal."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "El reconocimiento de voz no está disponible ahora. Comprueba la conexión e inténtalo de nuevo."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "La reconnaissance vocale n’est pas disponible pour le moment. Vérifiez la connexion et réessayez."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Il riconoscimento vocale non è disponibile al momento. Controlla la connessione e riprova."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Spraakherkenning is nu niet beschikbaar. Controleer de verbinding en probeer het opnieuw."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Taligenkänning är inte tillgänglig just nu. Kontrollera anslutningen och försök igen."
+          }
+        }
+      }
+    },
+    "Speech recognition is switched off for Tree Apps in the Settings app.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Die Spracherkennung ist für Tree Apps in der App „Einstellungen“ ausgeschaltet."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "El reconocimiento de voz está desactivado para Tree Apps en la app Ajustes."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "La reconnaissance vocale est désactivée pour Tree Apps dans l’app Réglages."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Il riconoscimento vocale è disattivato per Tree Apps nell’app Impostazioni."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Spraakherkenning staat uit voor Tree Apps in de app Instellingen."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Taligenkänning är avstängd för Tree Apps i appen Inställningar."
+          }
+        }
+      }
+    },
+    "Stop listening": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Zuhören beenden"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Dejar de escuchar"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Arrêter l’écoute"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Smetti di ascoltare"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Stoppen met luisteren"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Sluta lyssna"
+          }
+        }
+      }
+    },
     "Stop reading": {
       "localizations": {
         "de": {
@@ -4313,6 +4793,86 @@
         }
       }
     },
+    "The microphone could not be used just now.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Das Mikrofon konnte gerade nicht verwendet werden."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "No se pudo usar el micrófono en este momento."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Le micro n’a pas pu être utilisé pour le moment."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Non è stato possibile usare il microfono in questo momento."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "De microfoon kon nu niet worden gebruikt."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Mikrofonen kunde inte användas just nu."
+          }
+        }
+      }
+    },
+    "The microphone is switched off for Tree Apps in the Settings app.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Das Mikrofon ist für Tree Apps in der App „Einstellungen“ ausgeschaltet."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "El micrófono está desactivado para Tree Apps en la app Ajustes."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Le micro est désactivé pour Tree Apps dans l’app Réglages."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Il microfono è disattivato per Tree Apps nell’app Impostazioni."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "De microfoon staat uit voor Tree Apps in de app Instellingen."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Mikrofonen är avstängd för Tree Apps i appen Inställningar."
+          }
+        }
+      }
+    },
     "The search did not work. Check the connection and try again.": {
       "localizations": {
         "de": {
@@ -4509,6 +5069,46 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "Profilen har ännu ingen biografi att läsa upp."
+          }
+        }
+      }
+    },
+    "Touch and hold to choose the language": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Gedrückt halten, um die Sprache zu wählen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Mantén pulsado para elegir el idioma"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Maintenez appuyé pour choisir la langue"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Tieni premuto per scegliere la lingua"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Houd ingedrukt om de taal te kiezen"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Håll ned för att välja språk"
           }
         }
       }
@@ -4712,6 +5312,46 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "Uppdaterar…"
+          }
+        }
+      }
+    },
+    "Voice search language": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Sprache der Sprachsuche"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Idioma de la búsqueda por voz"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Langue de la recherche vocale"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Lingua della ricerca vocale"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Taal voor zoeken met stem"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Språk för röstsökning"
           }
         }
       }

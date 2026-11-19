@@ -148,4 +148,14 @@
     <string name="wbe_ai_allow">Autoriser</string>
     <string name="wbe_ai_deny">Ne pas autoriser</string>
     <string name="wbe_ai_refused">Vous n’avez pas autorisé WBE à envoyer ceci à %1$s.</string>
+    <!-- Voice search in the name search. -->
+    <string name="voice_search">Rechercher à la voix. Maintenez appuyé pour choisir la langue.</string>
+    <string name="voice_prompt">Dites un nom, par exemple « Jean Martin, né 1850 à Lyon »</string>
+    <string name="voice_language_title">Langue de la recherche vocale</string>
+    <string name="voice_phone_language">%1$s (téléphone)</string>
+    <string name="voice_language_set">La recherche vocale écoutera en %1$s.</string>
+    <string name="voice_unavailable">Ce téléphone n’a pas de reconnaissance vocale pour la recherche vocale.</string>
+    <string name="voice_no_name">Aucun nom entendu dans « %1$s ». Réessayez ou tapez-le.</string>
+    <string name="find_no_name">Ajoutez un nom à rechercher, par exemple « Jean Martin, né 1850 ».</string>
+    <string name="find_none_more">Personne trouvé pour « %1$s ». Essayez sans l’année ni le lieu.</string>
 </resources>
