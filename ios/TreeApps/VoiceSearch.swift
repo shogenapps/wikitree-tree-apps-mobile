@@ -207,7 +207,11 @@ struct NameSounds {
     private var spelling: [String: String] = [:]
     private var byKey: [String: [String]] = [:]
 
-    init(names: [String]) {
+    /// For places: accept a spelling further off when it sounds the same ("Wynn" → "Wem").
+    private var loose = false
+
+    init(names: [String], loose: Bool = false) {
+        self.loose = loose
         var seen: [String: [String: Int]] = [:]
         for name in names {
             for word in name.split(whereSeparator: { $0.isWhitespace || "(),".contains($0) }) {
@@ -250,12 +254,11 @@ struct NameSounds {
             return common.flatMap { spelling[$0] } ?? known
         }
         var candidates = byKey[key] ?? []
-        // Words run together ("B Cole") must sound exactly like the name; a single word may be a
-        // sound or so off.
-        if candidates.isEmpty, key.count >= 3, !joined {
-            candidates = byKey.filter { Self.distance($0.key, key) == 1 }.flatMap(\.value)
+        // Nothing sounds just the same: try names one sound off ("Bee cold" for "Beacall").
+        if candidates.isEmpty, key.count >= 3 {
+            candidates = byKey.filter { $0.key.first == key.first && Self.distance($0.key, key) == 1 }.flatMap(\.value)
         }
-        let limit = joined ? max(4, f.count * 2 / 3) : max(2, f.count / 3)
+        let limit = joined || loose ? max(joined ? 4 : 3, f.count * 2 / 3) : max(2, f.count / 3)
         let best = candidates.map { ($0, Self.distance($0, f)) }
             .filter { $0.1 <= limit }
             .min { a, b in a.1 != b.1 ? a.1 < b.1 : (count[a.0] ?? 0) > (count[b.0] ?? 0) }
@@ -326,7 +329,9 @@ struct NameSounds {
         for (a, b) in [("sch", "sk"), ("tch", "ch"), ("ph", "f"), ("gh", "g"), ("ck", "k"), ("th", "t"),
                        ("sh", "x"), ("ch", "x"), ("cz", "x"), ("sz", "x"), ("ce", "se"), ("ci", "si"),
                        ("cy", "sy"), ("c", "k"), ("q", "k"), ("x", "ks"), ("z", "s"), ("v", "f"),
-                       ("dg", "j"), ("j", "y")] {
+                       ("dg", "j"), ("j", "y"),
+                       // "m" and "n" are easily misheard for each other.
+                       ("n", "m")] {
             s = s.replacingOccurrences(of: a, with: b)
         }
         let chars = Array(s)

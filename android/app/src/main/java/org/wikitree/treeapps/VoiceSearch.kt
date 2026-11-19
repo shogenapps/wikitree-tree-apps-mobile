@@ -195,7 +195,11 @@ data class NameSearch(
  * The names in the member's own tree (watchlist, Saved, Recent), for putting right a name the
  * phone heard a little wrong: "Beecall" sounds like "Beacall", so it becomes "Beacall".
  */
-class NameSounds(names: List<String>) {
+class NameSounds(
+    names: List<String>,
+    /** For places: accept a spelling further off when it sounds the same ("Wynn" → "Wem"). */
+    private val loose: Boolean = false,
+) {
     private val count = HashMap<String, Int>()
     /** Folded spelling → the spelling used most in the tree. */
     private val spelling = HashMap<String, String>()
@@ -241,12 +245,11 @@ class NameSounds(names: List<String>) {
             return common?.let { spelling[it] } ?: known
         }
         var candidates: List<String> = byKey[k].orEmpty()
-        // Words run together ("B Cole") must sound exactly like the name; a single word may be a
-        // sound or so off.
-        if (candidates.isEmpty() && k.length >= 3 && !joined) {
-            candidates = byKey.filterKeys { distance(it, k) == 1 }.values.flatten()
+        // Nothing sounds just the same: try names one sound off ("Bee cold" for "Beacall").
+        if (candidates.isEmpty() && k.length >= 3) {
+            candidates = byKey.filterKeys { it[0] == k[0] && distance(it, k) == 1 }.values.flatten()
         }
-        val limit = if (joined) maxOf(4, f.length * 2 / 3) else maxOf(2, f.length / 3)
+        val limit = if (joined || loose) maxOf(if (joined) 4 else 3, f.length * 2 / 3) else maxOf(2, f.length / 3)
         return candidates.map { it to distance(it, f) }
             .filter { it.second <= limit }
             .minWithOrNull(compareBy({ it.second }, { -(count[it.first] ?: 0) }))
@@ -306,6 +309,8 @@ class NameSounds(names: List<String>) {
                 "sh" to "x", "ch" to "x", "cz" to "x", "sz" to "x", "ce" to "se", "ci" to "si",
                 "cy" to "sy", "c" to "k", "q" to "k", "x" to "ks", "z" to "s", "v" to "f",
                 "dg" to "j", "j" to "y",
+                // "m" and "n" are easily misheard for each other.
+                "n" to "m",
             )) s = s.replace(a, b)
             val out = StringBuilder()
             for ((i, c) in s.withIndex()) {

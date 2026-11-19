@@ -276,7 +276,7 @@ class PeopleDialog(
     }
 
     /** Birthplaces of the people on the watchlist, for putting right a place the phone misheard. */
-    private fun treePlaces() = NameSounds(watchlist?.all().orEmpty().map { it.place })
+    private fun treePlaces() = NameSounds(watchlist?.all().orEmpty().map { it.place }, loose = true)
 
     /** Listen for a name and put what was heard in the search box, for checking before Find. */
     private fun listen(input: EditText) {

@@ -813,7 +813,7 @@ struct PeopleView: View {
     }
 
     /// Birthplaces of the people on the watchlist, for putting right a place the phone misheard.
-    private var treePlaces: NameSounds { NameSounds(names: watchlist.people.map(\.place)) }
+    private var treePlaces: NameSounds { NameSounds(names: watchlist.people.map(\.place), loose: true) }
 
     /// Listen for a name and put what was heard in the search box, for checking before Find.
     private func listen() {
