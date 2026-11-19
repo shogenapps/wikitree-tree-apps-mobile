@@ -812,13 +812,22 @@ struct PeopleView: View {
         return NameSounds(names: watchlist.people.map(\.name) + mine.map(\.name))
     }
 
+    /// Birthplaces of the people on the watchlist, for putting right a place the phone misheard.
+    private var treePlaces: NameSounds { NameSounds(names: watchlist.people.map(\.place)) }
+
     /// Listen for a name and put what was heard in the search box, for checking before Find.
     private func listen() {
         UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
         let names = treeNames
-        voice.start(hints: names.hints()) { heard in
+        let places = treePlaces
+        voice.start(hints: names.hints() + places.hints(30)) { heard in
             // Of the recognizer's guesses, the one with most names from the tree; else its best.
-            let searches = heard.map { names.correct(NameSearch($0)) }
+            let searches = heard.map { text -> NameSearch in
+                var q = names.correct(NameSearch(text))
+                q.bornPlace = places.correctPlace(q.bornPlace)
+                q.diedPlace = places.correctPlace(q.diedPlace)
+                return q
+            }
             let best = searches.enumerated().max { a, b in
                 let sa = names.score(a.element), sb = names.score(b.element)
                 return sa != sb ? sa < sb : a.offset > b.offset
@@ -847,15 +856,29 @@ struct PeopleView: View {
         suggestions = []
         matches = []
         searchNote = String(localized: "Searching WikiTree…")
-        store.search(text) { found, total in
+        search(run, text, NameSearch(text), placeDropped: false)
+    }
+
+    /// Look `query` up and list the matches. A place is easily misheard or spelled another way, so
+    /// when nobody matches with it, the search is tried once more without it, and says so.
+    private func search(_ run: Int, _ text: String, _ query: NameSearch, placeDropped: Bool) {
+        store.search(query.text) { found, total in
             guard run == searchRun else { return }
+            if let found, found.isEmpty, !query.bornPlace.isEmpty || !query.diedPlace.isEmpty {
+                var anywhere = query
+                anywhere.bornPlace = ""
+                anywhere.diedPlace = ""
+                return search(run, text, anywhere, placeDropped: true)
+            }
             matches = found ?? []
             if found == nil {
                 searchNote = String(localized: "The search did not work. Check the connection and try again.")
             } else if matches.isEmpty {
-                searchNote = NameSearch(text).hasMore
+                searchNote = query.hasMore || placeDropped
                     ? String(localized: "Nobody found for “\(text)”. Try without the year or place.")
                     : String(localized: "Nobody found for “\(text)”. Try a first name and a last name.")
+            } else if placeDropped {
+                searchNote = String(localized: "Nobody matched that place, so these matches are from any place.")
             } else if total > matches.count {
                 searchNote = String(localized: "Showing \(matches.count) of \(total). Add a first name to narrow it down.")
             } else {

@@ -157,5 +157,6 @@
     <string name="voice_unavailable">Ce téléphone n’a pas de reconnaissance vocale pour la recherche vocale.</string>
     <string name="voice_no_name">Aucun nom entendu dans « %1$s ». Réessayez ou tapez-le.</string>
     <string name="find_no_name">Ajoutez un nom à rechercher, par exemple « Jean Martin, né 1850 ».</string>
+    <string name="find_any_place">Personne ne correspondait à ce lieu, voici donc des résultats de tous lieux.</string>
     <string name="find_none_more">Personne trouvé pour « %1$s ». Essayez sans l’année ni le lieu.</string>
 </resources>

@@ -230,8 +230,16 @@ class NameSounds(names: List<String>) {
     fun match(word: String, joined: Boolean = false): String? {
         val f = fold(word)
         if (f.length < 2) return null
-        spelling[f]?.let { return it }
         val k = key(f)
+        spelling[f]?.let { known ->
+            // The phone can't hear spelling: a rare spelling in the tree ("Beacoll") gives way to
+            // a far more common one that sounds the same ("Beacall").
+            if (f.length < 5) return known
+            val mine = count[f] ?: 0
+            val common = byKey[k].orEmpty().filter { it != f && (count[it] ?: 0) >= 5 * mine && distance(it, f) <= 2 }
+                .maxByOrNull { count[it] ?: 0 }
+            return common?.let { spelling[it] } ?: known
+        }
         var candidates: List<String> = byKey[k].orEmpty()
         // Words run together ("B Cole") must sound exactly like the name; a single word may be a
         // sound or so off.
@@ -269,6 +277,10 @@ class NameSounds(names: List<String>) {
         }
         return search.copy(names = words.map { match(it) ?: it })
     }
+
+    /** Put each word of a place right ("Wham" → "Wem"), keeping its commas. */
+    fun correctPlace(place: String): String =
+        if (isEmpty) place else Regex("\\p{L}+").replace(place) { m -> match(m.value) ?: m.value }
 
     /** How many words of a heard search are names from the tree, to choose among alternatives. */
     fun score(search: NameSearch) = search.names.count { knows(it) }
@@ -416,8 +428,9 @@ object VoiceSearch {
     }
 
     /** Of the recognizer's guesses, the one with most names from the tree, put right; else its best. */
-    fun best(heard: List<String>, names: NameSounds): NameSearch? =
+    fun best(heard: List<String>, names: NameSounds, places: NameSounds? = null): NameSearch? =
         heard.map { names.correct(NameSearch.parse(it)) }
+            .map { q -> if (places == null) q else q.copy(bornPlace = places.correctPlace(q.bornPlace), diedPlace = places.correctPlace(q.diedPlace)) }
             .withIndex()
             .maxWithOrNull(compareBy({ names.score(it.value) }, { -it.index }))
             ?.value

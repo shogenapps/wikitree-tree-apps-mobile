@@ -238,8 +238,17 @@ struct NameSounds {
     func match(_ word: String, joined: Bool = false) -> String? {
         let f = Self.fold(word)
         guard f.count >= 2 else { return nil }
-        if let known = spelling[f] { return known }
         let key = Self.key(f)
+        if let known = spelling[f] {
+            // The phone can't hear spelling: a rare spelling in the tree ("Beacoll") gives way to
+            // a far more common one that sounds the same ("Beacall").
+            guard f.count >= 5 else { return known }
+            let mine = count[f] ?? 0
+            let common = (byKey[key] ?? [])
+                .filter { $0 != f && (count[$0] ?? 0) >= 5 * mine && Self.distance($0, f) <= 2 }
+                .max { (count[$0] ?? 0) < (count[$1] ?? 0) }
+            return common.flatMap { spelling[$0] } ?? known
+        }
         var candidates = byKey[key] ?? []
         // Words run together ("B Cole") must sound exactly like the name; a single word may be a
         // sound or so off.
@@ -273,6 +282,22 @@ struct NameSounds {
             i += 1
         }
         out.names = words.map { match($0) ?? $0 }
+        return out
+    }
+
+    /// Put each word of a place right ("Wham" → "Wem"), keeping its commas.
+    func correctPlace(_ place: String) -> String {
+        guard !isEmpty, !place.isEmpty else { return place }
+        var out = ""
+        var word = ""
+        func flush() {
+            if !word.isEmpty { out += match(word) ?? word }
+            word = ""
+        }
+        for c in place {
+            if c.isLetter { word.append(c) } else { flush(); out.append(c) }
+        }
+        flush()
         return out
     }
 

@@ -157,5 +157,6 @@
     <string name="voice_unavailable">Dieses Telefon hat keine Spracherkennung für die Sprachsuche.</string>
     <string name="voice_no_name">In „%1$s“ wurde kein Name erkannt. Versuche es noch einmal oder tippe ihn ein.</string>
     <string name="find_no_name">Gib einen Namen zum Suchen an, etwa „Hans Müller, geboren 1850“.</string>
+    <string name="find_any_place">Niemand passte zu diesem Ort, daher sind dies Treffer von jedem Ort.</string>
     <string name="find_none_more">Niemand gefunden für „%1$s“. Versuche es ohne Jahr oder Ort.</string>
 </resources>

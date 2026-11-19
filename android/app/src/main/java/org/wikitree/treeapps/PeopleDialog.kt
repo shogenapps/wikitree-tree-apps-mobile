@@ -275,12 +275,16 @@ class PeopleDialog(
         return NameSounds(watchlist?.all().orEmpty().map { it.name } + mine.map { it.name })
     }
 
+    /** Birthplaces of the people on the watchlist, for putting right a place the phone misheard. */
+    private fun treePlaces() = NameSounds(watchlist?.all().orEmpty().map { it.place })
+
     /** Listen for a name and put what was heard in the search box, for checking before Find. */
     private fun listen(input: EditText) {
         activity.getSystemService(InputMethodManager::class.java)?.hideSoftInputFromWindow(input.windowToken, 0)
         val names = treeNames()
-        val started = VoiceSearch.listen(activity, names.hints()) { heard ->
-            val best = VoiceSearch.best(heard, names)
+        val places = treePlaces()
+        val started = VoiceSearch.listen(activity, names.hints() + places.hints(30)) { heard ->
+            val best = VoiceSearch.best(heard, names, places)
             if (best == null || best.isEmpty) {
                 Toast.makeText(activity, activity.getString(R.string.voice_no_name, heard.first()), Toast.LENGTH_LONG).show()
             } else {
@@ -312,12 +316,26 @@ class PeopleDialog(
         searchNote = activity.getString(R.string.find_searching)
         refresh()
         list.setSelection(0)
-        store.search(text) { found, total ->
+        search(run, text, NameSearch.parse(text), placeDropped = false)
+    }
+
+    /**
+     * Look [query] up and list the matches. A place is easily misheard or spelled another way, so
+     * when nobody matches with it, the search is tried once more without it, and says so.
+     */
+    private fun search(run: Int, text: String, query: NameSearch, placeDropped: Boolean) {
+        store.search(query.text()) { found, total ->
             if (run != searchRun) return@search
+            val hasPlace = query.bornPlace.isNotEmpty() || query.diedPlace.isNotEmpty()
+            if (found != null && found.isEmpty() && hasPlace) {
+                search(run, text, query.copy(bornPlace = "", diedPlace = ""), placeDropped = true)
+                return@search
+            }
             matches = found.orEmpty().map { it.copy(view = currentView) }
             searchNote = when {
                 found == null -> activity.getString(R.string.find_failed)
-                found.isEmpty() -> activity.getString(if (NameSearch.parse(text).hasMore) R.string.find_none_more else R.string.find_none, text)
+                found.isEmpty() -> activity.getString(if (query.hasMore || placeDropped) R.string.find_none_more else R.string.find_none, text)
+                placeDropped -> activity.getString(R.string.find_any_place)
                 total > found.size -> activity.getString(R.string.find_more, found.size, total)
                 else -> null
             }

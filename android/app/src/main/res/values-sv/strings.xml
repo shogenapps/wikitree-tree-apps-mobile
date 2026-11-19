@@ -157,5 +157,6 @@
     <string name="voice_unavailable">Den här telefonen har ingen taligenkänning för röstsökning.</string>
     <string name="voice_no_name">Inget namn hördes i ”%1$s”. Försök igen eller skriv det.</string>
     <string name="find_no_name">Lägg till ett namn att söka efter, till exempel ”Johan Andersson, född 1850”.</string>
+    <string name="find_any_place">Ingen matchade den platsen, så de här träffarna är från alla platser.</string>
     <string name="find_none_more">Ingen hittades för ”%1$s”. Prova utan år eller plats.</string>
 </resources>

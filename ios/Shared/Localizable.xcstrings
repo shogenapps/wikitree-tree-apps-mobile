@@ -2793,6 +2793,46 @@
         }
       }
     },
+    "Nobody matched that place, so these matches are from any place.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Niemand passte zu diesem Ort, daher sind dies Treffer von jedem Ort."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Nadie coincidía con ese lugar, así que estos resultados son de cualquier lugar."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Personne ne correspondait à ce lieu, voici donc des résultats de tous lieux."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Nessuno corrispondeva a quel luogo, quindi questi risultati sono di qualsiasi luogo."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Niemand paste bij die plaats, dus dit zijn resultaten van elke plaats."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Ingen matchade den platsen, så de här träffarna är från alla platser."
+          }
+        }
+      }
+    },
     "Nobody on your watchlist was born or died on this day.": {
       "localizations": {
         "de": {

@@ -88,6 +88,7 @@
     <string name="voice_language_set">Voice search will listen for %1$s.</string>
     <string name="voice_unavailable">This phone has no speech recognition for voice search.</string>
     <string name="voice_no_name">No name was heard in “%1$s”. Try again, or type it.</string>
+    <string name="find_any_place">Nobody matched that place, so these matches are from any place.</string>
     <string name="find_none_more">Nobody found for “%1$s”. Try without the year or place.</string>
     <string name="find_no_name">Add a name to search for, such as “John Smith, born 1850”.</string>
     <string name="find_matches">Matches</string>
