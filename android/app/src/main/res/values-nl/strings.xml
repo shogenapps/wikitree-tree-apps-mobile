@@ -143,4 +143,9 @@
     <string name="wbe_turn_off">Browser Extension uitzetten</string>
     <string name="wbe_turn_on">Browser Extension aanzetten</string>
     <string name="wbe_not_ready">De pagina wordt nog geladen. Probeer het zo opnieuw.</string>
+    <string name="wbe_ai_title">Naar %1$s sturen?</string>
+    <string name="wbe_ai_message">De AI-functies van WBE (Genie, Improve with AI en andere) sturen uw vraag en gegevens van de gebruikte WikiTree-pagina\'s, zoals namen, datums en plaatsen van de personen erop, met uw eigen API-sleutel naar %1$s. De voorwaarden en het privacybeleid van %1$s zijn van toepassing.\n\nDe app vraagt dit één keer per AI-aanbieder. Om te stoppen verwijdert u uw sleutel in de AI Settings van WBE.</string>
+    <string name="wbe_ai_allow">Toestaan</string>
+    <string name="wbe_ai_deny">Niet toestaan</string>
+    <string name="wbe_ai_refused">U hebt WBE niet toegestaan dit naar %1$s te sturen.</string>
 </resources>

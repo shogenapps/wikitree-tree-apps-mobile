@@ -1,4 +1,5 @@
 import Foundation
+import UIKit
 import WebKit
 
 /// The WikiTree Browser Extension (WBE) on wikitree.com pages in the app's page sheet.
@@ -12,7 +13,8 @@ import WebKit
 /// - Document-start scripts define `__wbeHost` and run wbe-early.js (all frames) and
 ///   wbe-webview.js (top frame), on https://www.wikitree.com pages only.
 /// - Host calls arrive over a script message handler with replies: settings storage (one store for
-///   every web view, kept in Application Support), openOptions and openUrl.
+///   every web view, kept in Application Support), openOptions, openUrl, and net.fetch for WBE's
+///   AI requests (see "AI requests" below).
 /// - When a page changes a setting, every other open WBE page gets a storageChanged event. The page
 ///   that wrote it fires its own onChanged, so it is not sent the event again.
 final class Wbe: NSObject, WKScriptMessageHandlerWithReply, WKURLSchemeHandler {
@@ -225,6 +227,9 @@ final class Wbe: NSObject, WKScriptMessageHandlerWithReply, WKURLSchemeHandler {
             case "openOptions":
                 if let webView = message.webView { actions.object(forKey: webView)?.actions.openOptions() }
                 replyHandler("null", nil)
+            case "net.fetch":
+                // (answered later: it may ask the member first, and the request takes a while)
+                aiFetch(args, from: message.webView, reply: replyHandler)
             case "openUrl":
                 if let webView = message.webView, let text = args["url"] as? String, let url = URL(string: text) {
                     actions.object(forKey: webView)?.actions.openUrl(url)
@@ -269,6 +274,96 @@ final class Wbe: NSObject, WKScriptMessageHandlerWithReply, WKURLSchemeHandler {
     private static func json(_ value: Any) -> String? {
         guard let data = try? JSONSerialization.data(withJSONObject: value, options: [.fragmentsAllowed]) else { return nil }
         return String(data: data, encoding: .utf8)
+    }
+
+    // MARK: AI requests (net.fetch)
+
+    // WBE's AI requests (Genie, Auto Bio's Improve with AI and the other AI features), which the
+    // extension makes from its background script. Here WBE sends them as the net.fetch host call and
+    // the app makes the request itself, so no CORS rules get in the way.
+    // - Only the AI providers' API hosts are allowed; anything else is refused.
+    // - The member brings their own API key (WBE's AI Settings); it goes only to that provider.
+    // - The first time a provider is used, the member is asked whether WBE may send to it (app store
+    //   rules ask for that before personal data goes to a third-party AI). Allow is remembered for
+    //   that provider; Don't Allow refuses this request only, so the next one asks again.
+
+    /// Host to the name the member knows the provider by. Matches ai_requests.js in WBE.
+    private static let aiProviders = [
+        "api.openai.com": "OpenAI",
+        "generativelanguage.googleapis.com": "Google Gemini",
+        "api.anthropic.com": "Anthropic (Claude)",
+        "api.perplexity.ai": "Perplexity",
+        "api.x.ai": "xAI (Grok)",
+        "ollama.com": "Ollama Cloud",
+    ]
+
+    /// WBE gives up after 4½ minutes and says so; this is a little longer, so its message is the one shown.
+    private static let aiTimeout: TimeInterval = 280
+
+    private lazy var aiSession: URLSession = {
+        let config = URLSessionConfiguration.ephemeral
+        config.timeoutIntervalForRequest = Wbe.aiTimeout
+        config.timeoutIntervalForResource = Wbe.aiTimeout + 10
+        return URLSession(configuration: config, delegate: NoRedirects(), delegateQueue: nil)
+    }()
+
+    /// The API key must only ever go to the provider, so redirects aren't followed.
+    private final class NoRedirects: NSObject, URLSessionTaskDelegate {
+        func urlSession(_ session: URLSession, task: URLSessionTask, willPerformHTTPRedirection response: HTTPURLResponse,
+                        newRequest request: URLRequest, completionHandler: @escaping (URLRequest?) -> Void) {
+            completionHandler(nil)
+        }
+    }
+
+    /// One net.fetch call: { url, method, headers, body } -> { status, statusText, body }.
+    private func aiFetch(_ args: [String: Any], from webView: WKWebView?, reply: @escaping (Any?, String?) -> Void) {
+        guard let text = args["url"] as? String, let url = URL(string: text), url.scheme == "https",
+              let host = url.host, let provider = Wbe.aiProviders[host] else {
+            return reply(nil, "The WikiTree app only sends WBE's requests to the AI providers")
+        }
+        let method = (args["method"] as? String ?? "GET").uppercased()
+        guard method == "GET" || method == "POST" else { return reply(nil, "Method \(method) isn't allowed") }
+        askToSend(to: provider, host: host, from: webView) { allowed in
+            guard allowed else {
+                return reply(nil, String(localized: "You didn't allow WBE to send this to \(provider)."))
+            }
+            var request = URLRequest(url: url)
+            request.httpMethod = method
+            for (name, value) in args["headers"] as? [String: Any] ?? [:] {
+                request.setValue("\(value)", forHTTPHeaderField: name)
+            }
+            if method == "POST", let body = args["body"] as? String { request.httpBody = Data(body.utf8) }
+            self.aiSession.dataTask(with: request) { data, response, error in
+                DispatchQueue.main.async {
+                    if let error { return reply(nil, error.localizedDescription) }
+                    let status = (response as? HTTPURLResponse)?.statusCode ?? 500
+                    let result: [String: Any] = [
+                        "status": status,
+                        "statusText": HTTPURLResponse.localizedString(forStatusCode: status),
+                        "body": String(decoding: data ?? Data(), as: UTF8.self),
+                    ]
+                    reply(Wbe.json(result), nil)
+                }
+            }.resume()
+        }
+    }
+
+    private func askToSend(to provider: String, host: String, from webView: WKWebView?,
+                           answer: @escaping (Bool) -> Void) {
+        let key = "wbe.ai.allowed.\(host)"
+        if UserDefaults.standard.bool(forKey: key) { return answer(true) }
+        guard var top = webView?.window?.rootViewController else { return answer(false) }
+        while let next = top.presentedViewController, !next.isBeingDismissed { top = next }
+        let alert = UIAlertController(
+            title: String(localized: "Send to \(provider)?"),
+            message: String(localized: "WBE's AI features (Genie, Improve with AI and others) send your question, and details from the WikiTree pages they use, such as names, dates and places of the people on them, to \(provider) with your own API key. \(provider)'s own terms and privacy policy apply.\n\nThe app asks once for each AI provider. To stop, remove your key in WBE's AI Settings."),
+            preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: String(localized: "Don't Allow"), style: .cancel) { _ in answer(false) })
+        alert.addAction(UIAlertAction(title: String(localized: "Allow"), style: .default) { _ in
+            UserDefaults.standard.set(true, forKey: key)
+            answer(true)
+        })
+        top.present(alert, animated: true)
     }
 
     // MARK: Storage
