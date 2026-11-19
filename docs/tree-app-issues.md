@@ -224,6 +224,19 @@ any shell workaround.
 - **Seen:** iPhone and Android shells, 2026-11-14 (Knopp-385). Shell workaround: `fitTimeline()`
   widens the window until every label is inside.
 
+### Timeline: rows cannot be scrolled when the timeline is taller than the screen
+- **Symptom:** the timeline has no height or `verticalScroll` option, so vis-timeline grows to
+  fit every row (964px for Charles Darwin, Darwin-15, with his ten children), with the years
+  along the bottom. vis-timeline sets `touch-action: none` on its rows, so on a phone a drag on
+  them pans the years and never scrolls the page; only the site's header above the timeline can
+  be dragged to scroll, and the years at the bottom are out of sight until you do. In the app,
+  which hides that header, nothing could be scrolled.
+- **Source:** `views/timeline/TimelineView.js` (the `vis.Timeline` options: a `height` or
+  `maxHeight` set to the room on screen would let vis-timeline's own up/down drag scroll the rows).
+- **Seen:** iPhone shell (Simulator, landscape), 2026-11-19, Darwin-15; checked in Chrome on
+  the site. Shell workaround: on phones the timeline is held to the screen below any controls
+  (`height: "100%"`), starts at the top, and scrolls its rows with an up/down drag.
+
 ### Timeline Tree: labels at the right edge cut off
 - **Symptom:** in landscape on a phone, the name labels of people born latest (for example
   "Ann Fawcett (1855-?)" for Knopp-385) run past the right edge of the timeline and are cut off.
