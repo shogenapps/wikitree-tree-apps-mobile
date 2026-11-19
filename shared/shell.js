@@ -593,18 +593,65 @@
     // parents) were cut off at the left and the latest (children) at the right until panned.
     // Once a new timeline has drawn, widen its window until every label is inside. Drag and
     // pinch carry on from there. Tree App issue, see docs/tree-app-issues.md.
+    // Family Timeline on phones, also: the app lets vis-timeline grow to fit its rows (964px
+    // for Charles Darwin, Darwin-15), with the years along the bottom, so in landscape most of
+    // it was below the screen. A drag on the timeline pans its years and never scrolls the page
+    // (vis-timeline sets touch-action: none there), and the site's header, which a browser user
+    // can drag instead, is hidden by the shell, so the rows could not be scrolled at all. The
+    // timeline takes exactly the screen below any controls instead, with the years in view, and
+    // starts at the top (the parents); an up or down drag scrolls its rows (vis-timeline's own
+    // vertical scrolling, which works once its height is set). Tree App issue, see
+    // docs/tree-app-issues.md.
+    CSS +=
+        " @media (max-width: 599px), (max-height: 599px) {" +
+        " html[data-wt-view=timeline] main#main .col-lg-12 { display: flex !important; flex-direction: column; height: 100vh; }" +
+        " html[data-wt-view=timeline] #view-container { flex: 1 1 0; min-height: 0 !important; height: auto !important; overflow: hidden !important; }" +
+        " }";
+
+    // The Family Timeline's vis.Timeline, or null.
+    function timelineChart() {
+        if (document.documentElement.getAttribute("data-wt-view") !== "timeline") return null;
+        var view = window.wtViewRegistry && wtViewRegistry.views && wtViewRegistry.views.timeline;
+        // Once Tree Apps load each app's files on first use, the registry holds a promise.
+        if (view && typeof view.then === "function") view = view.__wtResolved;
+        var tl = view && view.timeline;
+        return tl && typeof tl.setOptions === "function" ? tl : null;
+    }
+
+    // Scroll the timeline's rows to the top (vis-timeline has no public call for it).
+    function timelineTop(tl) {
+        if (typeof tl._setScrollTop !== "function") return;
+        tl._setScrollTop(0);
+        if (typeof tl.redraw === "function") tl.redraw();
+    }
+
+    // How many pixels of rows are scrolled out of sight inside the timeline (for a picture of
+    // the whole chart, see __wtShellCapture).
+    function timelineHidden(tl) {
+        return tl && tl.props && tl.props.scrollTopMin < 0 ? -tl.props.scrollTopMin : 0;
+    }
+
     var timelineTimer;
     function fitTimeline() {
-        var tries = 0, done, resolved;
+        var tries = 0, done, sized;
         clearInterval(timelineTimer);
         var timer = (timelineTimer = setInterval(function () {
             if (++tries > 120 || document.documentElement.getAttribute("data-wt-view") !== "timeline") return clearInterval(timer);
             var view = window.wtViewRegistry && wtViewRegistry.views && wtViewRegistry.views.timeline;
-            // Once Tree Apps load each app's files on first use, the registry holds a promise.
-            if (view && typeof view.then === "function") { view.then(function (v) { resolved = v; }); view = resolved; }
-            var tl = view && view.timeline;
+            if (view && typeof view.then === "function" && !view.__wtWaiting) {
+                view.__wtWaiting = true;
+                view.then(function (v) { view.__wtResolved = v; });
+            }
+            var tl = timelineChart();
             var panel = document.querySelector("#view-container .vis-panel.vis-center");
             if (!tl || tl === done || !panel || capture || !matchMedia(PHONE_QUERY).matches) return;
+            // First fit the timeline to the screen (see the CSS above) and start at the top.
+            if (tl !== sized) {
+                sized = tl;
+                tl.setOptions({ height: "100%" });
+                timelineTop(tl);
+                return;
+            }
             var p = panel.getBoundingClientRect();
             var l = Infinity, r = -Infinity, widest = 0;
             [].forEach.call(panel.querySelectorAll(".vis-item.vis-box, .vis-item.vis-range"), function (e) {
@@ -2251,7 +2298,8 @@
                 extraH = Math.max(extraH, s.scrollHeight - s.clientHeight);
             });
             w += extraW;
-            h += extraH;
+            // Family Timeline: its rows scroll inside it rather than in the page.
+            h += Math.max(extraH, timelineHidden(timelineChart()));
         }
         var max = CAPTURE_MAX / (window.devicePixelRatio || 1);
         return JSON.stringify({
@@ -2302,6 +2350,12 @@
             c.layers.forEach(function (e, i) { e.style.transform = c.layerTransforms[i]; });
         }
         capture.scrolls.forEach(function (s) { s.el.scrollLeft = s.x; s.el.scrollTop = s.y; });
+        var tl = timelineChart();
+        if (tl && typeof capture.timelineTop === "number" && typeof tl._setScrollTop === "function") {
+            tl.redraw();
+            tl._setScrollTop(capture.timelineTop);
+            tl.redraw();
+        }
         capture.style.remove();
         capture = null;
         cc7Side();
@@ -2314,6 +2368,8 @@
             if (!capture) return "";
             if (capture.chart) captureFitChart(capture.chart);
             else capture.scrollers.forEach(function (s) { s.scrollLeft = 0; s.scrollTop = 0; });
+            var tl = timelineChart();
+            if (tl) timelineTop(tl);
             return captureNeed();
         }
         captureEnd();
@@ -2333,6 +2389,11 @@
             capture.scrollers = captureScrollers();
             capture.scrolls = capture.scrollers.map(function (s) { return { el: s, x: s.scrollLeft, y: s.scrollTop }; });
             capture.scrollers.forEach(function (s) { s.scrollLeft = 0; s.scrollTop = 0; });
+            var tl = timelineChart();
+            if (tl) {
+                capture.timelineTop = tl.props && tl.props.scrollTop;
+                timelineTop(tl);
+            }
         }
         return captureNeed();
     };
