@@ -631,7 +631,7 @@
         return tl && tl.props && tl.props.scrollTopMin < 0 ? -tl.props.scrollTopMin : 0;
     }
 
-    var timelineTimer;
+    var timelineTimer, timelineSized = null;
     function fitTimeline() {
         var tries = 0, done, sized, topped;
         clearInterval(timelineTimer);
@@ -649,7 +649,7 @@
             // at that height (vis-timeline draws on the next frame, and keeps the bottom rows
             // in view when its height changes), scroll to the top.
             if (tl !== sized) {
-                sized = tl;
+                sized = timelineSized = tl;
                 tl.setOptions({ height: "100%" });
                 return;
             }
@@ -2356,11 +2356,14 @@
             c.layers.forEach(function (e, i) { e.style.transform = c.layerTransforms[i]; });
         }
         capture.scrolls.forEach(function (s) { s.el.scrollLeft = s.x; s.el.scrollTop = s.y; });
-        var tl = timelineChart();
-        if (tl && typeof capture.timelineTop === "number" && typeof tl._setScrollTop === "function") {
-            tl.redraw();
-            tl._setScrollTop(capture.timelineTop);
-            tl.redraw();
+        var t = capture.timeline;
+        if (t) {
+            t.tl.setOptions({ height: "100%" });
+            // After it has drawn at that height again (the next frame).
+            setTimeout(function () {
+                if (typeof t.tl._setScrollTop === "function" && typeof t.top === "number") t.tl._setScrollTop(t.top);
+                if (typeof t.tl.redraw === "function") t.tl.redraw();
+            }, 100);
         }
         capture.style.remove();
         capture = null;
@@ -2374,8 +2377,6 @@
             if (!capture) return "";
             if (capture.chart) captureFitChart(capture.chart);
             else capture.scrollers.forEach(function (s) { s.scrollLeft = 0; s.scrollTop = 0; });
-            var tl = timelineChart();
-            if (tl) timelineTop(tl);
             return captureNeed();
         }
         captureEnd();
@@ -2395,13 +2396,19 @@
             capture.scrollers = captureScrollers();
             capture.scrolls = capture.scrollers.map(function (s) { return { el: s, x: s.scrollLeft, y: s.scrollTop }; });
             capture.scrollers.forEach(function (s) { s.scrollLeft = 0; s.scrollTop = 0; });
-            var tl = timelineChart();
-            if (tl) {
-                capture.timelineTop = tl.props && tl.props.scrollTop;
-                timelineTop(tl);
-            }
         }
-        return captureNeed();
+        // Family Timeline on phones: the size it needs counts the rows scrolled out of sight
+        // (see captureNeed), then it goes back to growing with its rows, from the top, in the
+        // taller view; the view is no longer phone-sized there, so the CSS that held it to the
+        // screen no longer applies.
+        var tl = timelineChart();
+        var need = captureNeed();
+        if (tl && tl === timelineSized) {
+            capture.timeline = { tl: tl, top: tl.props && tl.props.scrollTop };
+            tl.setOptions({ height: "auto" });
+            timelineTop(tl);
+        }
+        return need;
     };
 
     new MutationObserver(function () {
