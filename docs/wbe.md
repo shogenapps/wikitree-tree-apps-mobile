@@ -77,6 +77,13 @@ injected as `WKUserScript`s, which the site's Content Security Policy doesn't ap
 images, CSS and page scripts are loaded from `wbe-app://app/`, so they rely on the site's policy
 allowing that scheme.
 
+WebKit treats `wbe-app:` as insecure on https pages: images and CSS load, but a `<script src>` or
+`fetch()` of a `wbe-app:` URL fails without an error. So the host script hands those to the app
+instead: a script element's `src` and `fetch()` of a WBE URL go through the `file` host call
+(js, json and css files from the app's `wbe/` folder only), and the script runs as inline text
+with a `load` event after. That is how Genie (`wbe-genie.js`), the edit page helpers
+(`core/cm_text.js` and others) and data files like `templatesExp.json` load on iPhone.
+
 - Host calls come over a `WKScriptMessageHandlerWithReply` named `wbeNative`, in the page's world,
   accepted only from `https://www.wikitree.com` and `wbe-app:` frames.
 - Settings live in `Application Support/wbe/sync.json` and `local.json`.
