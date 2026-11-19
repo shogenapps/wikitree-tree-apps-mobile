@@ -2405,7 +2405,8 @@
         var need = captureNeed();
         if (tl && tl === timelineSized) {
             capture.timeline = { tl: tl, top: tl.props && tl.props.scrollTop };
-            tl.setOptions({ height: "auto" });
+            // null, not "auto": vis-timeline works out the height itself only when none is set.
+            tl.setOptions({ height: null });
             timelineTop(tl);
         }
         return need;
