@@ -50,8 +50,9 @@ To try a WBE build from your own machine without a release:
   settings page (laid out for a 780 px popup) fit a phone.
 - **Host calls** arrive over a web message listener that only `https://www.wikitree.com` can use:
   `storage.get`, `storage.set`, `storage.remove` and `storage.clear` (areas `sync` and `local`, kept in
-  SharedPreferences and shared by every web view), `openOptions` (WBE's settings in a new sheet)
-  and `openUrl` (wikitree.com in a new sheet, other sites in the browser).
+  SharedPreferences and shared by every web view), `openOptions` (WBE's settings in a new sheet),
+  `openUrl` (wikitree.com in a new sheet, other sites in the browser) and `net.fetch` (WBE's AI
+  requests, see below).
 - **Changes.** When a page changes a setting, every other open WBE page gets a `storageChanged`
   event. The page that wrote it is left out, because it already fired its own `onChanged`.
 - **WBE button** in the sheet's bar: Extension settings; Notes, Clipboard, Wikitable Wizard and
@@ -82,9 +83,31 @@ allowing that scheme.
 - The page sheet has a **WBE** menu with the same items as on Android, reloads the page after the
   settings sheet changed something, and leaves the person's name out of the bar on a profile.
 
+## Genie and the AI features
+
+Genie, Auto Bio's Improve with AI, the AI Change Explanation and Find and Replace's Ask Genie use the
+member's own API key (BYOK) with OpenAI, Google Gemini, Anthropic (Claude), Perplexity, xAI (Grok) or
+Ollama Cloud. In the extension, WBE's background script makes those requests. In the app, WBE's
+`ai_requests.js` runs in the page and sends each request to the app as the `net.fetch` host call,
+and the app makes it (`WbeAi.kt`, the "AI requests" part of `Wbe.swift`), so no CORS rules apply.
+
+- Only the providers' API hosts are allowed (`api.openai.com`, `generativelanguage.googleapis.com`,
+  `api.anthropic.com`, `api.perplexity.ai`, `api.x.ai`, `ollama.com`). Anything else is refused.
+  Redirects aren't followed, so the key only goes to the provider.
+- **Consent.** The first time WBE sends to a provider, the app asks "Send to <provider>?" and says
+  what goes there (the question and details from the WikiTree pages used, such as names, dates and
+  places). Allow is remembered for that provider. Don't allow refuses that one request, so the next
+  one asks again. Apple's guideline 5.1.2(i) asks for this before personal data goes to a
+  third-party AI. To stop, the member removes their key in WBE's AI Settings.
+- Genie is a separate file, `wbe-genie.js`, loaded only when Genie is opened, because it is too big
+  to inject into every page.
+- On a phone Ollama always means Ollama Cloud; WBE's AI Settings offer only that.
+- Needs a WBE build with Genie in the app (`chat` no longer in `disabledFeatures`).
+
 ## Not in the app yet
 
-- WBE features that need its background script: Genie, Duplicates, the Gold Standard inspector and
-  the AI features. WBE's webview build turns them off (`disabledFeatures` in `webview.json`).
+- WBE features that need its background script: Duplicates and the Gold Standard inspector. WBE's
+  webview build turns them off (`disabledFeatures` in `webview.json`). Inside Genie, the Duplicate
+  Finder and Wikidata lookups are skipped for the same reason; Genie works without them.
 - Backup and Restore from the WBE menu (downloads and file pickers need more work in a web view).
 - Settings don't sync with WBE on a computer. They stay on the phone.

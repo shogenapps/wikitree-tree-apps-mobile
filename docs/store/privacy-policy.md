@@ -16,7 +16,8 @@ covered by the [WikiTree Privacy Policy](https://www.wikitree.com/wiki/Help:Priv
 - The app has **no ads, no analytics, no crash reporting and no tracking**, and it contains no
   third-party SDKs.
 - Everything the app sends goes to **WikiTree** (www.wikitree.com and api.wikitree.com), and only to
-  show you what you asked for.
+  show you what you asked for. The one exception is optional: if you give the Browser Extension your
+  own AI key, what you ask its AI goes to that AI provider (see below).
 - Your **WikiTree password is never stored** by the app.
 - Your **Saved people, Recent people and the copy of your watchlist stay on your phone.**
 
@@ -36,6 +37,17 @@ Some Tree Apps load program libraries and fonts from public content networks (cd
 cdn.jsdelivr.net, unpkg.com, Google Fonts, Google Hosted Libraries). Those services receive your IP
 address when your phone downloads them, as with any website that uses them. A few Tree Apps (such as WT+
 Maps) show maps or data from plus.wikitree.com.
+
+## WikiTree Browser Extension and AI (only if you set it up)
+
+The app includes the WikiTree Browser Extension (WBE). Its AI features (Genie, Improve with AI and
+others) work only if you enter your own API key for an AI provider in WBE's AI Settings. When you use
+them, the app sends your question, and details from the WikiTree pages involved (which can include
+names, dates and places of the people on them), directly from your phone to the provider you chose
+(OpenAI, Google Gemini, Anthropic, Perplexity, xAI or Ollama Cloud), with your key. The app asks your
+permission the first time it sends anything to each provider. Nothing goes through WikiTree or us, and
+the provider's own terms and privacy policy apply. Your key is kept on your phone with WBE's other
+settings. To stop, remove your key.
 
 ## What the app keeps on your phone
 

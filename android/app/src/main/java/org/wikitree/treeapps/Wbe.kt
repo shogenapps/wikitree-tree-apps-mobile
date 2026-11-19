@@ -26,7 +26,8 @@ import java.io.IOException
  *   sees them as its own ([intercept]).
  * - A document-start script defines `__wbeHost` and then runs wbe-early.js and wbe-webview.js.
  * - Host calls arrive over a web message listener limited to https://www.wikitree.com: settings
- *   storage (one store for every web view, kept in SharedPreferences), openOptions and openUrl.
+ *   storage (one store for every web view, kept in SharedPreferences), openOptions, openUrl, and
+ *   net.fetch for WBE's AI requests ([WbeAi]).
  * - When a page changes a setting, every other open WBE page gets a storageChanged event. The page
  *   that wrote it fires its own onChanged, so it is not sent the event again.
  */
@@ -258,6 +259,22 @@ object Wbe {
         }
         val id = call.opt("id")
         val args = call.optJSONObject("args") ?: JSONObject()
+        fun answer(error: String?, result: Any?) {
+            val json = JSONObject()
+                .put("kind", "reply")
+                .put("id", id ?: JSONObject.NULL)
+                .put("error", error ?: JSONObject.NULL)
+                .put("result", if (result == null) "null" else result.toString())
+            try {
+                reply.postMessage(json.toString())
+            } catch (_: Exception) {
+            }
+        }
+        if (call.optString("method") == "net.fetch") {
+            // (answered later: it may ask the member first, and the request takes a while)
+            WbeAi.fetch(context, args) { error, result -> answer(error, result) }
+            return
+        }
         var error: String? = null
         var result: Any? = null
         try {
@@ -273,15 +290,7 @@ object Wbe {
         } catch (e: Exception) {
             error = e.message ?: e.javaClass.simpleName
         }
-        val answer = JSONObject()
-            .put("kind", "reply")
-            .put("id", id ?: JSONObject.NULL)
-            .put("error", error ?: JSONObject.NULL)
-            .put("result", if (result == null) "null" else result.toString())
-        try {
-            reply.postMessage(answer.toString())
-        } catch (_: Exception) {
-        }
+        answer(error, result)
     }
 
     private fun JSONObject.area(): String = when (val a = optString("area")) {

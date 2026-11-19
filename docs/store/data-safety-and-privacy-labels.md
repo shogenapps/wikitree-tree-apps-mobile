@@ -17,6 +17,7 @@ wikitree.com counts as data "the developer collects".
 | Biography read aloud | No (on-device TTS) | | No |
 | Notifications | Local only, no push service | | |
 | Location, contacts, photos, camera, microphone | Not used | | |
+| WBE AI features (optional, member's own API key): the question and details from the WikiTree pages used (names, dates, places of people) | Yes, HTTPS, only after the member allows each provider once | The AI provider the member chose (OpenAI, Google, Anthropic, Perplexity, xAI, Ollama) | The key and WBE settings, on the phone |
 | Analytics, crash reporting, ads, third-party SDKs | None (dependencies are only androidx webkit, browser, core) | | |
 
 Other hosts the Tree Apps pages load code or fonts from: cdnjs.cloudflare.com, cdn.jsdelivr.net, unpkg.com,
@@ -58,6 +59,13 @@ with WikiTree.
 
 Password: Play's form has no "password" type; credentials sent only to authenticate are covered by
 "Account management" under Email address / User IDs.
+
+**WBE AI features (CONFIRM wording at submission):** the member starts each request, with their own key,
+after a consent prompt naming the provider. Play counts a transfer the user starts, with prominent
+disclosure and consent, as not "shared"; it is still data leaving the phone, so tick **Other user-generated
+content** (the question) and, if names, dates and places of people count as personal info in the form's
+sense, **Personal info > Other info**, as Collected, Optional, purpose App functionality. On Apple's label
+the same items fall under **Other User Content**, not linked, not tracking.
 
 "Shared" means sent to a *third party*. Data the app sends to WikiTree is not "shared" once WikiTree is the
 developer. If the app were ever published by someone other than WikiTree, the same rows would become

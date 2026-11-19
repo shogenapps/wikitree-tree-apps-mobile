@@ -751,6 +751,46 @@
         }
       }
     },
+    "Allow": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Erlauben"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Permitir"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Autoriser"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Consenti"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Toestaan"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Tillåt"
+          }
+        }
+      }
+    },
     "Anniversaries": {
       "localizations": {
         "de": {
@@ -1429,6 +1469,46 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "Död %@"
+          }
+        }
+      }
+    },
+    "Don't Allow": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Nicht erlauben"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "No permitir"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Ne pas autoriser"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Non consentire"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Niet toestaan"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Tillåt inte"
           }
         }
       }
@@ -3713,6 +3793,46 @@
         }
       }
     },
+    "Send to %@?": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "An %@ senden?"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "¿Enviar a %@?"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Envoyer à %@ ?"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Inviare a %@?"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Naar %@ sturen?"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Skicka till %@?"
+          }
+        }
+      }
+    },
     "Share profile link": {
       "localizations": {
         "de": {
@@ -4596,6 +4716,46 @@
         }
       }
     },
+    "WBE's AI features (Genie, Improve with AI and others) send your question, and details from the WikiTree pages they use, such as names, dates and places of the people on them, to %@ with your own API key. %@'s own terms and privacy policy apply.\n\nThe app asks once for each AI provider. To stop, remove your key in WBE's AI Settings.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Die KI-Funktionen von WBE (Genie, Improve with AI und andere) senden Ihre Frage und Angaben von den verwendeten WikiTree-Seiten, etwa Namen, Daten und Orte der Personen darauf, mit Ihrem eigenen API-Schlüssel an %1$@. Es gelten die Bedingungen und die Datenschutzerklärung von %2$@.\n\nDie App fragt einmal pro KI-Anbieter. Zum Beenden entfernen Sie Ihren Schlüssel in den AI Settings von WBE."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Las funciones de IA de WBE (Genie, Improve with AI y otras) envían su pregunta y datos de las páginas de WikiTree que usan, como nombres, fechas y lugares de las personas que aparecen en ellas, a %1$@ con su propia clave de API. Se aplican los términos y la política de privacidad de %2$@.\n\nLa app lo pregunta una vez por cada proveedor de IA. Para dejar de usarlo, quite su clave en los AI Settings de WBE."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Les fonctions d’IA de WBE (Genie, Improve with AI et d’autres) envoient votre question, ainsi que des informations des pages WikiTree utilisées, comme les noms, dates et lieux des personnes qui y figurent, à %1$@ avec votre propre clé d’API. Les conditions et la politique de confidentialité de %2$@ s’appliquent.\n\nL’app demande une fois par fournisseur d’IA. Pour arrêter, supprimez votre clé dans les AI Settings de WBE."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Le funzioni di IA di WBE (Genie, Improve with AI e altre) inviano la tua domanda e i dati delle pagine WikiTree che usano, come nomi, date e luoghi delle persone presenti, a %1$@ con la tua chiave API. Si applicano i termini e l’informativa sulla privacy di %2$@.\n\nL’app lo chiede una volta per ogni fornitore di IA. Per smettere, rimuovi la chiave nelle AI Settings di WBE."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "De AI-functies van WBE (Genie, Improve with AI en andere) sturen uw vraag en gegevens van de gebruikte WikiTree-pagina's, zoals namen, datums en plaatsen van de personen erop, met uw eigen API-sleutel naar %1$@. De voorwaarden en het privacybeleid van %2$@ zijn van toepassing.\n\nDe app vraagt dit één keer per AI-aanbieder. Om te stoppen verwijdert u uw sleutel in de AI Settings van WBE."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "WBE:s AI-funktioner (Genie, Improve with AI och andra) skickar din fråga och uppgifter från de WikiTree-sidor de använder, till exempel namn, datum och platser för personerna där, till %1$@ med din egen API-nyckel. %2$@:s egna villkor och integritetspolicy gäller.\n\nAppen frågar en gång per AI-leverantör. Ta bort din nyckel i WBE:s AI Settings för att sluta."
+          }
+        }
+      }
+    },
     "Watchlist: %@ people, updated %@. Tap to refresh.": {
       "localizations": {
         "de": {
@@ -4715,6 +4875,46 @@
           "stringUnit": {
             "state": "needs_review",
             "value": "WikiTree-profil"
+          }
+        }
+      }
+    },
+    "You didn't allow WBE to send this to %@.": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Sie haben WBE nicht erlaubt, dies an %@ zu senden."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "No ha permitido que WBE envíe esto a %@."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Vous n’avez pas autorisé WBE à envoyer ceci à %@."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Non hai consentito a WBE di inviarlo a %@."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "U hebt WBE niet toegestaan dit naar %@ te sturen."
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Du tillät inte WBE att skicka detta till %@."
           }
         }
       }

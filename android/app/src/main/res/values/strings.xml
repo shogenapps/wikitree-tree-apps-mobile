@@ -151,6 +151,11 @@
     <string name="wbe_turn_off">Turn off the Browser Extension</string>
     <string name="wbe_turn_on">Turn on the Browser Extension</string>
     <string name="wbe_not_ready">The page is still loading. Try again in a moment.</string>
+    <string name="wbe_ai_title">Send to %1$s?</string>
+    <string name="wbe_ai_message">WBE\'s AI features (Genie, Improve with AI and others) send your question, and details from the WikiTree pages they use, such as names, dates and places of the people on them, to %1$s with your own API key. %1$s\'s own terms and privacy policy apply.\n\nThe app asks once for each AI provider. To stop, remove your key in WBE\'s AI Settings.</string>
+    <string name="wbe_ai_allow">Allow</string>
+    <string name="wbe_ai_deny">Don\'t allow</string>
+    <string name="wbe_ai_refused">You didn\'t allow WBE to send this to %1$s.</string>
     <string name="wbe_notes" translatable="false">Notes</string>
     <string name="wbe_clipboard" translatable="false">Clipboard</string>
     <string name="wbe_wikitable" translatable="false">Wikitable Wizard</string>

@@ -143,4 +143,9 @@
     <string name="wbe_turn_off">Stäng av Browser Extension</string>
     <string name="wbe_turn_on">Slå på Browser Extension</string>
     <string name="wbe_not_ready">Sidan laddas fortfarande. Försök igen om en stund.</string>
+    <string name="wbe_ai_title">Skicka till %1$s?</string>
+    <string name="wbe_ai_message">WBE:s AI-funktioner (Genie, Improve with AI och andra) skickar din fråga och uppgifter från de WikiTree-sidor de använder, till exempel namn, datum och platser för personerna där, till %1$s med din egen API-nyckel. %1$s:s egna villkor och integritetspolicy gäller.\n\nAppen frågar en gång per AI-leverantör. Ta bort din nyckel i WBE:s AI Settings för att sluta.</string>
+    <string name="wbe_ai_allow">Tillåt</string>
+    <string name="wbe_ai_deny">Tillåt inte</string>
+    <string name="wbe_ai_refused">Du tillät inte WBE att skicka detta till %1$s.</string>
 </resources>
