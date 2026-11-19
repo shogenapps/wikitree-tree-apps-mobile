@@ -633,7 +633,7 @@
 
     var timelineTimer;
     function fitTimeline() {
-        var tries = 0, done, sized;
+        var tries = 0, done, sized, topped;
         clearInterval(timelineTimer);
         var timer = (timelineTimer = setInterval(function () {
             if (++tries > 120 || document.documentElement.getAttribute("data-wt-view") !== "timeline") return clearInterval(timer);
@@ -645,10 +645,16 @@
             var tl = timelineChart();
             var panel = document.querySelector("#view-container .vis-panel.vis-center");
             if (!tl || tl === done || !panel || capture || !matchMedia(PHONE_QUERY).matches) return;
-            // First fit the timeline to the screen (see the CSS above) and start at the top.
+            // First fit the timeline to the screen (see the CSS above), then, once it has drawn
+            // at that height (vis-timeline draws on the next frame, and keeps the bottom rows
+            // in view when its height changes), scroll to the top.
             if (tl !== sized) {
                 sized = tl;
                 tl.setOptions({ height: "100%" });
+                return;
+            }
+            if (tl !== topped) {
+                topped = tl;
                 timelineTop(tl);
                 return;
             }
