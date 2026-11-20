@@ -149,6 +149,9 @@
     <string name="wbe_ai_deny">Nicht erlauben</string>
     <string name="wbe_ai_refused">Sie haben WBE nicht erlaubt, dies an %1$s zu senden.</string>
     <!-- Voice search in the name search. -->
+    <string name="genie_hint">Frag Genie etwas</string>
+    <string name="genie_ask">Fragen</string>
+    <string name="genie_ask_long">Genie fragen, den Assistenten der WikiTree Browser Extension</string>
     <string name="voice_search">Per Sprache suchen. Gedrückt halten, um die Sprache zu wählen.</string>
     <string name="voice_prompt">Sag einen Namen, etwa „Hans Müller, geboren 1850 in Bayern“</string>
     <string name="voice_language_title">Sprache der Sprachsuche</string>

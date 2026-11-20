@@ -149,6 +149,9 @@
     <string name="wbe_ai_deny">Ne pas autoriser</string>
     <string name="wbe_ai_refused">Vous n’avez pas autorisé WBE à envoyer ceci à %1$s.</string>
     <!-- Voice search in the name search. -->
+    <string name="genie_hint">Demandez à Genie</string>
+    <string name="genie_ask">Demander</string>
+    <string name="genie_ask_long">Demander à Genie, l\'assistant de la WikiTree Browser Extension</string>
     <string name="voice_search">Rechercher à la voix. Maintenez appuyé pour choisir la langue.</string>
     <string name="voice_prompt">Dites un nom, par exemple « Jean Martin, né 1850 à Lyon »</string>
     <string name="voice_language_title">Langue de la recherche vocale</string>

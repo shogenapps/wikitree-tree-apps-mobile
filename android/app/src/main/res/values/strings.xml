@@ -81,6 +81,9 @@
     <string name="find_hint">Name or WikiTree ID</string>
     <string name="find_go">Find</string>
     <!-- Voice search in the name search. -->
+    <string name="genie_hint">Ask Genie anything</string>
+    <string name="genie_ask">Ask</string>
+    <string name="genie_ask_long">Ask Genie, the WikiTree Browser Extension\'s assistant</string>
     <string name="voice_search">Search by voice. Touch and hold to choose the language.</string>
     <string name="voice_prompt">Say a name, such as “John Smith, born 1850 in Yorkshire”</string>
     <string name="voice_language_title">Voice search language</string>

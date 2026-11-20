@@ -298,10 +298,12 @@ struct PageSheet: View {
     let url: URL
     /// Read the profile's biography aloud as soon as it opens.
     var listen = false
+    /// Open Genie once the page has loaded, asking this ("" just opens it). See [Genie].
+    var genie: String?
     var body: some View {
         Group {
             if url.host?.hasSuffix("wikitree.com") == true {
-                WikiTreeSheet(url: url, listen: listen)
+                WikiTreeSheet(url: url, listen: listen, genie: genie)
             } else {
                 SafariSheet(url: url).ignoresSafeArea()
             }
@@ -319,9 +321,11 @@ struct PageSheet: View {
 ///
 /// The WikiTree Browser Extension runs on the pages here (see [Wbe]), with a WBE menu for its
 /// settings, the tools its right-click menu offers on a computer, and a switch to turn it off.
+/// With `genie` set, WBE's Genie opens on the page as soon as it has loaded (see [Genie]).
 private struct WikiTreeSheet: View {
     let url: URL
     var listen = false
+    var genie: String?
     @Environment(\.dismiss) private var dismiss
     @StateObject private var page = WikiTreePage()
     @StateObject private var reader = BioReader()
@@ -377,6 +381,7 @@ private struct WikiTreeSheet: View {
         }
         .onAppear {
             if page.webView.url == nil {
+                page.askGenie = genie
                 page.webView.load(URLRequest(url: url))
                 if listen, let id = Biography.profileId(url) { reader.start(id) }
             }
@@ -419,6 +424,12 @@ private final class WikiTreePage: NSObject, ObservableObject, WKNavigationDelega
     @Published var canGoBack = false
     @Published var loading = false
     @Published var url: URL?
+    /// "Ask Genie" on the start screen: asked when a wikitree.com page has loaded, again on the
+    /// next page if that page went away first (a redirect or a reload), for the first minute.
+    var askGenie: String? {
+        didSet { genieUntil = askGenie == nil ? nil : Date().addingTimeInterval(60) }
+    }
+    private var genieUntil: Date?
     private var watching: [NSKeyValueObservation] = []
 
     override init() {
@@ -476,6 +487,11 @@ private final class WikiTreePage: NSObject, ObservableObject, WKNavigationDelega
     /// again a little later too.
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
         guard wbeOn else { return }
+        if let question = askGenie, let until = genieUntil, Date() < until, webView.url?.host == "www.wikitree.com" {
+            Genie.ask(webView, question: question) { [weak self] done in
+                if done { self?.askGenie = nil }
+            }
+        }
         let ids = Array(Set(Wbe.tools.map(\.feature)))
         for delay in [0.0, 1.5, 4.0] {
             DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in

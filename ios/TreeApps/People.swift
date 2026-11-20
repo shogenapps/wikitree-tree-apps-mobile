@@ -381,6 +381,7 @@ struct PeopleView: View {
 
     @Environment(\.dismiss) private var dismiss
     @State private var draft = ""
+    @State private var genieQuestion = ""
     @State private var matches: [Person] = []
     @State private var searchNote: String?
     @State private var searchRun = 0
@@ -425,6 +426,19 @@ struct PeopleView: View {
                         }
                     } else if let note = voice.note {
                         Text(note).font(.footnote).foregroundStyle(.secondary)
+                    }
+                    if start != nil, Wbe.shared.isEnabled {
+                        // Genie, WBE's assistant: a question, or a search in Genie's own words.
+                        HStack {
+                            Text("🧞").font(.title2).accessibilityHidden(true)
+                            TextField("Ask Genie anything", text: $genieQuestion)
+                                .submitLabel(.send)
+                                .onSubmit(askGenie)
+                            Button("Ask", action: askGenie)
+                                .buttonStyle(.borderedProminent)
+                                .tint(wtButton)
+                                .accessibilityLabel("Ask Genie, the WikiTree Browser Extension's assistant")
+                        }
                     }
                     if !currentId.isEmpty, start == nil {
                         Button {
@@ -541,7 +555,7 @@ struct PeopleView: View {
             }
         }
         .tint(wtAccent)
-        .sheet(item: $profile, onDismiss: { if start != nil { store.findMe() } }) { PageSheet(url: $0.url, listen: $0.listen) }
+        .sheet(item: $profile, onDismiss: { if start != nil { store.findMe() } }) { PageSheet(url: $0.url, listen: $0.listen, genie: $0.genie) }
         .sheet(isPresented: $loggingIn, onDismiss: { store.findMe(afterLogin: true) }) { LoginView() }
         .onChange(of: draft) { text in
             // Suggest people from the watchlist while typing, as wikitree.com does.
@@ -835,6 +849,15 @@ struct PeopleView: View {
             if let best, !best.isEmpty { draft = best.text }
             else { voice.note = String(localized: "No name was heard in “\(heard.first ?? "")”. Try again, or type it.") }
         }
+    }
+
+    /// Open Genie over the start screen, on the profile of the person the Tree Apps list is for
+    /// (so Genie knows who "him" or "her" is), or WikiTree's home page with nobody.
+    private func askGenie() {
+        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+        let question = genieQuestion.trimmingCharacters(in: .whitespacesAndNewlines)
+        genieQuestion = ""
+        profile = ShellModel.SheetURL(url: Genie.page(for: appsFor), genie: question)
     }
 
     /// Open a typed WikiTree ID ("Windsor-1"), or look a name up and list the matches.
