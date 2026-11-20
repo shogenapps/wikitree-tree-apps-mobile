@@ -540,3 +540,42 @@ final class Wbe: NSObject, WKScriptMessageHandlerWithReply, WKURLSchemeHandler {
 
     func webView(_ webView: WKWebView, stop task: WKURLSchemeTask) {}
 }
+
+/// "Ask Genie" on the start screen. Genie is WBE's assistant: it searches WikiTree, answers
+/// questions and, with an AI key in WBE's settings, more. It lives on wikitree.com pages, so asking
+/// opens a page sheet (see [PageSheet]) and shared/genie.js opens Genie there with the question
+/// already sent.
+enum Genie {
+    /// The profile of the person Genie is to be about, or WikiTree's home page with nobody.
+    static func page(for personId: String) -> URL {
+        let id = personId.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? ""
+        return URL(string: id.isEmpty ? "https://www.wikitree.com/" : "https://www.wikitree.com/wiki/" + id)!
+    }
+
+    private static let js: String = {
+        guard let url = Bundle.main.url(forResource: "genie", withExtension: "js"),
+              let text = try? String(contentsOf: url, encoding: .utf8) else { return "" }
+        return text
+    }()
+
+    /// Called by the page sheet when a page has loaded; "" just opens Genie. `done` gets true once
+    /// Genie has opened on the page, false if the page went away first or Genie failed to open.
+    /// How it went is logged (it shows in the Simulator's log as "Genie: ...").
+    static func ask(_ webView: WKWebView, question: String, done: @escaping (Bool) -> Void = { _ in }) {
+        guard !js.isEmpty else { NSLog("Genie: genie.js is missing from the app"); return done(true) }
+        webView.evaluateJavaScript(js + "\n;void 0;") { _, error in
+            if let error { NSLog("Genie: genie.js failed: \(error)"); return done(false) }
+            webView.callAsyncJavaScript("return await window.__wtAskGenie(question);",
+                                        arguments: ["question": question], in: nil, in: .page) { result in
+                switch result {
+                case .success(let note):
+                    NSLog("Genie: \(note)")
+                    done(!String(describing: note).hasPrefix("failed"))
+                case .failure(let error):
+                    NSLog("Genie: \(error)")
+                    done(false)
+                }
+            }
+        }
+    }
+}

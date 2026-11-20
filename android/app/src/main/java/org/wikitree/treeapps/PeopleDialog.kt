@@ -204,6 +204,7 @@ class PeopleDialog(
         }
         find.addView(actionButton(activity.getString(R.string.find_go)) { submit() })
         body.addView(find)
+        if (start != null && Genie.isAvailable(activity)) body.addView(genieRow())
 
         // Save or unsave the person on screen.
         val actions = LinearLayout(activity).apply {
@@ -264,6 +265,42 @@ class PeopleDialog(
         dialog.setContentView(root)
         dialog.window?.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
         dialog.show()
+    }
+
+    /**
+     * Start screen: ask Genie (WBE's assistant) a question, or search WikiTree in Genie's own words.
+     * Genie opens in a page sheet over this screen, about the person the Tree Apps list is for.
+     */
+    private fun genieRow(): View {
+        val row = LinearLayout(activity).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            setPadding(dp(12), 0, dp(8), 0)
+        }
+        row.addView(TextView(activity).apply {
+            text = "🧞"
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 22f)
+            importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
+            setPadding(0, 0, dp(4), 0)
+        })
+        val input = EditText(activity).apply {
+            hint = activity.getString(R.string.genie_hint)
+            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_FLAG_CAP_SENTENCES
+            imeOptions = EditorInfo.IME_ACTION_SEND
+            setSingleLine()
+        }
+        fun ask() {
+            activity.getSystemService(InputMethodManager::class.java)?.hideSoftInputFromWindow(input.windowToken, 0)
+            val question = input.text.toString().trim()
+            input.setText("")
+            Genie.open(activity, question, currentId.ifBlank { store.me()?.id ?: "" })
+        }
+        input.setOnEditorActionListener { _, _, _ -> ask(); true }
+        row.addView(input, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+        row.addView(actionButton(activity.getString(R.string.genie_ask)) { ask() }.apply {
+            contentDescription = activity.getString(R.string.genie_ask_long)
+        })
+        return row
     }
 
     fun dismiss() = dialog.dismiss()

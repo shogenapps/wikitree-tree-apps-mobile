@@ -20,7 +20,9 @@ final class ShellModel: NSObject, ObservableObject, WKNavigationDelegate, WKUIDe
         let url: URL
         /// Read the profile's biography aloud as soon as it opens.
         var listen = false
-        var id: String { url.absoluteString + (listen ? "#listen" : "") }
+        /// Open Genie on the page once it has loaded, asking this ("" just opens it). See [Genie].
+        var genie: String?
+        var id: String { url.absoluteString + (listen ? "#listen" : "") + (genie.map { "#genie=" + $0 } ?? "") }
     }
 
     @Published var personId: String

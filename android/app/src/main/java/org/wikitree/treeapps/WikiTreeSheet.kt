@@ -36,13 +36,14 @@ import org.json.JSONObject
  *
  * The WikiTree Browser Extension runs on the pages here (see [Wbe]), with a WBE button for its
  * settings, the tools its right-click menu offers on a computer, and a switch to turn it off.
+ * [show] with genie set opens WBE's Genie on the page as soon as it has loaded (see [Genie]).
  */
 class WikiTreeSheet(private val activity: Activity) {
     private val density = activity.resources.displayMetrics.density
     private fun dp(v: Int) = (v * density).toInt()
 
     @SuppressLint("SetJavaScriptEnabled")
-    fun show(uri: Uri, listen: Boolean = false, onClose: () -> Unit = {}) {
+    fun show(uri: Uri, listen: Boolean = false, genie: String? = null, onClose: () -> Unit = {}) {
         val dialog = Dialog(activity, R.style.AppDialog)
         val green = activity.getColor(R.color.wt_green)
         val root = LinearLayout(activity).apply {
@@ -119,6 +120,11 @@ class WikiTreeSheet(private val activity: Activity) {
         web.settings.javaScriptEnabled = true
         web.settings.domStorageEnabled = true
         addWbe()
+        // "Ask Genie" on the start screen: Genie opens (and is asked) when a page is up, and again on
+        // the next page if that one went away first (a redirect, a reload), for the first minute.
+        // genie.js asks only once on any one page.
+        var askGenie = genie
+        val genieUntil = System.currentTimeMillis() + 60_000
         web.webViewClient = object : WebViewClient() {
             override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
                 val host = request.url.host
@@ -145,6 +151,11 @@ class WikiTreeSheet(private val activity: Activity) {
 
             override fun onPageFinished(view: WebView, url: String) {
                 progress.visibility = View.GONE
+                val question = askGenie
+                if (question != null && System.currentTimeMillis() > genieUntil) askGenie = null
+                else if (question != null && wbe != null && url.startsWith(Wbe.ORIGIN)) {
+                    Genie.ask(activity, view, question) { askGenie = null }
+                }
                 // A profile shows the person's name in large type right under the bar, so the bar
                 // leaves it out there and keeps the room for its buttons.
                 title.text = if (Biography.profileId(url) != null) "" else
