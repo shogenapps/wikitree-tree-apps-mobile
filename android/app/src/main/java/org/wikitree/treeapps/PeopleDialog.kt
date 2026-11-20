@@ -277,11 +277,11 @@ class PeopleDialog(
             gravity = Gravity.CENTER_VERTICAL
             setPadding(dp(12), 0, dp(8), 0)
         }
-        row.addView(TextView(activity).apply {
-            text = "🧞"
-            setTextSize(TypedValue.COMPLEX_UNIT_SP, 22f)
+        // Genie's lamp, from WBE's own icon.
+        row.addView(ImageView(activity).apply {
+            setImageResource(R.drawable.ic_genie)
             importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
-            setPadding(0, 0, dp(4), 0)
+            setPadding(0, 0, dp(6), 0)
         })
         val input = EditText(activity).apply {
             hint = activity.getString(R.string.genie_hint)

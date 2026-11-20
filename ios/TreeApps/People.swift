@@ -430,7 +430,13 @@ struct PeopleView: View {
                     if start != nil, Wbe.shared.isEnabled {
                         // Genie, WBE's assistant: a question, or a search in Genie's own words.
                         HStack {
-                            Text("🧞").font(.title2).accessibilityHidden(true)
+                            // Genie's lamp, from WBE's own icon.
+                            Image("Genie")
+                                .resizable()
+                                .scaledToFit()
+                                .frame(width: 28, height: 28)
+                                .foregroundStyle(wtAccent)
+                                .accessibilityHidden(true)
                             TextField("Ask Genie anything", text: $genieQuestion)
                                 .submitLabel(.send)
                                 .onSubmit(askGenie)
