@@ -8,19 +8,23 @@ import org.json.JSONObject
 /**
  * "Ask Genie" on the start screen. Genie is the WikiTree Browser Extension's assistant (see [Wbe]):
  * it searches WikiTree, answers questions and, with an AI key in WBE's settings, more. It lives on
- * wikitree.com pages, so asking opens a page sheet on the profile of the person the start screen's
- * Tree Apps are for (Genie then knows who "him" or "her" is), or WikiTree's home page with nobody,
- * and shared/genie.js opens Genie there with the question already sent.
+ * wikitree.com pages, so asking opens a page sheet on a profile, and shared/genie.js opens Genie
+ * there with the question already sent. People the question names who are on the start screen are
+ * put in as their WikiTree IDs (see [GenieNames]), and the profile is the first of them; with
+ * nobody named it is the person the start screen's Tree Apps are for (Genie then knows who "him"
+ * or "her" is), or WikiTree's home page with nobody at all.
  */
 object Genie {
     /** Genie needs WBE, which the member can turn off. */
     fun isAvailable(activity: Activity) = Wbe.isEnabled(activity)
 
-    /** Open Genie over the app, asking [question] ("" just opens it). */
-    fun open(activity: Activity, question: String, personId: String) {
-        val page = if (personId.isBlank()) "https://www.wikitree.com/"
-        else "https://www.wikitree.com/wiki/" + Uri.encode(personId)
-        WikiTreeSheet(activity).show(Uri.parse(page), genie = question.trim())
+    /** Open Genie over the app, asking [question] ("" just opens it) about the people in [known]. */
+    fun open(activity: Activity, question: String, personId: String, known: List<GenieNames.Known> = emptyList()) {
+        val resolved = GenieNames.resolve(question.trim(), known)
+        val id = resolved.personId ?: personId
+        val page = if (id.isBlank()) "https://www.wikitree.com/"
+        else "https://www.wikitree.com/wiki/" + Uri.encode(id)
+        WikiTreeSheet(activity).show(Uri.parse(page), genie = resolved.question)
     }
 
     /**

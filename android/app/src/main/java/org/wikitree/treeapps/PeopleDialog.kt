@@ -293,7 +293,7 @@ class PeopleDialog(
             activity.getSystemService(InputMethodManager::class.java)?.hideSoftInputFromWindow(input.windowToken, 0)
             val question = input.text.toString().trim()
             input.setText("")
-            Genie.open(activity, question, currentId.ifBlank { store.me()?.id ?: "" })
+            Genie.open(activity, question, currentId.ifBlank { store.me()?.id ?: "" }, genieKnown())
         }
         input.setOnEditorActionListener { _, _, _ -> ask(); true }
         row.addView(input, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
@@ -301,6 +301,14 @@ class PeopleDialog(
             contentDescription = activity.getString(R.string.genie_ask_long)
         })
         return row
+    }
+
+    /** The people Genie questions can name: those on the start screen, then the watchlist. */
+    private fun genieKnown(): List<GenieNames.Known> = buildList {
+        val shown = listOfNotNull(store.me()) + store.saved() + store.recent() + matches
+        shown.forEach { add(GenieNames.Known(it.id, it.name, onScreen = true)) }
+        watchlist?.anniversaries()?.forEach { add(GenieNames.Known(it.person.id, it.person.name, onScreen = true)) }
+        watchlist?.all()?.forEach { add(GenieNames.Known(it.id, it.name, onScreen = false)) }
     }
 
     fun dismiss() = dialog.dismiss()

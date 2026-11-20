@@ -579,3 +579,94 @@ enum Genie {
         }
     }
 }
+
+/// Finds the people a question to Genie names, among those the start screen knows: the member,
+/// Saved and Recent people and (by full name only) the watchlist. "Who are George's parents?"
+/// becomes "Who are Beacall-123's parents?", so Genie looks up that George and no other, and the
+/// first person named is the one whose profile Genie opens on.
+///
+/// A name counts only when it is one person's: two Georges on the start screen leave "George" to
+/// Genie. A first or last name on its own must start with a capital letter ("will" is not Will),
+/// and doesn't count at the start of the question if it is also a word such as "Will" or "May".
+/// The start screen's people win over the watchlist's. Mirrors GenieNames.kt.
+enum GenieNames {
+    /// Someone the start screen knows. `onScreen` people match by first or last name alone too.
+    struct Known {
+        let id: String
+        let name: String
+        let onScreen: Bool
+    }
+
+    /// Names that are also words often starting a question ("Will his...?"): not a name there.
+    private static let words: Set<String> = ["will", "may", "mark", "rose", "grace", "hope", "faith", "joy", "june",
+        "april", "august", "bill", "ray", "guy", "art", "dawn", "earl", "king", "major", "rich", "sunny"]
+
+    private static func squeeze(_ text: String) -> String {
+        text.split(whereSeparator: \.isWhitespace).joined(separator: " ")
+    }
+
+    static func resolve(_ question: String, people: [Known]) -> (question: String, personId: String?) {
+        let lower = question.lowercased()
+        // phrase -> the ids it could mean; the start screen's people first, then the watchlist.
+        var onScreen: [String: Set<String>] = [:]
+        var elsewhere: [String: Set<String>] = [:]
+        var firstSeen: [String: String] = [:]
+        var single = Set<String>()
+        for p in people where !p.id.isEmpty {
+            let parts = p.name.split(whereSeparator: { $0.isWhitespace || $0 == "(" || $0 == ")" }).map(String.init)
+            var phrases = [p.id]
+            if let first = parts.first, let last = parts.last {
+                phrases.append(parts.joined(separator: " "))
+                if parts.count > 1 { phrases.append("\(first) \(last)") }
+                if let open = p.name.firstIndex(of: "("), let close = p.name[open...].firstIndex(of: ")") {
+                    let birth = p.name[p.name.index(after: open)..<close].trimmingCharacters(in: .whitespaces)
+                    if !birth.isEmpty { phrases.append("\(first) \(birth)") }
+                }
+                if p.onScreen {
+                    for w in [first, last] where w.count >= 3 {
+                        phrases.append(w)
+                        single.insert(w.lowercased())
+                    }
+                }
+            }
+            for phrase in phrases {
+                let key = squeeze(phrase).lowercased()
+                // Only what the question could contain is kept, so a long watchlist costs little.
+                guard key.count >= 3, lower.contains(key) else { continue }
+                firstSeen[p.id.lowercased()] = p.id
+                if p.onScreen { onScreen[key, default: []].insert(p.id.lowercased()) }
+                else { elsewhere[key, default: []].insert(p.id.lowercased()) }
+            }
+        }
+        var ids: [String: String] = [:]
+        for (key, set) in onScreen where set.count == 1 { ids[key] = firstSeen[set.first!] }
+        for (key, set) in elsewhere where set.count == 1 && onScreen[key] == nil && !single.contains(key) {
+            ids[key] = firstSeen[set.first!]
+        }
+        guard !ids.isEmpty else { return (question, nil) }
+        let alternatives = ids.keys.sorted { $0.count > $1.count }.map { key in
+            key.split(separator: " ").map { NSRegularExpression.escapedPattern(for: String($0)) }.joined(separator: "\\s+")
+        }.joined(separator: "|")
+        guard let pattern = try? NSRegularExpression(pattern: "(?<![\\p{L}\\p{N}-])(?:\(alternatives))(?![\\p{L}\\p{N}-])",
+                                                     options: [.caseInsensitive]) else { return (question, nil) }
+        var out = ""
+        var firstId: String?
+        var at = question.startIndex
+        for match in pattern.matches(in: question, range: NSRange(question.startIndex..., in: question)) {
+            guard let range = Range(match.range, in: question) else { continue }
+            let text = String(question[range])
+            let key = squeeze(text).lowercased()
+            guard let id = ids[key] else { continue }
+            // A first or last name alone must be written as a name.
+            if single.contains(key), !key.contains("-") {
+                if text.first?.isUppercase != true { continue }
+                if words.contains(key), question[..<range.lowerBound].allSatisfy(\.isWhitespace) { continue }
+            }
+            out += String(question[at..<range.lowerBound]) + id
+            at = range.upperBound
+            if firstId == nil { firstId = id }
+        }
+        out += String(question[at...])
+        return (out, firstId)
+    }
+}
