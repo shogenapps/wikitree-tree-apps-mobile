@@ -863,7 +863,14 @@ struct PeopleView: View {
         UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
         let question = genieQuestion.trimmingCharacters(in: .whitespacesAndNewlines)
         genieQuestion = ""
-        profile = ShellModel.SheetURL(url: Genie.page(for: appsFor), genie: question)
+        // People the question names who are on the start screen go in as their WikiTree IDs, and
+        // Genie opens on the first of them (see [GenieNames]).
+        let shown = [store.me].compactMap { $0 } + store.saved + store.recent + matches
+        let known = shown.map { GenieNames.Known(id: $0.id, name: $0.name, onScreen: true) }
+            + watchlist.today.map { GenieNames.Known(id: $0.person.id, name: $0.person.name, onScreen: true) }
+            + watchlist.people.map { GenieNames.Known(id: $0.id, name: $0.name, onScreen: false) }
+        let resolved = GenieNames.resolve(question, people: known)
+        profile = ShellModel.SheetURL(url: Genie.page(for: resolved.personId ?? appsFor), genie: resolved.question)
     }
 
     /// Open a typed WikiTree ID ("Windsor-1"), or look a name up and list the matches.
