@@ -1,6 +1,6 @@
 {
   "repo": "wikitree/wikitree-browser-extension",
   "tag": "preview",
-  "asset": "wbe-preview-2.20.3.0-ae22669-webview.zip",
-  "sha256": "fbe79c7cc6fd208269e235fceed6fd983432ffdee109db01abcea8d6a4fbb913"
+  "asset": "wbe-preview-2.20.3.1-0475ee2-webview.zip",
+  "sha256": "5156c47196c5298e23c6fcc34430b63faee2be2f27ac1b5b5636c07534b02c1b"
 }

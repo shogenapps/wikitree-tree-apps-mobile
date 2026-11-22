@@ -149,6 +149,7 @@
     <string name="wbe_ai_deny">No permitir</string>
     <string name="wbe_ai_refused">No ha permitido que WBE envíe esto a %1$s.</string>
     <!-- Voice search in the name search. -->
+    <string name="genie_which">¿A quién te refieres con %1$s?</string>
     <string name="genie_hint">Pregunta a Genie</string>
     <string name="genie_ask">Preguntar</string>
     <string name="genie_ask_long">Preguntar a Genie, el asistente de la WikiTree Browser Extension</string>

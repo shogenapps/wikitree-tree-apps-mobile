@@ -382,6 +382,8 @@ struct PeopleView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var draft = ""
     @State private var genieQuestion = ""
+    /// A name in a Genie question that fits more than one person, waiting for "Which ... do you mean?".
+    @State private var genieWhich: GenieAsk?
     @State private var matches: [Person] = []
     @State private var searchNote: String?
     @State private var searchRun = 0
@@ -562,6 +564,19 @@ struct PeopleView: View {
         }
         .tint(wtAccent)
         .sheet(item: $profile, onDismiss: { if start != nil { store.findMe() } }) { PageSheet(url: $0.url, listen: $0.listen, genie: $0.genie) }
+        .confirmationDialog(String(localized: "Which \(genieWhich?.unsure ?? "") do you mean?"),
+                            isPresented: Binding(get: { genieWhich != nil }, set: { if !$0 { genieWhich = nil } }),
+                            titleVisibility: .visible, presenting: genieWhich) { ask in
+            ForEach(ask.choices, id: \.id) { p in
+                Button([p.name.isEmpty ? p.id : p.name, p.dates, p.id].filter { !$0.isEmpty }.joined(separator: "  ·  ")) {
+                    var next = ask
+                    next.chosen[ask.unsure] = p.id
+                    genieWhich = nil
+                    // The dialog closes first, then the next step (another question or the sheet).
+                    DispatchQueue.main.async { askGenie(next) }
+                }
+            }
+        }
         .sheet(isPresented: $loggingIn, onDismiss: { store.findMe(afterLogin: true) }) { LoginView() }
         .onChange(of: draft) { text in
             // Suggest people from the watchlist while typing, as wikitree.com does.
@@ -863,14 +878,35 @@ struct PeopleView: View {
         UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
         let question = genieQuestion.trimmingCharacters(in: .whitespacesAndNewlines)
         genieQuestion = ""
-        // People the question names who are on the start screen go in as their WikiTree IDs, and
-        // Genie opens on the first of them (see [GenieNames]).
         let shown = [store.me].compactMap { $0 } + store.saved + store.recent + matches
-        let known = shown.map { GenieNames.Known(id: $0.id, name: $0.name, onScreen: true) }
-            + watchlist.today.map { GenieNames.Known(id: $0.person.id, name: $0.person.name, onScreen: true) }
+        let known = shown.map { GenieNames.Known(id: $0.id, name: $0.name, onScreen: true, dates: $0.dates) }
+            + watchlist.today.map { GenieNames.Known(id: $0.person.id, name: $0.person.name, onScreen: true, dates: $0.person.dates) }
             + watchlist.people.map { GenieNames.Known(id: $0.id, name: $0.name, onScreen: false) }
-        let resolved = GenieNames.resolve(question, people: known)
-        profile = ShellModel.SheetURL(url: Genie.page(for: resolved.personId ?? appsFor), genie: resolved.question)
+        askGenie(GenieAsk(question: question, known: known))
+    }
+
+    /// A question for Genie on its way: the people it may name, and whom names were found to mean.
+    struct GenieAsk {
+        var question: String
+        var known: [GenieNames.Known]
+        var chosen: [String: String] = [:]
+        var unsure = ""
+        var choices: [GenieNames.Known] = []
+    }
+
+    /// People the question names who are on the start screen go in as their WikiTree IDs, and Genie
+    /// opens on the first of them (see [GenieNames]); a name that fits two of them is asked about
+    /// first ("Which George do you mean?").
+    private func askGenie(_ ask: GenieAsk) {
+        let r = GenieNames.resolve(ask.question, people: ask.known, chosen: ask.chosen)
+        if let unsure = r.unsure {
+            var next = ask
+            next.unsure = unsure
+            next.choices = r.choices
+            genieWhich = next
+            return
+        }
+        profile = ShellModel.SheetURL(url: Genie.page(for: r.personId ?? appsFor), genie: r.question)
     }
 
     /// Open a typed WikiTree ID ("Windsor-1"), or look a name up and list the matches.

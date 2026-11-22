@@ -585,37 +585,55 @@ enum Genie {
 /// becomes "Who are Beacall-123's parents?", so Genie looks up that George and no other, and the
 /// first person named is the one whose profile Genie opens on.
 ///
-/// A name counts only when it is one person's: two Georges on the start screen leave "George" to
-/// Genie. A first or last name on its own must start with a capital letter ("will" is not Will),
-/// and doesn't count at the start of the question if it is also a word such as "Will" or "May".
-/// The start screen's people win over the watchlist's. Mirrors GenieNames.kt.
+/// A name that fits two people on the start screen (two Georges) comes back as `unsure`, for the
+/// app to ask which; a shared surname, and any name shared on the watchlist, is left to Genie. A
+/// first or last name on its own must start with a capital letter ("will" is not Will), and
+/// doesn't count at the start of the question if it is also a word such as "Will" or "May". The
+/// start screen's people win over the watchlist's. "A's connection to B" is put the way Genie's
+/// help words it, "connection between A and B". Mirrors GenieNames.kt.
 enum GenieNames {
     /// Someone the start screen knows. `onScreen` people match by first or last name alone too.
     struct Known {
         let id: String
         let name: String
         let onScreen: Bool
+        var dates = ""
+    }
+
+    struct Result {
+        var question: String
+        var personId: String?
+        /// A name, as typed, that fits more than one person on the start screen, and whom it could be.
+        var unsure: String?
+        var choices: [Known] = []
     }
 
     /// Names that are also words often starting a question ("Will his...?"): not a name there.
     private static let words: Set<String> = ["will", "may", "mark", "rose", "grace", "hope", "faith", "joy", "june",
         "april", "august", "bill", "ray", "guy", "art", "dawn", "earl", "king", "major", "rich", "sunny"]
 
+    private static let connection = try? NSRegularExpression(
+        pattern: "(?<![\\p{L}\\p{N}_-])([\\p{L}_]+-\\d+)['’]s (?:connection|relationship) (?:to|with) ([\\p{L}_]+-\\d+)",
+        options: [.caseInsensitive])
+
     private static func squeeze(_ text: String) -> String {
         text.split(whereSeparator: \.isWhitespace).joined(separator: " ")
     }
 
-    static func resolve(_ question: String, people: [Known]) -> (question: String, personId: String?) {
+    /// `chosen`: names already asked about (as typed, any case) and the ID picked for each.
+    static func resolve(_ question: String, people: [Known], chosen: [String: String] = [:]) -> Result {
         let lower = question.lowercased()
         // phrase -> the ids it could mean; the start screen's people first, then the watchlist.
         var onScreen: [String: Set<String>] = [:]
         var elsewhere: [String: Set<String>] = [:]
-        var firstSeen: [String: String] = [:]
+        var known: [String: Known] = [:]
         var single = Set<String>()
+        var firstNames = Set<String>()
         for p in people where !p.id.isEmpty {
             let parts = p.name.split(whereSeparator: { $0.isWhitespace || $0 == "(" || $0 == ")" }).map(String.init)
             var phrases = [p.id]
             if let first = parts.first, let last = parts.last {
+                if p.onScreen { firstNames.insert(first.lowercased()) }
                 phrases.append(parts.joined(separator: " "))
                 if parts.count > 1 { phrases.append("\(first) \(last)") }
                 if let open = p.name.firstIndex(of: "("), let close = p.name[open...].firstIndex(of: ")") {
@@ -633,22 +651,30 @@ enum GenieNames {
                 let key = squeeze(phrase).lowercased()
                 // Only what the question could contain is kept, so a long watchlist costs little.
                 guard key.count >= 3, lower.contains(key) else { continue }
-                firstSeen[p.id.lowercased()] = p.id
-                if p.onScreen { onScreen[key, default: []].insert(p.id.lowercased()) }
-                else { elsewhere[key, default: []].insert(p.id.lowercased()) }
+                let id = p.id.lowercased()
+                if known[id] == nil { known[id] = p }
+                if p.onScreen { onScreen[key, default: []].insert(id) } else { elsewhere[key, default: []].insert(id) }
             }
         }
+        var picked: [String: String] = [:]
+        for (name, id) in chosen { picked[squeeze(name).lowercased()] = id }
         var ids: [String: String] = [:]
-        for (key, set) in onScreen where set.count == 1 { ids[key] = firstSeen[set.first!] }
-        for (key, set) in elsewhere where set.count == 1 && onScreen[key] == nil && !single.contains(key) {
-            ids[key] = firstSeen[set.first!]
+        // Names that fit more than one person on the start screen: whom they could be.
+        var many: [String: [Known]] = [:]
+        for (key, set) in onScreen {
+            if let id = picked[key] { ids[key] = id }
+            else if set.count == 1 { ids[key] = known[set.first!]?.id }
+            else { many[key] = set.sorted().compactMap { known[$0] } }
         }
-        guard !ids.isEmpty else { return (question, nil) }
-        let alternatives = ids.keys.sorted { $0.count > $1.count }.map { key in
+        for (key, set) in elsewhere where set.count == 1 && onScreen[key] == nil && !single.contains(key) {
+            ids[key] = known[set.first!]?.id
+        }
+        guard !ids.isEmpty || !many.isEmpty else { return Result(question: question) }
+        let alternatives = (Array(ids.keys) + Array(many.keys)).sorted { $0.count > $1.count }.map { key in
             key.split(separator: " ").map { NSRegularExpression.escapedPattern(for: String($0)) }.joined(separator: "\\s+")
         }.joined(separator: "|")
         guard let pattern = try? NSRegularExpression(pattern: "(?<![\\p{L}\\p{N}-])(?:\(alternatives))(?![\\p{L}\\p{N}-])",
-                                                     options: [.caseInsensitive]) else { return (question, nil) }
+                                                     options: [.caseInsensitive]) else { return Result(question: question) }
         var out = ""
         var firstId: String?
         var at = question.startIndex
@@ -656,17 +682,29 @@ enum GenieNames {
             guard let range = Range(match.range, in: question) else { continue }
             let text = String(question[range])
             let key = squeeze(text).lowercased()
-            guard let id = ids[key] else { continue }
             // A first or last name alone must be written as a name.
             if single.contains(key), !key.contains("-") {
                 if text.first?.isUppercase != true { continue }
                 if words.contains(key), question[..<range.lowerBound].allSatisfy(\.isWhitespace) { continue }
             }
+            // A shared first or full name is asked about; a shared surname ("the Beacall family") is
+            // left to Genie.
+            if let choices = many[key] {
+                if !single.contains(key) || firstNames.contains(key) {
+                    return Result(question: question, unsure: text, choices: choices)
+                }
+                continue
+            }
+            guard let id = ids[key] else { continue }
             out += String(question[at..<range.lowerBound]) + id
             at = range.upperBound
             if firstId == nil { firstId = id }
         }
         out += String(question[at...])
-        return (out, firstId)
+        if let connection {
+            out = connection.stringByReplacingMatches(in: out, range: NSRange(out.startIndex..., in: out),
+                                                      withTemplate: "connection between $1 and $2")
+        }
+        return Result(question: out, personId: firstId)
     }
 }

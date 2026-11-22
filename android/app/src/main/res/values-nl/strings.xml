@@ -149,6 +149,7 @@
     <string name="wbe_ai_deny">Niet toestaan</string>
     <string name="wbe_ai_refused">U hebt WBE niet toegestaan dit naar %1$s te sturen.</string>
     <!-- Voice search in the name search. -->
+    <string name="genie_which">Wie bedoel je met %1$s?</string>
     <string name="genie_hint">Vraag Genie iets</string>
     <string name="genie_ask">Vraag</string>
     <string name="genie_ask_long">Vraag het Genie, de assistent van de WikiTree Browser Extension</string>

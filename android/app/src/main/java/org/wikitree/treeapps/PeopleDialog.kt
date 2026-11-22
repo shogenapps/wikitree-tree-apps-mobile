@@ -293,7 +293,7 @@ class PeopleDialog(
             activity.getSystemService(InputMethodManager::class.java)?.hideSoftInputFromWindow(input.windowToken, 0)
             val question = input.text.toString().trim()
             input.setText("")
-            Genie.open(activity, question, currentId.ifBlank { store.me()?.id ?: "" }, genieKnown())
+            askGenie(question, genieKnown(), emptyMap())
         }
         input.setOnEditorActionListener { _, _, _ -> ask(); true }
         row.addView(input, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
@@ -303,11 +303,31 @@ class PeopleDialog(
         return row
     }
 
+    /**
+     * Open Genie on [question]. People it names from the start screen go in as their IDs and Genie
+     * opens on the first of them (see [GenieNames]); a name that fits two of them is asked about
+     * first ("Which George do you mean?").
+     */
+    private fun askGenie(question: String, known: List<GenieNames.Known>, chosen: Map<String, String>) {
+        val r = GenieNames.resolve(question, known, chosen)
+        val unsure = r.unsure
+        if (unsure != null) {
+            val labels = r.choices.map { p -> listOf(p.name.ifBlank { p.id }, p.dates, p.id).filter { it.isNotBlank() }.joinToString("  ·  ") }
+            AlertDialog.Builder(activity)
+                .setTitle(activity.getString(R.string.genie_which, unsure))
+                .setItems(labels.toTypedArray()) { _, i -> askGenie(question, known, chosen + (unsure to r.choices[i].id)) }
+                .setNegativeButton(android.R.string.cancel, null)
+                .show()
+            return
+        }
+        Genie.open(activity, r.question, r.personId ?: currentId.ifBlank { store.me()?.id ?: "" })
+    }
+
     /** The people Genie questions can name: those on the start screen, then the watchlist. */
     private fun genieKnown(): List<GenieNames.Known> = buildList {
         val shown = listOfNotNull(store.me()) + store.saved() + store.recent() + matches
-        shown.forEach { add(GenieNames.Known(it.id, it.name, onScreen = true)) }
-        watchlist?.anniversaries()?.forEach { add(GenieNames.Known(it.person.id, it.person.name, onScreen = true)) }
+        shown.forEach { add(GenieNames.Known(it.id, it.name, onScreen = true, dates = it.dates)) }
+        watchlist?.anniversaries()?.forEach { add(GenieNames.Known(it.person.id, it.person.name, onScreen = true, dates = it.person.dates)) }
         watchlist?.all()?.forEach { add(GenieNames.Known(it.id, it.name, onScreen = false)) }
     }
 
