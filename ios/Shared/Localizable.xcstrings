@@ -5596,6 +5596,46 @@
         }
       }
     },
+    "Which %@ do you mean?": {
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Welche Person meinst du mit %@?"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "¿A quién te refieres con %@?"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Qui voulez-vous dire par %@ ?"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Chi intendi con %@?"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Wie bedoel je met %@?"
+          }
+        },
+        "sv": {
+          "stringUnit": {
+            "state": "needs_review",
+            "value": "Vem menar du med %@?"
+          }
+        }
+      }
+    },
     "WikiTree Tree Apps": {
       "shouldTranslate": false
     },

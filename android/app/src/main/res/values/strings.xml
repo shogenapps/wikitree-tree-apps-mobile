@@ -81,6 +81,7 @@
     <string name="find_hint">Name or WikiTree ID</string>
     <string name="find_go">Find</string>
     <!-- Voice search in the name search. -->
+    <string name="genie_which">Which %1$s do you mean?</string>
     <string name="genie_hint">Ask Genie anything</string>
     <string name="genie_ask">Ask</string>
     <string name="genie_ask_long">Ask Genie, the WikiTree Browser Extension\'s assistant</string>

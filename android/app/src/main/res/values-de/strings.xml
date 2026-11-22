@@ -149,6 +149,7 @@
     <string name="wbe_ai_deny">Nicht erlauben</string>
     <string name="wbe_ai_refused">Sie haben WBE nicht erlaubt, dies an %1$s zu senden.</string>
     <!-- Voice search in the name search. -->
+    <string name="genie_which">Welche Person meinst du mit %1$s?</string>
     <string name="genie_hint">Frag Genie etwas</string>
     <string name="genie_ask">Fragen</string>
     <string name="genie_ask_long">Genie fragen, den Assistenten der WikiTree Browser Extension</string>

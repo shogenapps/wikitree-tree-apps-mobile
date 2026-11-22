@@ -18,13 +18,11 @@ object Genie {
     /** Genie needs WBE, which the member can turn off. */
     fun isAvailable(activity: Activity) = Wbe.isEnabled(activity)
 
-    /** Open Genie over the app, asking [question] ("" just opens it) about the people in [known]. */
-    fun open(activity: Activity, question: String, personId: String, known: List<GenieNames.Known> = emptyList()) {
-        val resolved = GenieNames.resolve(question.trim(), known)
-        val id = resolved.personId ?: personId
-        val page = if (id.isBlank()) "https://www.wikitree.com/"
-        else "https://www.wikitree.com/wiki/" + Uri.encode(id)
-        WikiTreeSheet(activity).show(Uri.parse(page), genie = resolved.question)
+    /** Open Genie over the app on [personId]'s profile, asking [question] ("" just opens it). */
+    fun open(activity: Activity, question: String, personId: String) {
+        val page = if (personId.isBlank()) "https://www.wikitree.com/"
+        else "https://www.wikitree.com/wiki/" + Uri.encode(personId)
+        WikiTreeSheet(activity).show(Uri.parse(page), genie = question.trim())
     }
 
     /**
