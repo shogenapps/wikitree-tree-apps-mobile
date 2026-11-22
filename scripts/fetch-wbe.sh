@@ -1,7 +1,12 @@
 #!/usr/bin/env bash
 # Puts the WikiTree Browser Extension's webview build in shared/wbe/, from the release asset named
-# in shared/wbe.lock, after checking its SHA-256. The Android build (and later the iOS build) runs
-# this; it does nothing when shared/wbe/ already holds that exact build.
+# in shared/wbe.lock, after checking its SHA-256. The Android and iOS builds run this; it does
+# nothing when shared/wbe/ already holds that exact build.
+#
+# WBE's preview release is replaced on every WBE release run, so the locked asset can vanish. Then
+# the newest *-webview.zip on the same release is taken instead, with a warning (its SHA-256 can't
+# be checked against the lock), so the build still works. Run scripts/update-wbe.sh to lock it.
+# GH_TOKEN or GITHUB_TOKEN, if set, is used for the GitHub API call that finds it.
 #
 #   WBE_ZIP=/path/to/dist-webview.zip scripts/fetch-wbe.sh   use a local zip instead (for testing;
 #                                                             its SHA-256 is not checked)
@@ -29,12 +34,29 @@ else
   # The tag can contain a slash (test/development), which must be encoded in the download URL.
   url="https://github.com/$repo/releases/download/${tag//\//%2F}/$asset"
   echo "Downloading $url"
-  curl -fsSL --retry 3 -o "$tmp/wbe.zip" "$url" || {
-    echo "Could not download $asset. The $tag release is replaced on every WBE release run, so" >&2
-    echo "this asset may be gone: run scripts/update-wbe.sh to take the current one." >&2
-    exit 1
-  }
-  got="$(sha256 "$tmp/wbe.zip")"
+  if curl -fsSL --retry 3 -o "$tmp/wbe.zip" "$url"; then
+    got="$(sha256 "$tmp/wbe.zip")"
+  else
+    # The locked build is gone: take the newest webview build on the same release.
+    echo "Could not download $asset; looking for the newest *-webview.zip on the $tag release." >&2
+    token="${GH_TOKEN:-${GITHUB_TOKEN:-}}"
+    api="https://api.github.com/repos/$repo/releases/tags/${tag//\//%2F}"
+    latest="$(curl -fsSL --retry 3 ${token:+-H "Authorization: Bearer $token"} "$api" |
+      grep -oE '"name"[[:space:]]*:[[:space:]]*"[^"]*-webview\.zip"' | head -n 1 | sed -E 's/.*"([^"]*)"$/\1/')" || latest=""
+    [ -n "$latest" ] || {
+      echo "No *-webview.zip found on the $tag release of $repo either." >&2
+      exit 1
+    }
+    curl -fsSL --retry 3 -o "$tmp/wbe.zip" "https://github.com/$repo/releases/download/${tag//\//%2F}/$latest" || {
+      echo "Could not download $latest either." >&2
+      exit 1
+    }
+    got="$(sha256 "$tmp/wbe.zip")"
+    echo "warning: using $latest ($got) in place of the locked $asset." >&2
+    echo "warning: run scripts/update-wbe.sh to lock it, so later builds check its SHA-256." >&2
+    want="$got"
+    stamp="latest:$got"
+  fi
   if [ "$got" != "$want" ]; then
     echo "SHA-256 of $asset is $got, but shared/wbe.lock expects $want." >&2
     echo "The release changed: run scripts/update-wbe.sh to take the new build on purpose." >&2

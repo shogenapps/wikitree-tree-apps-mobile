@@ -21,8 +21,10 @@ so does the iPhone build (the "Fetch WikiTree Browser Extension" build phase, wh
 that build.
 
 WBE's `stable`, `preview` and `test/development` releases are replaced every time their workflow
-runs, so the asset in the lock file disappears at the next WBE release. The build then fails with
-a message saying so, until the lock is updated.
+runs, so the asset in the lock file disappears at the next WBE release. The build then takes the
+newest `*-webview.zip` on the same release instead, with a warning (its SHA-256 can't be checked,
+as the lock doesn't know it), so builds keep working. Lock it with `scripts/update-wbe.sh` when
+you've checked it. The Android CI passes its token (`GH_TOKEN`) for the GitHub API call this needs.
 
 ## Moving to a new WBE build
 
